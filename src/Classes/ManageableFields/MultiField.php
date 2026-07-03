@@ -330,7 +330,9 @@ class MultiField
         $fieldName = $this->getName();
 
         if (!$request->has($fieldName . '_groups') && !$request->has($fieldName . '_existing_images')) {
-            return $value;
+            // Component was not rendered on this page (eg. hidden via showOnlyOn()). Never persist
+            // an empty string into a JSON column — normalise blank values to null.
+            return ($value === '' || $value === null) ? null : $value;
         }
 
         $items = $this->getItems();
