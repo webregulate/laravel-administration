@@ -9,6 +9,7 @@
     'searchPlaceholder' => 'Search...',
     'searchLimit' => 50,
     'prependOption' => [],
+    'canCancel' => true,
     'disabled' => false,
     'required' => false,
 ])
@@ -33,6 +34,7 @@
         'searchPlaceholder' => $searchPlaceholder,
         'searchLimit' => $searchLimit,
         'prependOption' => $prependOption,
+        'canCancel' => $canCancel,
         'disabled' => $disabled,
         'required' => $required,
     ], key('search-select-'.$fieldName))

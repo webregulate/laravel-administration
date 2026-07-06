@@ -53,6 +53,10 @@ class SearchSelect extends Component
     /** When true, the selection cannot be cleared back to empty. */
     public bool $required = false;
 
+    /** When true, a "Cancel" button is shown that clears the selection to null. */
+    #[Reactive]
+    public bool $canCancel = true;
+
     /** Optional prepended option as [value => label] (e.g. ['' => 'None']). */
     #[Reactive]
     public array $prependOption = [];
@@ -71,6 +75,7 @@ class SearchSelect extends Component
         array $prependOption = [],
         bool $disabled = false,
         bool $required = false,
+        bool $canCancel = true,
     ): void {
         $this->name = $name;
         $this->manageableModelClass = $manageableModelClass;
@@ -78,6 +83,7 @@ class SearchSelect extends Component
         $this->prependOption = $prependOption;
         $this->disabled = $disabled;
         $this->required = $required;
+        $this->canCancel = $canCancel;
 
         if ($placeholder !== null) {
             $this->placeholder = $placeholder;
@@ -221,6 +227,19 @@ class SearchSelect extends Component
             return;
         }
 
+        $this->selectedId = null;
+        $this->selectedLabel = '';
+
+        $this->flagSelectedResults();
+    }
+
+    /**
+     * Cancel the selection entirely, forcing the underlying value to null
+     * regardless of any prepend option or required flag. Triggered by the
+     * "Cancel" button.
+     */
+    public function cancel(): void
+    {
         $this->selectedId = null;
         $this->selectedLabel = '';
 

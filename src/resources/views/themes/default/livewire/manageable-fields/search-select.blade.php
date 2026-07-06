@@ -7,6 +7,22 @@
     {{-- Hidden form element carrying the selected value on submit --}}
     <input type="hidden" name="{{ $name }}" value="{{ $selectedId }}" />
 
+    {{-- Cancel button (clears the underlying value back to null) --}}
+    @if($canCancel && !$disabled && $selectedId !== null && $selectedId !== '')
+        <button
+            type="button"
+            wire:click="cancel"
+            wire:target="cancel"
+            class="absolute right-0 -top-6 flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-rose-500 transition focus:outline-none"
+            wire:loading.class.remove="hover:text-rose-500"
+            wire:loading.class="cursor-default"
+        >
+            <i wire:loading.remove class="fas fa-times"></i>
+            <i wire:loading wire:target="cancel" class="fas fa-circle-notch animate-spin inline-block"></i>
+            Cancel
+        </button>
+    @endif
+
     <div class="relative w-full" x-on:click.outside="open = false">
         {{-- Display field --}}
         <button
@@ -83,10 +99,10 @@
                     </button>
                 @empty
                     <div wire:loading.remove wire:target="search, runSearch" class="px-3 py-4 text-center text-slate-400 text-sm">
-                        <i class="fas fa-search mr-1"></i> No matches found.
+                        <i class="fa-solid fa-search mr-1"></i> No matches found.
                     </div>
                     <div wire:loading wire:target="search, runSearch" class="px-3 py-4 text-center text-slate-400 text-sm">
-                        <i class="fas fa-rep animate-spin inline-block mr-1"></i> Searching&hellip;
+                        <i class="fa-solid fa-circle-notch animate-spin inline-block mr-1"></i> Searching&hellip;
                     </div>
                 @endforelse
             </div>

@@ -67,6 +67,7 @@ class SearchSelect
             'searchPlaceholder' => 'Search...',
             'searchLimit' => $searchLimit ?? 50,
             'prependOption' => [],
+            'canCancel' => true,
         ], $options ?? []));
 
         if ($searchQuery !== null) {
@@ -153,6 +154,17 @@ class SearchSelect
     }
 
     /**
+     * Set whether a "Cancel" button is shown that clears the selection back to
+     * null when pressed. Defaults to true.
+     */
+    public function canCancel(bool $canCancel = true): static
+    {
+        $this->options['canCancel'] = $canCancel;
+
+        return $this;
+    }
+
+    /**
      * Run the configured search query for the given term. Called by the Livewire
      * component after it re-derives this field.
      */
@@ -210,6 +222,7 @@ class SearchSelect
             'searchPlaceholder' => $this->getOption('searchPlaceholder'),
             'searchLimit' => $this->getOption('searchLimit'),
             'prependOption' => $this->getOption('prependOption') ?? [],
+            'canCancel' => (bool) $this->getOption('canCancel'),
             'disabled' => (bool) $this->getAttribute('disabled'),
             'required' => (bool) $this->getAttribute('required'),
         ])->render();
