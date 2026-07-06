@@ -39,6 +39,7 @@ use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelU
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelDynamicBrowseFilters;
 use WebRegulate\LaravelAdministration\Livewire\MultiUploadFields\MultiImageUploads;
 use WebRegulate\LaravelAdministration\Livewire\MultiUploadFields\MultiFormGroups;
+use WebRegulate\LaravelAdministration\Livewire\ManageableFields\SearchSelect as SearchSelectComponent;
 
 class WRLAServiceProvider extends ServiceProvider
 {
@@ -202,6 +203,7 @@ class WRLAServiceProvider extends ServiceProvider
         Livewire::component('wrla.dev-tools.handle-update-modal', HandleUpdateModal::class);
         Livewire::component('wrla.wire-elements-modal', \LivewireUI\Modal\Modal::class);
         Livewire::component('wrla.manageable-fields.searchable-value', SearchableValue::class);
+        Livewire::component('wrla.manageable-fields.search-select', SearchSelectComponent::class);
         Livewire::component('wrla.file-manager', FileManager::class);
         Livewire::component('wrla.logs', Logs::class);
         Livewire::component('wrla.multi-upload-fields.multi-image-uploads', MultiImageUploads::class);

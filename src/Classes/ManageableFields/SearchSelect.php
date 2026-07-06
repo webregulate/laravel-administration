@@ -1,0 +1,182 @@
+<?php
+
+namespace WebRegulate\LaravelAdministration\Classes\ManageableFields;
+
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
+use WebRegulate\LaravelAdministration\Traits\ManageableField;
+
+/**
+ * Searchable single-select field backed by the self-contained
+ * `wrla.manageable-fields.search-select` Livewire component.
+ *
+ * The search query and item label are provided inline as callbacks. Because a
+ * nested Livewire component cannot receive closures (they do not survive
+ * hydration), the component re-derives this field on each request via
+ * ManageableModel::getManageableFieldByName() and calls back into
+ * runSearchQuery() / resolveItemLabel(). The closures therefore live only on
+ * the freshly rebuilt field instance and are never serialized.
+ *
+ * Example:
+ *
+ *   SearchSelect::make($this, 'customer_id')
+ *       ->searchQuery(fn (string $term) => Customer::query()
+ *           ->when($term !== '', fn ($q) => $q->where('account_name', 'like', "%{$term}%")))
+ *       ->itemLabel('account_name')                        // or a callback
+ *       ->prependItem('', 'None')                          // optional
+ *       ->required();
+ */
+class SearchSelect
+{
+    use ManageableField;
+
+    /** Callback: fn(string $term): Builder */
+    protected mixed $searchQueryCallable = null;
+
+    /** String column name, or callback: fn(Model $model): string */
+    protected mixed $itemLabelResolver = null;
+
+    /** Optional prepended option as [value => label] (e.g. ['' => 'None']). */
+    protected array $prependOption = [];
+
+    /** Maximum number of results returned per search. */
+    protected int $searchLimit = 50;
+
+    /** Placeholder shown on the closed field when nothing is selected. */
+    protected string $placeholder = 'Select...';
+
+    /** Placeholder shown inside the search input. */
+    protected string $searchPlaceholder = 'Search...';
+
+    /**
+     * Define the search query. The callback receives the trimmed search term
+     * (may be empty when the popout first opens) and must return an Eloquent
+     * query builder.
+     *
+     * @param  callable(string): Builder  $callback
+     */
+    public function searchQuery(callable $callback): static
+    {
+        $this->searchQueryCallable = $callback;
+
+        return $this;
+    }
+
+    /**
+     * Define how each result is labelled. Either a column name on the model, or
+     * a callback that receives the model and returns the label string.
+     *
+     * @param  string|callable(Model): string  $columnOrCallback
+     */
+    public function itemLabel(string|callable $columnOrCallback): static
+    {
+        $this->itemLabelResolver = $columnOrCallback;
+
+        return $this;
+    }
+
+    /**
+     * Prepend an option to the top of the list (e.g. an "All" / "None" entry).
+     * Maps to the Livewire component's prependOption.
+     */
+    public function prependItem(int|string $value, string $label): static
+    {
+        $this->prependOption = [(string) $value => $label];
+
+        return $this;
+    }
+
+    /**
+     * Set the maximum number of results returned per search.
+     */
+    public function searchLimit(int $searchLimit): static
+    {
+        $this->searchLimit = $searchLimit;
+
+        return $this;
+    }
+
+    /**
+     * Set the placeholder shown on the closed field.
+     */
+    public function placeholder(string $placeholder): static
+    {
+        $this->placeholder = $placeholder;
+
+        return $this;
+    }
+
+    /**
+     * Set the placeholder shown inside the search input.
+     */
+    public function searchPlaceholder(string $searchPlaceholder): static
+    {
+        $this->searchPlaceholder = $searchPlaceholder;
+
+        return $this;
+    }
+
+    /**
+     * Run the configured search query for the given term. Called by the Livewire
+     * component after it re-derives this field.
+     */
+    public function runSearchQuery(string $term): Builder
+    {
+        if ($this->searchQueryCallable === null) {
+            throw new \Exception('SearchSelect field "' . $this->getName() . '" is missing a searchQuery() callback.');
+        }
+
+        return ($this->searchQueryCallable)($term);
+    }
+
+    /**
+     * Resolve the display label for a single model. Called by the Livewire
+     * component after it re-derives this field.
+     */
+    public function resolveItemLabel(Model $model): string
+    {
+        $resolver = $this->itemLabelResolver;
+
+        if ($resolver === null) {
+            return (string) $model->getKey();
+        }
+
+        if (is_callable($resolver)) {
+            return (string) $resolver($model);
+        }
+
+        return (string) data_get($model, $resolver);
+    }
+
+    /**
+     * Expose the prepend option to the Livewire component.
+     */
+    public function getPrependOption(): array
+    {
+        return $this->prependOption;
+    }
+
+    /**
+     * Render the field — embeds the search-select Livewire component within a
+     * labelled wrapper. The component receives only serializable identifiers so
+     * it can re-derive this field (and its closures) on each request.
+     */
+    public function render(): mixed
+    {
+        return view(WRLAHelper::getViewPath('components.forms.search-select'), [
+            'label' => $this->getLabel(),
+            'options' => $this->options,
+            'fieldName' => $this->getName(),
+            'manageableModelClass' => $this->manageableModel !== null ? get_class($this->manageableModel) : null,
+            'modelId' => $this->manageableModel?->model()?->getKey(),
+            'value' => (string) $this->getValue(),
+            'placeholder' => $this->placeholder,
+            'searchPlaceholder' => $this->searchPlaceholder,
+            'searchLimit' => $this->searchLimit,
+            'prependOption' => $this->prependOption,
+            'disabled' => (bool) $this->getAttribute('disabled'),
+            'required' => (bool) $this->getAttribute('required'),
+        ])->render();
+    }
+}
