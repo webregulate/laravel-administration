@@ -4,6 +4,7 @@ namespace WebRegulate\LaravelAdministration\Classes\ManageableFields;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use WebRegulate\LaravelAdministration\Classes\ManageableModel;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Traits\ManageableField;
 
@@ -26,10 +27,17 @@ use WebRegulate\LaravelAdministration\Traits\ManageableField;
  *       ->itemLabel('account_name')                        // or a callback
  *       ->prependItem('', 'None')                          // optional
  *       ->required();
+ *
+ * The search query and item label may also be passed inline via make():
+ *
+ *   SearchSelect::make($this, 'customer_id', searchQuery: fn (string $term) => ...,
+ *       itemLabel: 'account_name', prependItem: ['', 'None']);
  */
 class SearchSelect
 {
-    use ManageableField;
+    use ManageableField {
+        make as protected makeBase;
+    }
 
     /** Callback: fn(string $term): Builder */
     protected mixed $searchQueryCallable = null;
@@ -37,17 +45,44 @@ class SearchSelect
     /** String column name, or callback: fn(Model $model): string */
     protected mixed $itemLabelResolver = null;
 
-    /** Optional prepended option as [value => label] (e.g. ['' => 'None']). */
-    protected array $prependOption = [];
+    /**
+     * Make the field, optionally setting the search query, item label and
+     * prepended option inline.
+     *
+     * @param  (callable(string): Builder)|null  $searchQuery
+     * @param  string|(callable(Model): string)|null  $itemLabel
+     * @param  array{0: int|string, 1: string}|null  $prependItem  [value, label] (e.g. ['', 'None'])
+     */
+    public static function make(
+        ?ManageableModel $manageableModel = null,
+        ?string $column = null,
+        ?callable $searchQuery = null,
+        string|callable|null $itemLabel = null,
+        ?array $prependItem = null,
+        ?int $searchLimit = null,
+        ?array $options = null,
+    ): static {
+        $manageableField = static::makeBase($manageableModel, $column, array_merge([
+            'placeholder' => 'Select...',
+            'searchPlaceholder' => 'Search...',
+            'searchLimit' => $searchLimit ?? 50,
+            'prependOption' => [],
+        ], $options ?? []));
 
-    /** Maximum number of results returned per search. */
-    protected int $searchLimit = 50;
+        if ($searchQuery !== null) {
+            $manageableField->searchQuery($searchQuery);
+        }
 
-    /** Placeholder shown on the closed field when nothing is selected. */
-    protected string $placeholder = 'Select...';
+        if ($itemLabel !== null) {
+            $manageableField->itemLabel($itemLabel);
+        }
 
-    /** Placeholder shown inside the search input. */
-    protected string $searchPlaceholder = 'Search...';
+        if ($prependItem !== null) {
+            $manageableField->prependItem($prependItem[0], $prependItem[1]);
+        }
+
+        return $manageableField;
+    }
 
     /**
      * Define the search query. The callback receives the trimmed search term
@@ -82,7 +117,7 @@ class SearchSelect
      */
     public function prependItem(int|string $value, string $label): static
     {
-        $this->prependOption = [(string) $value => $label];
+        $this->options['prependOption'] = [(string) $value => $label];
 
         return $this;
     }
@@ -92,7 +127,7 @@ class SearchSelect
      */
     public function searchLimit(int $searchLimit): static
     {
-        $this->searchLimit = $searchLimit;
+        $this->options['searchLimit'] = $searchLimit;
 
         return $this;
     }
@@ -102,7 +137,7 @@ class SearchSelect
      */
     public function placeholder(string $placeholder): static
     {
-        $this->placeholder = $placeholder;
+        $this->options['placeholder'] = $placeholder;
 
         return $this;
     }
@@ -112,7 +147,7 @@ class SearchSelect
      */
     public function searchPlaceholder(string $searchPlaceholder): static
     {
-        $this->searchPlaceholder = $searchPlaceholder;
+        $this->options['searchPlaceholder'] = $searchPlaceholder;
 
         return $this;
     }
@@ -154,7 +189,7 @@ class SearchSelect
      */
     public function getPrependOption(): array
     {
-        return $this->prependOption;
+        return $this->options['prependOption'] ?? [];
     }
 
     /**
@@ -171,10 +206,10 @@ class SearchSelect
             'manageableModelClass' => $this->manageableModel !== null ? get_class($this->manageableModel) : null,
             'modelId' => $this->manageableModel?->model()?->getKey(),
             'value' => (string) $this->getValue(),
-            'placeholder' => $this->placeholder,
-            'searchPlaceholder' => $this->searchPlaceholder,
-            'searchLimit' => $this->searchLimit,
-            'prependOption' => $this->prependOption,
+            'placeholder' => $this->getOption('placeholder'),
+            'searchPlaceholder' => $this->getOption('searchPlaceholder'),
+            'searchLimit' => $this->getOption('searchLimit'),
+            'prependOption' => $this->getOption('prependOption') ?? [],
             'disabled' => (bool) $this->getAttribute('disabled'),
             'required' => (bool) $this->getAttribute('required'),
         ])->render();
