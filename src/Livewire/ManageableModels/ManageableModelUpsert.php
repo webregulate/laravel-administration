@@ -311,7 +311,6 @@ class ManageableModelUpsert extends Component
         // Check that model URL alias matches the manageable model class URL alias
         if ($modelUrlAlias != $this->manageableModelClass::getUrlAlias()) {
             $this->addError('error', 'Model URL alias does not match manageable model class URL alias.');
-
             return;
         }
 
@@ -321,14 +320,17 @@ class ManageableModelUpsert extends Component
         // If model failed to delete, add an error
         if (! $success) {
             $this->addError('error', $message);
-
             return;
         }
 
-        // Otherwise the model was deleted successfully, redirect to browse page for the model
+        // Otherwise the model was deleted successfully
         session()->flash('success', $message);
 
-        return $this->manageableModelClass::urlBrowse();
+        // If the user is currently on the edit page, take them back to the browse page for
+        // the manageable model as the instance they were editing no longer exists.
+        if (WRLAHelper::isEditPage()) {
+            return redirect($this->manageableModelClass::urlBrowse());
+        }
     }
 
     /* Methods
