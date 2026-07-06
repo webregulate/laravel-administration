@@ -1586,6 +1586,11 @@ class WRLAHelper
             $permanent = 1;
         }
 
+        // Forget any cached manageable model instance for this id so subsequent renders
+        // within the same request reflect the new (soft) deleted state instead of the
+        // stale pre-delete instance held in the static cache.
+        $manageableModelClass::forgetModelInstanceCache($id);
+
         // Log event
         WRLAHelper::logEvent(
             ($permanent ? 'Permanently deleted' : 'Soft deleted')." `{$manageableModelClass::getUrlAlias()}` with ID `{$id}`", array_merge([

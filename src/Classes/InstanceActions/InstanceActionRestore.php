@@ -66,6 +66,7 @@ class InstanceActionRestore
 
                     try {
                         $model->restore();
+                        $manageableModelClass::forgetModelInstanceCache((int) $id);
                         $restored++;
                     } catch (\Throwable $e) {
                         $failed++;

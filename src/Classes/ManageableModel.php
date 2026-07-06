@@ -180,6 +180,29 @@ abstract class ManageableModel
     }
 
     /**
+     * Forget a cached model instance so the next make()/constructor call re-queries the
+     * database. Must be called after a model's persisted state changes within the same
+     * request (e.g. delete, force delete or restore) otherwise subsequent renders would
+     * receive the stale, pre-change instance from the static cache.
+     *
+     * @param  int|null  $id  The model id to forget, or null to clear the entire cache for this class.
+     */
+    public static function forgetModelInstanceCache(?int $id = null): void
+    {
+        if (! array_key_exists(static::class, self::$modelInstanceCache)) {
+            return;
+        }
+
+        if ($id === null) {
+            unset(self::$modelInstanceCache[static::class]);
+
+            return;
+        }
+
+        unset(self::$modelInstanceCache[static::class][$id]);
+    }
+
+    /**
      * Abstract: Main setup.
      */
     abstract public static function mainSetup(): void;

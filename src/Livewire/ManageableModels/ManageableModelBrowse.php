@@ -608,6 +608,10 @@ class ManageableModelBrowse extends Component
         $baseModelClass = $this->manageableModelClass::getStaticOption($this->manageableModelClass, 'baseModelClass');
         $model = $baseModelClass::withTrashed()->find($id);
         $model->restore();
+
+        // Forget any cached manageable model instance for this id so the re-render reflects
+        // the restored (non-trashed) state instead of the stale cached instance.
+        $this->manageableModelClass::forgetModelInstanceCache($id);
     }
 
     /**
