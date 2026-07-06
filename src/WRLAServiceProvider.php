@@ -33,13 +33,13 @@ use WebRegulate\LaravelAdministration\Livewire\DevTools\HandleUpdateModal;
 use WebRegulate\LaravelAdministration\Classes\VersionHandler\VersionHandler;
 use WebRegulate\LaravelAdministration\Commands\CreateManageableModelCommand;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItem;
-use WebRegulate\LaravelAdministration\Classes\ManageableFields\SearchableValue;
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelBrowse;
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelUpsert;
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelDynamicBrowseFilters;
 use WebRegulate\LaravelAdministration\Livewire\MultiUploadFields\MultiImageUploads;
 use WebRegulate\LaravelAdministration\Livewire\MultiUploadFields\MultiFormGroups;
-use WebRegulate\LaravelAdministration\Livewire\ManageableFields\SearchSelect as SearchSelectComponent;
+use WebRegulate\LaravelAdministration\Livewire\ManageableFields\SearchSelect;
+use WebRegulate\LaravelAdministration\Livewire\ManageableFields\SearchableValue;
 
 class WRLAServiceProvider extends ServiceProvider
 {
@@ -203,7 +203,7 @@ class WRLAServiceProvider extends ServiceProvider
         Livewire::component('wrla.dev-tools.handle-update-modal', HandleUpdateModal::class);
         Livewire::component('wrla.wire-elements-modal', \LivewireUI\Modal\Modal::class);
         Livewire::component('wrla.manageable-fields.searchable-value', SearchableValue::class);
-        Livewire::component('wrla.manageable-fields.search-select', SearchSelectComponent::class);
+        Livewire::component('wrla.manageable-fields.search-select', SearchSelect::class);
         Livewire::component('wrla.file-manager', FileManager::class);
         Livewire::component('wrla.logs', Logs::class);
         Livewire::component('wrla.multi-upload-fields.multi-image-uploads', MultiImageUploads::class);
