@@ -9,29 +9,7 @@ use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Traits\ManageableField;
 
 /**
- * Searchable single-select field backed by the self-contained
- * `wrla.manageable-fields.search-select` Livewire component.
- *
- * The search query and item label are provided inline as callbacks. Because a
- * nested Livewire component cannot receive closures (they do not survive
- * hydration), the component re-derives this field on each request via
- * ManageableModel::getManageableFieldByName() and calls back into
- * runSearchQuery() / resolveItemLabel(). The closures therefore live only on
- * the freshly rebuilt field instance and are never serialized.
- *
- * Example:
- *
- *   SearchSelect::make($this, 'customer_id')
- *       ->searchQuery(fn (string $term) => Customer::query()
- *           ->when($term !== '', fn ($q) => $q->where('account_name', 'like', "%{$term}%")))
- *       ->itemLabel('account_name')                        // or a callback
- *       ->prependItem('', 'None')                          // optional
- *       ->required();
- *
- * The search query and item label may also be passed inline via make():
- *
- *   SearchSelect::make($this, 'customer_id', searchQuery: fn (string $term) => ...,
- *       itemLabel: 'account_name', prependItem: ['', 'None']);
+ * Searchable single-select field
  */
 class SearchSelect
 {
