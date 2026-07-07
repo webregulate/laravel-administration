@@ -2,8 +2,10 @@
 
 namespace WebRegulate\LaravelAdministration\Classes\ManageableFields;
 
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\SerializableClosure\SerializableClosure;
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Traits\ManageableField;
@@ -183,19 +185,85 @@ class SearchSelect
     }
 
     /**
+     * Serialize a callback so the Livewire component can rebuild it on its own
+     * requests when there is no ManageableModel to act as a factory. The payload
+     * is signed with the app key (via Laravel's SerializableClosure), so it
+     * cannot be tampered with in transit.
+     *
+     * @throws \Exception when the callback captures non-serializable state.
+     */
+    protected function serializeCallable(callable $callable, string $context): string
+    {
+        if (! $callable instanceof Closure) {
+            $callable = Closure::fromCallable($callable);
+        }
+
+        try {
+            return base64_encode(serialize(new SerializableClosure($callable)));
+        } catch (\Throwable $e) {
+            throw new \Exception(
+                "SearchSelect field \"{$this->getName()}\" could not serialize its {$context} callback. "
+                .'When used without a ManageableModel the callback must be serializable — avoid capturing $this '
+                ."or other non-serializable objects via 'use'. Alternatively, pass a ManageableModel to "
+                ."SearchSelect::make(). Original error: {$e->getMessage()}",
+                0,
+                $e
+            );
+        }
+    }
+
+    /**
      * Render the field — embeds the search-select Livewire component within a
-     * labelled wrapper. The component receives only serializable identifiers so
-     * it can re-derive this field (and its closures) on each request.
+     * labelled wrapper.
+     *
+     * When a ManageableModel is present the component receives only serializable
+     * identifiers and re-derives this field (and its closures) on each request.
+     * When no ManageableModel is present (standalone usage), the search/label
+     * closures are signed and serialized so the component can rebuild them on
+     * its own requests without a factory.
      */
     public function render(): mixed
     {
+        $usesManageableModel = $this->manageableModel !== null;
+
+        $serializedSearchQuery = null;
+        $serializedItemLabel = null;
+        $itemLabelColumn = null;
+
+        // Detect a parent wire:model binding (set via setLivewireModel), so the embedded
+        // Livewire component can be bound two-way to the parent's property. Without this the
+        // isolated child component's value never reaches the parent component.
+        $wireModelTarget = null;
+        foreach ($this->htmlAttributes as $key => $attributeValue) {
+            if (str_starts_with((string) $key, 'wire:model')) {
+                $wireModelTarget = $attributeValue;
+                break;
+            }
+        }
+
+        if (! $usesManageableModel) {
+            if ($this->searchQueryCallable !== null) {
+                $serializedSearchQuery = $this->serializeCallable($this->searchQueryCallable, 'searchQuery');
+            }
+
+            if ($this->itemLabelResolver instanceof Closure) {
+                $serializedItemLabel = $this->serializeCallable($this->itemLabelResolver, 'itemLabel');
+            } elseif (is_string($this->itemLabelResolver)) {
+                $itemLabelColumn = $this->itemLabelResolver;
+            }
+        }
+
         return view(WRLAHelper::getViewPath('components.forms.search-select'), [
             'label' => $this->getLabel(),
             'options' => $this->options,
             'fieldName' => $this->getName(),
-            'manageableModelClass' => $this->manageableModel !== null ? get_class($this->manageableModel) : null,
+            'manageableModelClass' => $usesManageableModel ? get_class($this->manageableModel) : null,
             'modelId' => $this->manageableModel?->model()?->getKey(),
+            'serializedSearchQuery' => $serializedSearchQuery,
+            'serializedItemLabel' => $serializedItemLabel,
+            'itemLabelColumn' => $itemLabelColumn,
             'value' => (string) $this->getValue(),
+            'wireModelTarget' => $wireModelTarget,
             'placeholder' => $this->getOption('placeholder'),
             'searchPlaceholder' => $this->getOption('searchPlaceholder'),
             'searchLimit' => $this->getOption('searchLimit'),

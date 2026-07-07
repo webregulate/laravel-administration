@@ -4,24 +4,14 @@ namespace WebRegulate\LaravelAdministration\Livewire\ManageableFields;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Livewire\Attributes\Modelable;
 use Livewire\Attributes\Reactive;
 use Livewire\Component;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\SearchSelect as SearchSelectField;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 
 /**
- * Self-contained searchable single-select Livewire component, embedded by the
- * SearchSelect ManageableField.
- *
- * It runs its own AJAX searches. Because closures cannot survive Livewire
- * hydration, the search query and item label are not passed in directly.
- * Instead this component re-derives the owning ManageableField each request
- * (via ManageableModel::getManageableFieldByName) and delegates to its
- * runSearchQuery() / resolveItemLabel() methods, which invoke the inline
- * callbacks defined on the field.
- *
- * The selected value is submitted with the surrounding form through a hidden
- * input named after the field, mirroring the MultiUploadFields pattern.
+ * Self-contained searchable single-select Livewire component.
  */
 class SearchSelect extends Component
 {
@@ -34,6 +24,25 @@ class SearchSelect extends Component
     /** Model id (null when creating) used when rebuilding the manageable model. */
     public ?int $modelId = null;
 
+    /**
+     * Signed, serialized search query closure. Used to rebuild the field when no
+     * manageableModelClass is set (standalone usage). Signed with the app key so
+     * it cannot be tampered with in transit.
+     */
+    public ?string $serializedSearchQuery = null;
+
+    /**
+     * Signed, serialized item label closure. Used to rebuild the field when no
+     * manageableModelClass is set and the label is resolved via a callback.
+     */
+    public ?string $serializedItemLabel = null;
+
+    /**
+     * Item label column name. Used to rebuild the field when no
+     * manageableModelClass is set and the label is a plain column.
+     */
+    public ?string $itemLabelColumn = null;
+
     public string $placeholder = 'Select...';
 
     public string $searchPlaceholder = 'Search...';
@@ -42,6 +51,13 @@ class SearchSelect extends Component
 
     public int $searchLimit = 50;
 
+    /**
+     * The selected value. Marked #[Modelable] so a parent Livewire component can
+     * two-way bind to it with wire:model (e.g. wire:model.live="livewireData.foo").
+     * When no wire:model is present (standard manageable-model forms), it behaves
+     * as a normal public property and is submitted via the hidden input.
+     */
+    #[Modelable]
     public ?string $selectedId = null;
 
     public string $selectedLabel = '';
@@ -68,6 +84,9 @@ class SearchSelect extends Component
         string $name,
         ?string $manageableModelClass = null,
         ?int $modelId = null,
+        ?string $serializedSearchQuery = null,
+        ?string $serializedItemLabel = null,
+        ?string $itemLabelColumn = null,
         string $value = '',
         ?string $placeholder = null,
         ?string $searchPlaceholder = null,
@@ -80,6 +99,9 @@ class SearchSelect extends Component
         $this->name = $name;
         $this->manageableModelClass = $manageableModelClass;
         $this->modelId = $modelId;
+        $this->serializedSearchQuery = $serializedSearchQuery;
+        $this->serializedItemLabel = $serializedItemLabel;
+        $this->itemLabelColumn = $itemLabelColumn;
         $this->prependOption = $prependOption;
         $this->disabled = $disabled;
         $this->required = $required;
@@ -121,18 +143,40 @@ class SearchSelect extends Component
      */
     protected function field(): SearchSelectField
     {
-        if ($this->manageableModelClass === null) {
-            throw new \Exception('SearchSelect Livewire component is missing a manageableModelClass.');
+        if ($this->manageableModelClass !== null) {
+            $manageableModel = $this->manageableModelClass::make($this->modelId, true);
+            $field = $manageableModel->getManageableFieldByName($this->name);
+
+            if (!$field instanceof SearchSelectField) {
+                throw new \Exception("SearchSelect could not re-derive field '{$this->name}' on {$this->manageableModelClass}.");
+            }
+
+            return $field;
         }
 
-        $manageableModel = $this->manageableModelClass::make($this->modelId, true);
-        $field = $manageableModel->getManageableFieldByName($this->name);
+        if ($this->serializedSearchQuery !== null) {
+            $field = SearchSelectField::make(null, $this->name);
+            $field->searchQuery($this->unserializeCallable($this->serializedSearchQuery));
 
-        if (!$field instanceof SearchSelectField) {
-            throw new \Exception("SearchSelect could not re-derive field '{$this->name}' on {$this->manageableModelClass}.");
+            if ($this->serializedItemLabel !== null) {
+                $field->itemLabel($this->unserializeCallable($this->serializedItemLabel));
+            } elseif ($this->itemLabelColumn !== null) {
+                $field->itemLabel($this->itemLabelColumn);
+            }
+
+            return $field;
         }
 
-        return $field;
+        throw new \Exception('SearchSelect Livewire component is missing a manageableModelClass and has no serialized search callback to fall back on.');
+    }
+
+    /**
+     * Restore a signed, serialized closure passed in on mount back into a live
+     * closure. The signature is verified before the closure is unserialized.
+     */
+    protected function unserializeCallable(string $payload): \Closure
+    {
+        return unserialize(base64_decode($payload))->getClosure();
     }
 
     /**
@@ -310,6 +354,17 @@ class SearchSelect extends Component
 
     public function render()
     {
+        // When the value is driven by a parent wire:model binding (rather than a
+        // local select()), the label won't have been resolved yet — resolve it here
+        // so the closed field shows the correct text.
+        if ($this->selectedId !== null && $this->selectedId !== '' && $this->selectedLabel === '') {
+            if ($this->isPrependKey((string) $this->selectedId)) {
+                $this->applyPrependSelection();
+            } else {
+                $this->applyInitialSelection((string) $this->selectedId);
+            }
+        }
+
         return view(WRLAHelper::getViewPath('livewire.manageable-fields.search-select'));
     }
 }
