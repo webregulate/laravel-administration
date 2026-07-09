@@ -22,6 +22,7 @@ class BrowseColumnImage extends BrowseColumnBase
                 'width' => $width,
                 'value' => is_string($imagePath) ? $imagePath : null,
                 'maxHeight' => 90,
+                'objectFit' => 'contain',
             ]);
 
         // Set override render value callback
@@ -32,16 +33,20 @@ class BrowseColumnImage extends BrowseColumnBase
                 $value = $imagePath($value, $model);
             }
 
+            $colWidth = $browseColumnImage->getOption('width') ?? 140;
+            $colWidthPx = is_int($colWidth) ? "{$colWidth}px" : $colWidth;
+
             $renderedView = view(WRLAHelper::getViewPath('components.forced-aspect-image', false), [
                 'src' => $value,
                 'class' => $browseColumnImage->getOption('imageClass') ?? ' border border-slate-400',
                 'aspect' => $browseColumnImage->getOption('aspect'),
                 'maxHeight' => $browseColumnImage->getOption('maxHeight'),
+                'objectFit' => $browseColumnImage->getOption('objectFit') ?? 'contain',
                 'hideIfEmpty' => true,
             ])->render();
 
             return <<<BLADE
-                <a href="$value" target="_blank" style="width:100%;max-width:100%;">$renderedView</a>
+                <a href="$value" target="_blank" style="display:block;width:{$colWidthPx};max-width:{$colWidthPx};">$renderedView</a>
             BLADE;
         };
 
@@ -76,5 +81,14 @@ class BrowseColumnImage extends BrowseColumnBase
     public function imageClass(string $class): static
     {
         return $this->setOption('imageClass', $class);
+    }
+
+    /**
+     * Set the object-fit CSS property for the image. Use 'contain', 'cover', 'fill', etc.
+     * Pass the alias 'fit' for 'contain'.
+     */
+    public function objectFit(string $objectFit): static
+    {
+        return $this->setOption('objectFit', $objectFit);
     }
 }
