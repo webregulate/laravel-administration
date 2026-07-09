@@ -41,7 +41,7 @@ class BrowseColumnImage extends BrowseColumnBase
             ])->render();
 
             return <<<BLADE
-                <a href="$value" target="_blank">$renderedView</a>
+                <a href="$value" target="_blank" style="width:100%;max-width:100%;">$renderedView</a>
             BLADE;
         };
 
