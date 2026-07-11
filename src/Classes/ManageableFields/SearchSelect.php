@@ -67,25 +67,44 @@ class SearchSelect
 
     /**
      * Define the search query. You may pass any of the following:
-     *  - A ManageableModel class
-     *  - A Model class
+     *  - A ManageableModel class (if passed, must also pass the column name to search on)
+     *  - A Model class (if passed, must also pass the column name to search on)
      *  - A callable that returns a custom Eloquent builder
      *
-     * @param  class-string<ManageableModel>|class-string<Model>|callable(string): Builder  $callbackOrModel
+     * When a ManageableModel or Model class is passed together with a column, the
+     * search filters that column by the term (case-insensitive LIKE) and the item
+     * label is automatically set to the same column.
+     *
+     * @param class-string<ManageableModel>|class-string<Model>|callable(string): Builder  $callbackOrModel
+     * @param ?string $column The column name to search on (only used/required when passing a ManageableModel or Model class)
      */
-    public function searchQuery(string|callable $callbackOrModel): static
+    public function searchQuery(string|callable $callbackOrModel, ?string $column = null): static
     {
-        // ManageableModel class-string: resolve its base model and query that.
+        // Resolve a model class from either a ManageableModel class-string or a Model class-string.
+        $modelClass = null;
+
         if (is_string($callbackOrModel) && is_subclass_of($callbackOrModel, ManageableModel::class)) {
             $modelClass = $callbackOrModel::getBaseModelClass();
-            $this->searchQueryCallable = fn (string $term): Builder => $modelClass::query();
-
-            return $this;
+        } elseif (is_string($callbackOrModel) && is_subclass_of($callbackOrModel, Model::class)) {
+            $modelClass = $callbackOrModel;
         }
 
-        // Model class-string: query that model directly.
-        if (is_string($callbackOrModel) && is_subclass_of($callbackOrModel, Model::class)) {
-            $this->searchQueryCallable = fn (string $term): Builder => $callbackOrModel::query();
+        // Class-string path: build a query that (optionally) filters on the given column,
+        // and auto-set the item label to that column when provided.
+        if ($modelClass !== null) {
+            $this->searchQueryCallable = function (string $term) use ($modelClass, $column): Builder {
+                $query = $modelClass::query();
+
+                if ($column !== null && $term !== '') {
+                    $query->where($column, 'like', "%{$term}%");
+                }
+
+                return $query;
+            };
+
+            if ($column !== null) {
+                $this->itemLabel($column);
+            }
 
             return $this;
         }
