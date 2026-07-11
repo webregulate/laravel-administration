@@ -46,7 +46,7 @@ class Image extends File
             'aspect' => null,
             'objectFit' => 'fit',
             'showPreview' => true,
-            'previewContainerClass' => '',
+            'previewContainerClass' => 'w-full max-w-full md:max-w-[25%]',
             'allowRotation' => true,
         ]);
     }
