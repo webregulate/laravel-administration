@@ -38,6 +38,15 @@ class WRLAHelper
     const WRLA_KEY_REMOVE = '__WRLA::KEY::REMOVE__';
 
     /**
+     * Key rotate constant. Injected as a field's submitted value when the user
+     * rotated a stored image without uploading a replacement, so the field is
+     * still processed (an empty file input is otherwise absent from the POST).
+     *
+     * @var string
+     */
+    const WRLA_KEY_ROTATE = '__WRLA::KEY::ROTATE__';
+
+    /**
      * Key remove constant
      *
      * @var string

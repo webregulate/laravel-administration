@@ -18,7 +18,7 @@
         : '<span class="float-right text-red-500">Image not found</span>';
 @endphp
 
-<div wire:ignore class="{{ $options['containerClass'] ?? 'w-full flex-1 md:flex-auto' }}">
+<div wire:ignore class="wrla_image_field {{ $options['containerClass'] ?? 'w-full flex-1 md:flex-auto' }}">
 
 @if(!empty($label))
     @themeComponent('forms.label', [
@@ -91,13 +91,84 @@
                 ])
             ])
         @endif
+
+        {{-- Rotation controls (if allowed) --}}
+        @if($options['allowRotation'] ?? true)
+            <div class="wrla_rotation_controls w-full flex items-center gap-1.5 mt-3" style="{{ $fileSystemImageExists ? '' : 'display: none;' }}">
+                <button type="button" title="Rotate left" onclick="wrla_rotateImage(this, -90)"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-500 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                    <i class="fa fa-rotate-left text-xs"></i>
+                </button>
+                <button type="button" title="Rotate right" onclick="wrla_rotateImage(this, 90)"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-500 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                    <i class="fa fa-rotate-right text-xs"></i>
+                </button>
+                <span class="wrla_rotation_label text-sm text-slate-500 dark:text-slate-400 ml-1">Rotation: 0&deg;</span>
+            </div>
+
+            <input class="wrla_rotation_input" type="hidden" name="wrla_rotation_{!! $name !!}" value="0" />
+        @endif
     </div>
 </div>
 
 @once
 <script>
+    function wrla_getImageFieldRoot(el) {
+        return el.closest('.wrla_image_field');
+    }
+
+    function wrla_applyRotationPreview(root) {
+        var previewImageElement = root.querySelector('.wrla_image_preview');
+        var rotationInput = root.querySelector('.wrla_rotation_input');
+        var rotationLabel = root.querySelector('.wrla_rotation_label');
+
+        if (!rotationInput) {
+            return;
+        }
+
+        var degrees = parseInt(rotationInput.value, 10) || 0;
+
+        if (previewImageElement) {
+            previewImageElement.style.transform = 'rotate(' + degrees + 'deg)';
+        }
+
+        if (rotationLabel) {
+            rotationLabel.textContent = 'Rotation: ' + degrees + '\u00B0';
+        }
+    }
+
+    function wrla_resetRotation(root) {
+        var rotationInput = root.querySelector('.wrla_rotation_input');
+        if (rotationInput) {
+            rotationInput.value = '0';
+        }
+        wrla_applyRotationPreview(root);
+    }
+
+    function wrla_showRotationControls(root, show) {
+        var controls = root.querySelector('.wrla_rotation_controls');
+        if (controls) {
+            controls.style.display = show ? 'flex' : 'none';
+        }
+    }
+
+    function wrla_rotateImage(button, amount) {
+        var root = wrla_getImageFieldRoot(button);
+        var rotationInput = root.querySelector('.wrla_rotation_input');
+        if (!rotationInput) {
+            return;
+        }
+
+        var degrees = (parseInt(rotationInput.value, 10) || 0) + amount;
+        degrees = ((degrees % 360) + 360) % 360;
+        rotationInput.value = degrees;
+
+        wrla_applyRotationPreview(root);
+    }
+
     function wrla_setPreviewImage(input) {
         if (input.files && input.files[0]) {
+            var root = wrla_getImageFieldRoot(input);
             var previewImageElement = input.parentElement.parentElement.parentElement.querySelector('.wrla_image_preview');
 
             var reader = new FileReader();
@@ -115,10 +186,15 @@
                 removeButton.value = 'false';
                 removeButton.parentElement.querySelector('button').style.display = 'block';
             }
+
+            // Reset any previous rotation and reveal the rotation controls
+            wrla_resetRotation(root);
+            wrla_showRotationControls(root, true);
         }
     }
 
     function wrla_removeImage(button) {
+        var root = wrla_getImageFieldRoot(button);
         var input = button.parentElement.parentElement.querySelector('.wrla_image_input');
         var previewImageElement = input.parentElement.parentElement.parentElement.querySelector('.wrla_image_preview');
         var removeInput = button.parentElement.querySelector('.wrla_remove_input');
@@ -127,6 +203,10 @@
         button.style.display = 'none';
         previewImageElement.src = '{{ $WRLAHelper::getCurrentThemeData('no_image_src') }}';
         previewImageElement.classList.add('wrla_no_image');
+
+        // Reset rotation and hide the rotation controls
+        wrla_resetRotation(root);
+        wrla_showRotationControls(root, false);
 
         // Pass $fileSystemImageExists to JS
         var imageExists = @json($fileSystemImageExists);

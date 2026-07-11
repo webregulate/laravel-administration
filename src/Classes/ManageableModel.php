@@ -1395,6 +1395,27 @@ abstract class ManageableModel
             }
         }
 
+        // Check for rotation-only submissions (image rotated without uploading a
+        // replacement). An empty file input is not submitted, so the field's key
+        // would be missing from $formKeyValues and skipped entirely below. Inject
+        // a rotate sentinel so the field is still processed and can re-encode and
+        // persist the rotated image.
+        if (count($request->all()) > 0) {
+            $rotationKeys = collect($request->all())->filter(fn ($value, $key)
+                => str_starts_with((string) $key, 'wrla_rotation_') && (((int) $value) % 360) !== 0
+            );
+
+            $rotationKeys->each(function ($value, $key) use (&$formKeyValues): void {
+                $fieldName = substr($key, strlen('wrla_rotation_'));
+
+                // Only inject when the field isn't already being handled (i.e. no
+                // new upload and not flagged for removal).
+                if (!array_key_exists($fieldName, $formKeyValues)) {
+                    $formKeyValues[$fieldName] = WRLAHelper::WRLA_KEY_ROTATE;
+                }
+            });
+        }
+
         // Get the manageable fields for the model, and get form components as a collection
         $manageableFields = $this->getManageableFieldsFinal();
         $formComponents = collect($formComponents);

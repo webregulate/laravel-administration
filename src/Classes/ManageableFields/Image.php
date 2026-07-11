@@ -2,6 +2,7 @@
 
 namespace WebRegulate\LaravelAdministration\Classes\ManageableFields;
 
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Gd\Driver;
@@ -28,6 +29,13 @@ class Image extends File
     public $manipulateImageFunction = null;
 
     /**
+     * Clockwise rotation (in degrees) requested by the user for the current
+     * submission. Populated by {@see applySubmittedValue()} and applied when
+     * (re)encoding the image.
+     */
+    public int $rotationDegrees = 0;
+
+    /**
      * Default options, augmenting {@see File::defaultOptions()} with the
      * image-only options consumed by the input-image blade view.
      */
@@ -39,6 +47,7 @@ class Image extends File
             'objectFit' => 'fit',
             'showPreview' => true,
             'previewContainerClass' => '',
+            'allowRotation' => true,
         ]);
     }
 
@@ -52,13 +61,47 @@ class Image extends File
     }
 
     /**
-     * Run the upload through Intervention Image, applying any user supplied
-     * manipulation callback, then write the encoded result to disk.
+     * Apply the submitted value.
+     *
+     * Captures the requested rotation for this field, then defers upload / remove
+     * handling to {@see File::applySubmittedValue()}. When a new file is uploaded
+     * the rotation is baked in during {@see processUploadedFile()}. When the user
+     * only rotated an already-stored image (no new upload) the base class reports
+     * "no change" (null) and we rotate the stored file into a new cache-busting
+     * filename via {@see rotateExistingFile()}, returning that new value to store.
+     */
+    public function applySubmittedValue(Request $request, mixed $value): mixed
+    {
+        $this->rotationDegrees = $this->getOption('allowRotation') == true
+            ? ((int) $request->input('wrla_rotation_'.$this->getName(), 0)) % 360
+            : 0;
+
+        // Rotation-only submission: the image was rotated without uploading a
+        // replacement. The value is a sentinel injected by the update loop (see
+        // ManageableModel::updateModelInstanceProperties) so the field is still
+        // processed. Rotate the stored file in place and persist the new value.
+        if ($value === WRLAHelper::WRLA_KEY_ROTATE) {
+            if ($this->rotationDegrees !== 0 && !empty($this->getAttribute('value'))) {
+                return $this->rotateExistingFile();
+            }
+
+            // Nothing to rotate — keep the existing stored value unchanged.
+            return $this->getAttribute('value');
+        }
+
+        return parent::applySubmittedValue($request, $value);
+    }
+
+    /**
+     * Run the upload through Intervention Image, applying rotation and any user
+     * supplied manipulation callback, then write the encoded result to disk.
      */
     protected function processUploadedFile(UploadedFile $file, string $path, string $filename): void
     {
         $imageManager = new ImageManager(new Driver);
         $image = $imageManager->read($file);
+
+        $image = $this->applyRotation($image);
 
         if ($this->manipulateImageFunction !== null) {
             $manipulateImageFunction = $this->manipulateImageFunction;
@@ -66,6 +109,76 @@ class Image extends File
         }
 
         Storage::disk($this->getOption('fileSystem'))->put("$path/$filename", $image->encode());
+    }
+
+    /**
+     * Rotate the already-stored image (when no replacement file was uploaded).
+     *
+     * The rotated result is written under a *new*, cache-busting filename and
+     * the original file is removed (respecting the `unlinkOld` option). Writing
+     * to the same path would leave the browser showing the previously cached
+     * image, so a fresh filename guarantees the change is visible and lets the
+     * new value propagate to the database.
+     *
+     * @return string The new value to store, or the current stored value
+     *                unchanged if the original file could no longer be found.
+     */
+    protected function rotateExistingFile(): string
+    {
+        $disk = $this->getFileSystem();
+        $oldDiskPath = ltrim($this->getDiskStoragePath(), '/');
+
+        // If the original file has vanished, leave the stored value untouched.
+        if (!$disk->exists($oldDiskPath)) {
+            return (string) $this->getAttribute('value');
+        }
+
+        $imageManager = new ImageManager(new Driver);
+        $image = $imageManager->read($disk->get($oldDiskPath));
+        $image = $this->applyRotation($image);
+
+        // Build a new, cache-busting filename in the same directory. Any prior
+        // rotation suffix is stripped first so repeated rotations don't stack.
+        $directory = ltrim(WRLAHelper::forwardSlashPath($this->getPathOnly()), '/');
+        $oldFilename = basename($oldDiskPath);
+        $extension = pathinfo($oldFilename, PATHINFO_EXTENSION);
+        $baseName = preg_replace('/-r\d+$/', '', pathinfo($oldFilename, PATHINFO_FILENAME));
+
+        $newFilename = $baseName.'-r'.time().($extension !== '' ? '.'.$extension : '');
+        $newDiskPath = ltrim(($directory !== '' ? $directory.'/' : '').$newFilename, '/');
+
+        $disk->put($newDiskPath, $image->encode());
+
+        // Remove the now-orphaned original file.
+        if ($this->getOption('unlinkOld') == true && $newDiskPath !== $oldDiskPath) {
+            $disk->delete($oldDiskPath);
+        }
+
+        // Return the value to store (filename only, or full path).
+        return $this->getOption('storeFilenameOnly') == true
+            ? $newFilename
+            : $newDiskPath;
+    }
+
+    /**
+     * Apply the requested clockwise rotation to the given Intervention image.
+     * The UI reports clockwise degrees whereas Intervention rotates
+     * counter-clockwise, so the angle is negated.
+     *
+     * @param  \Intervention\Image\Interfaces\ImageInterface  $image
+     * @return \Intervention\Image\Interfaces\ImageInterface
+     */
+    protected function applyRotation($image)
+    {
+        $degrees = $this->rotationDegrees % 360;
+
+        if ($degrees === 0) {
+            return $image;
+        }
+
+        $image->rotate(-$degrees);
+
+        return $image;
     }
 
     /**
@@ -89,6 +202,18 @@ class Image extends File
     public function showPreview(bool $show = true): static
     {
         $this->setOption('showPreview', $show);
+
+        return $this;
+    }
+
+    /**
+     * Allow the user to rotate the image (defaults to true).
+     *
+     * @return $this
+     */
+    public function allowRotation(bool $allow = true): static
+    {
+        $this->setOption('allowRotation', $allow);
 
         return $this;
     }
