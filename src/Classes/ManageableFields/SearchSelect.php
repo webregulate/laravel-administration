@@ -25,6 +25,9 @@ class SearchSelect
     /** String column name, or callback: fn(Model $model): string */
     protected mixed $itemLabelResolver = null;
 
+    /** Value used when nothing is selected. Eg. use 0 or 'none' instead of null (default). */
+    public mixed $emptyValue = null;
+
     /**
      * Make the field, optionally setting the search query, item label and
      * prepended option inline.
@@ -180,6 +183,17 @@ class SearchSelect
     }
 
     /**
+     * Define the empty value. Eg. use 0 or 'none' instead of null (default). Used
+     * as the field value when nothing is selected.
+     */
+    public function setEmptyValue(mixed $emptyValue): static
+    {
+        $this->emptyValue = $emptyValue;
+
+        return $this;
+    }
+
+    /**
      * Run the configured search query for the given term. Called by the Livewire
      * component after it re-derives this field.
      */
@@ -260,6 +274,11 @@ class SearchSelect
     public function render(): mixed
     {
         $usesManageableModel = $this->manageableModel !== null;
+
+        // If an empty value is defined and the current value is empty, fall back to it.
+        if ($this->emptyValue !== null && empty($this->getValue())) {
+            $this->setAttribute('value', $this->emptyValue);
+        }
 
         $serializedSearchQuery = null;
         $serializedItemLabel = null;
