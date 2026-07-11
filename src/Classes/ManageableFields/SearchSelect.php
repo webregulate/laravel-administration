@@ -29,14 +29,14 @@ class SearchSelect
      * Make the field, optionally setting the search query, item label and
      * prepended option inline.
      *
-     * @param  (callable(string): Builder)|null  $searchQuery
+     * @param  class-string<ManageableModel>|class-string<Model>|(callable(string): Builder)|null  $searchQuery
      * @param  string|(callable(Model): string)|null  $itemLabel
      * @param  array{0: int|string, 1: string}|null  $prependItem  [value, label] (e.g. ['', 'None'])
      */
     public static function make(
         ?ManageableModel $manageableModel = null,
         ?string $column = null,
-        ?callable $searchQuery = null,
+        string|callable|null $searchQuery = null,
         string|callable|null $itemLabel = null,
         ?array $prependItem = null,
         ?int $searchLimit = null,
@@ -66,15 +66,31 @@ class SearchSelect
     }
 
     /**
-     * Define the search query. The callback receives the trimmed search term
-     * (may be empty when the popout first opens) and must return an Eloquent
-     * query builder.
+     * Define the search query. You may pass any of the following:
+     *  - A ManageableModel class
+     *  - A Model class
+     *  - A callable that returns a custom Eloquent builder
      *
-     * @param  callable(string): Builder  $callback
+     * @param  class-string<ManageableModel>|class-string<Model>|callable(string): Builder  $callbackOrModel
      */
-    public function searchQuery(callable $callback): static
+    public function searchQuery(string|callable $callbackOrModel): static
     {
-        $this->searchQueryCallable = $callback;
+        // ManageableModel class-string: resolve its base model and query that.
+        if (is_string($callbackOrModel) && is_subclass_of($callbackOrModel, ManageableModel::class)) {
+            $modelClass = $callbackOrModel::getBaseModelClass();
+            $this->searchQueryCallable = fn (string $term): Builder => $modelClass::query();
+
+            return $this;
+        }
+
+        // Model class-string: query that model directly.
+        if (is_string($callbackOrModel) && is_subclass_of($callbackOrModel, Model::class)) {
+            $this->searchQueryCallable = fn (string $term): Builder => $callbackOrModel::query();
+
+            return $this;
+        }
+
+        $this->searchQueryCallable = $callbackOrModel;
 
         return $this;
     }
