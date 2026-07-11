@@ -95,6 +95,23 @@
                 ])
             ])
         @endif
+
+        {{-- Rotation controls (if allowed) --}}
+        @if($options['allowRotation'] ?? true)
+            <div id="wrla_croppable_rotation_controls" class="w-full flex items-center gap-1.5 mt-3" style="{{ $fileSystemImageExists ? '' : 'display: none;' }}">
+                <button type="button" title="Rotate left" data-rotate="-90"
+                    class="wrla_rotate_btn inline-flex items-center justify-center w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-500 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                    <i class="fa fa-rotate-left text-xs"></i>
+                </button>
+                <button type="button" title="Rotate right" data-rotate="90"
+                    class="wrla_rotate_btn inline-flex items-center justify-center w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-500 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                    <i class="fa fa-rotate-right text-xs"></i>
+                </button>
+                <span id="wrla_croppable_rotation_label" class="text-sm text-slate-500 dark:text-slate-400 ml-1">Rotation: 0&deg;</span>
+            </div>
+
+            <input id="wrla_croppable_rotation_input" type="hidden" name="wrla_rotation_{!! $name !!}" value="0" />
+        @endif
     </div>
 </div>
 
@@ -138,6 +155,15 @@
         button.style.display = 'none';
         previewImageElement.src = '{{ $WRLAHelper::getCurrentThemeData('no_image_src') }}';
         previewImageElement.classList.add('wrla_no_image');
+        previewImageElement.style.transform = 'none';
+
+        // Reset the rotation controls (if present)
+        var rotationControls = document.getElementById('wrla_croppable_rotation_controls');
+        var rotationInput = document.getElementById('wrla_croppable_rotation_input');
+        var rotationLabel = document.getElementById('wrla_croppable_rotation_label');
+        if (rotationControls) { rotationControls.style.display = 'none'; }
+        if (rotationInput) { rotationInput.value = '0'; }
+        if (rotationLabel) { rotationLabel.textContent = 'Rotation: 0\u00B0'; }
 
         // Pass $fileSystemImageExists to JS
         var imageExists = @json($fileSystemImageExists);
@@ -159,6 +185,50 @@
         imageToCropContainer.style.display = 'none';
 
         let cropper;
+
+        // Rotation controls (Option B): when a cropper is active (new upload) the
+        // rotation is baked into the cropped canvas via Cropper.js, so it's fully
+        // WYSIWYG and no server-side rotation is needed. When there's no cropper
+        // (rotating an already-stored image) we defer to the inherited server-side
+        // rotateExistingFile() by carrying the angle in the wrla_rotation_ input.
+        const rotationControls = document.getElementById('wrla_croppable_rotation_controls');
+        const rotationInput = document.getElementById('wrla_croppable_rotation_input');
+        const rotationLabel = document.getElementById('wrla_croppable_rotation_label');
+
+        function wrla_croppable_updateRotationLabel(degrees) {
+            if (rotationLabel) {
+                rotationLabel.textContent = 'Rotation: ' + degrees + '\u00B0';
+            }
+        }
+
+        function wrla_croppable_handleRotate(amount) {
+            // New upload: rotation is baked into the cropper output canvas.
+            if (cropper) {
+                cropper.rotate(amount);
+                updatePreview();
+                return;
+            }
+
+            // Existing stored image: accumulate the angle in the hidden input and
+            // preview it with a CSS transform. The server rotates the stored file.
+            var current = parseInt(rotationInput ? rotationInput.value : '0', 10) || 0;
+            current = (((current + amount) % 360) + 360) % 360;
+            if (rotationInput) {
+                rotationInput.value = current;
+            }
+            wrla_croppable_updateRotationLabel(current);
+            if (croppedImagePreview) {
+                croppedImagePreview.style.transform = 'rotate(' + current + 'deg)';
+            }
+        }
+
+        if (rotationControls) {
+            rotationControls.querySelectorAll('.wrla_rotate_btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    wrla_croppable_handleRotate(parseInt(btn.getAttribute('data-rotate'), 10) || 0);
+                });
+            });
+        }
 
         let updatePreview = function() {
             // Get the cropped canvas
@@ -184,6 +254,17 @@
 
                 // Show image preview on crop
                 imageToCropContainer.style.display = 'flex';
+
+                // New upload: rotation is handled by Cropper.js, so clear any pending
+                // server-side rotation and reset the existing-image preview transform.
+                if (rotationInput) {
+                    rotationInput.value = '0';
+                }
+                wrla_croppable_updateRotationLabel(0);
+                croppedImagePreview.style.transform = 'none';
+                if (rotationControls) {
+                    rotationControls.style.display = 'flex';
+                }
 
                 // Calculated aspect ratio from setting, is a string with format "1/2" or "16/9" etc, needs to be calculated
                 let aspectRatioCalculation = @js($options['aspect']);
