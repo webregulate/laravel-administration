@@ -262,6 +262,24 @@ return [
         ],
     ],
 
+    // Browse (model listing) configuration
+    'browse' => [
+        // Pagination options used on the browse pages
+        'pagination' => [
+            // Default number of records shown per page
+            'default' => 20,
+
+            // Selectable per-page options shown in the browse pagination dropdown
+            'perPage' => [
+                20,
+                30,
+                50,
+                75,
+                100,
+            ],
+        ],
+    ],
+
     // CSV import configuration (used by the ImportDataModal)
     'csv_imports' => [
         'chunk_size' => 500,

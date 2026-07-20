@@ -70,6 +70,14 @@ class ManageableModelBrowse extends Component
     public $orderDirection = 'desc';
 
     /**
+     * Number of records to display per page. Initialised from the
+     * `wr-laravel-administration.browse.pagination.default` config in mount().
+     *
+     * @var int
+     */
+    public int $perPage = 20;
+
+    /**
      * Table columns.
      *
      * @var array
@@ -149,6 +157,16 @@ class ManageableModelBrowse extends Component
     }
 
     /**
+     * Reset to the first page whenever the per-page selection changes so the user
+     * isn't left on a page that no longer exists with the new page size.
+     */
+    public function updatedPerPage(): void
+    {
+        $this->perPage = $this->resolvePerPage($this->perPage);
+        $this->resetPage();
+    }
+
+    /**
      * Mount the component.
      *
      * @param  string  $manageableModelClass  The class name of the manageable model.
@@ -178,6 +196,9 @@ class ManageableModelBrowse extends Component
         // Run browse setup method
         $this->manageableModelClass::browseSetupFinal($this->filters);
         $this->preFilters = $preFilters;
+
+        // Set the default per-page value from config
+        $this->perPage = $this->resolvePerPage(config('wr-laravel-administration.browse.pagination.default', 20));
 
         // Build parent columns from manageable model
         $columns = $manageableModelInstance->getBrowseColumns();
@@ -218,6 +239,19 @@ class ManageableModelBrowse extends Component
 
         // Get table columns
         $this->tableColumns = $this->manageableModelClass::getTableColumns();
+    }
+
+    /**
+     * Resolve a valid per-page value, falling back to the config default if the
+     * given value isn't one of the allowed options.
+     */
+    protected function resolvePerPage(int|string|null $perPage): int
+    {
+        $options = array_map('intval', config('wr-laravel-administration.browse.pagination.perPage', [20, 30, 50, 75, 100]));
+        $default = (int) config('wr-laravel-administration.browse.pagination.default', 20);
+        $perPage = (int) $perPage;
+
+        return in_array($perPage, $options, true) ? $perPage : $default;
     }
 
     /**
@@ -282,7 +316,7 @@ class ManageableModelBrowse extends Component
         WRLAHelper::setCurrentPageType(PageType::BROWSE);
 
         $this->renders++;
-        $models = $this->browseModels()->paginate(18);
+        $models = $this->browseModels()->paginate($this->resolvePerPage($this->perPage));
 
         return view(WRLAHelper::getViewPath('livewire.manageable-models.browse'), [
             'models' => $models,

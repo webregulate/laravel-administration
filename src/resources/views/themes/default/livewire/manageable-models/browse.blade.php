@@ -17,11 +17,28 @@
         </div>
         @php
             $wrlaBrowseTotal = $models instanceof \Illuminate\Pagination\LengthAwarePaginator ? $models?->total() : $models->count();
+            $wrlaPerPageOptions = config('wr-laravel-administration.browse.pagination.perPage', [20, 30, 50, 75, 100]);
         @endphp
-        <div class="text-sm text-slate-500">
-            Total:
-            <span data-wrla-browse-total="{{ $wrlaBrowseTotal }}">{{ $wrlaBrowseTotal }}</span>
-            records
+        <div class="flex items-center gap-4">
+            <div wire:loading.flex class="items-center gap-2 text-sm">
+                <i class="fas fa-spinner animate-spin text-primary-500"></i>
+                <span>Loading...</span>
+            </div>
+            <div class="text-sm text-slate-500">
+                Total:
+                <span data-wrla-browse-total="{{ $wrlaBrowseTotal }}">{{ $wrlaBrowseTotal }}</span>
+                records
+            </div>
+            <div class="flex items-center gap-2 text-sm text-slate-500">
+                <label for="wrlaPerPage" class="whitespace-nowrap">Per page</label>
+                <select id="wrlaPerPage" wire:model.live="perPage"
+                    class="min-w-12 px-2 py-1 border border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-900
+                        focus:outline-none focus:ring-1 focus:ring-primary-500 dark:focus:ring-primary-500 rounded-md shadow-sm">
+                    @foreach ($wrlaPerPageOptions as $wrlaPerPageOption)
+                        <option value="{{ $wrlaPerPageOption }}">{{ $wrlaPerPageOption }}</option>
+                    @endforeach
+                </select>
+            </div>
         </div>
     </div>
 
