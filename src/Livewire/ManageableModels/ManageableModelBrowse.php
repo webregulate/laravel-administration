@@ -645,10 +645,19 @@ class ManageableModelBrowse extends Component
     {
         $rememberFilters = $this->manageableModelClass::getStaticOption($this->manageableModelClass, 'rememberFilters');
 
+        // Build a map of the original default filter values as defined in the manageable model.
+        // This mirrors how mount() initialises $this->filters, so resetting restores those defaults
+        // (or empty/null where a filter has no default value set).
+        $defaultFilterValues = [];
+        foreach ($this->manageableModelClass::getBrowseFilters() as $browseFilter) {
+            $defaultFilterValues[$browseFilter->getKey()] = $browseFilter->getField()->getValue();
+        }
+
         // Standard filters
         foreach ($this->filters as $key => $value) {
-            $this->filters[$key] = null;
-            ManageableField::setStaticBrowseFilterValue($key, null);
+            $defaultValue = $defaultFilterValues[$key] ?? null;
+            $this->filters[$key] = $defaultValue;
+            ManageableField::setStaticBrowseFilterValue($key, $defaultValue);
 
             // If rememberFilters is enabled, also remove from session
             if ($rememberFilters['enabled']) {
@@ -656,7 +665,6 @@ class ManageableModelBrowse extends Component
                 session()->forget($sessionKey);
             }
         }
-        $this->filters = array_map(fn($v) => null, $this->filters);
 
         // Dynamic filters - This doesn't seem to work. The fields attached to this component
         // are not the same as those in the ManageableModelDynamicBrowseFilters component
