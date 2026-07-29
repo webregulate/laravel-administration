@@ -4,15 +4,14 @@ namespace {{ $NAMESPACE }};
 
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
 use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
-use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumn;
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionRestore;
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionEdit;
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionDelete;
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionDuplicate;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItemBrowse;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItemCreate;
-use WebRegulate\LaravelAdministration\Classes\ManageableFields\Text;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
+{{ $USE_STATEMENTS }}
 
 class {{ $MODEL }} extends ManageableModel
 {
@@ -66,9 +65,7 @@ class {{ $MODEL }} extends ManageableModel
     public final function getBrowseColumns(): array
     {
         return [
-            'id' => BrowseColumn::make('ID'),
-            // 'name' => BrowseColumn::make('Name'),
-            // ...
+{{ $BROWSE_COLUMNS }}
         ];
     }
 
@@ -87,10 +84,7 @@ class {{ $MODEL }} extends ManageableModel
     public final function getManageableFields(): array
     {
         return [
-            // Text::make($this, 'name')
-            //     ->required()
-            //     ->validation('string|max:255')
-            //     ->setAttribute('placeholder', 'John Doe'),
+{{ $MANAGEABLE_FIELDS }}
         ];
     }
 }
