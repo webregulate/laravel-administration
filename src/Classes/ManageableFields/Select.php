@@ -1,9 +1,7 @@
 <?php
-
 namespace WebRegulate\LaravelAdministration\Classes\ManageableFields;
 
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\View\ComponentAttributeBag;
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
@@ -11,12 +9,34 @@ use WebRegulate\LaravelAdministration\Traits\ManageableField;
 
 class Select
 {
-    use ManageableField;
+    use ManageableField {
+        make as protected makeBase;
+    }
 
     /**
      * Items
      */
     protected array $items = [];
+
+    /**
+     * Make the field, optionally setting the options list inline.
+     *
+     * @param  array|Collection|null  $setItems  Options list in key => display_value format.
+     */
+    public static function make(
+        ?ManageableModel $manageableModel = null,
+        ?string $column = null,
+        array|Collection|null $setItems = null,
+        ?array $options = null,
+    ): static {
+        $manageableField = static::makeBase($manageableModel, $column, $options);
+
+        if ($setItems !== null) {
+            $manageableField->setItems($setItems);
+        }
+
+        return $manageableField;
+    }
 
     /**
      * Set items for the options list. $items must use the following format:
