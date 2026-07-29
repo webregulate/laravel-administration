@@ -26,7 +26,7 @@ class Select
     public static function make(
         ?ManageableModel $manageableModel = null,
         ?string $column = null,
-        array|Collection|null $items = null,
+        null|array|Collection $items = null,
         ?array $options = null,
     ): static {
         $manageableField = static::makeBase($manageableModel, $column, $options);
