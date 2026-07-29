@@ -934,4 +934,312 @@ class ManageableModelService
             .self::INDENT."// 'name' => BrowseColumn::make('Name'),\n"
             .self::INDENT.'// ...';
     }
+
+    /**
+     * Resolve the absolute file path of a manageable model class (supports deeply nested namespaces).
+     */
+    public static function getManageableModelFilePath(string $manageableModelClass): string
+    {
+        $relative = str($manageableModelClass)->after('App\\WRLA\\')->replace('\\', '/')->__toString();
+
+        return app_path('WRLA/'.$relative.'.php');
+    }
+
+    /**
+     * Resolve the database table for a manageable model, preferring the registered base model class.
+     */
+    public static function resolveTableForManageableModel(string $manageableModelClass): string
+    {
+        try {
+            $baseModelClass = $manageableModelClass::getBaseModelClass();
+
+            if (! empty($baseModelClass) && class_exists($baseModelClass)) {
+                return (new $baseModelClass)->getTable();
+            }
+        } catch (\Throwable) {
+            // Fall back to the naming convention below.
+        }
+
+        return static::getTableName($manageableModelClass);
+    }
+
+    /**
+     * Collate the up to date column metadata for a table, preferring migrations and falling back to the live table.
+     *
+     * @return array{columns: array<string, array>, source: string, migrationPaths: array<int, string>}
+     */
+    public static function collateColumns(string $table): array
+    {
+        $migrationPaths = static::findMigrationPathsForTable($table);
+
+        if (! empty($migrationPaths)) {
+            return [
+                'columns' => static::mergeMigrationColumns($migrationPaths, $table),
+                'source' => 'migrations',
+                'migrationPaths' => $migrationPaths,
+            ];
+        }
+
+        if (Schema::hasTable($table)) {
+            return [
+                'columns' => static::getTableColumnMeta($table),
+                'source' => 'table',
+                'migrationPaths' => [],
+            ];
+        }
+
+        return [
+            'columns' => [],
+            'source' => 'none',
+            'migrationPaths' => [],
+        ];
+    }
+
+    /**
+     * Extract the column names already referenced by manageable fields (::make($this, 'column')).
+     *
+     * @return array<int, string>
+     */
+    public static function extractExistingFieldNames(string $contents): array
+    {
+        $clean = static::stripPhpComments($contents);
+        $location = static::locateMethodArray($clean, 'getManageableFields');
+
+        if ($location === null) {
+            return [];
+        }
+
+        $body = substr($clean, $location['open'], $location['close'] - $location['open'] + 1);
+        preg_match_all('/::make\s*\(\s*\$this\s*,\s*[\'"]([^\'"]+)[\'"]/', $body, $matches);
+
+        return array_values(array_unique($matches[1] ?? []));
+    }
+
+    /**
+     * Extract the array keys already used by the browse columns (eg. 'name' or 'user.email').
+     *
+     * @return array<int, string>
+     */
+    public static function extractExistingBrowseKeys(string $contents): array
+    {
+        $clean = static::stripPhpComments($contents);
+        $location = static::locateMethodArray($clean, 'getBrowseColumns');
+
+        if ($location === null) {
+            return [];
+        }
+
+        $body = substr($clean, $location['open'], $location['close'] - $location['open'] + 1);
+        preg_match_all('/[\'"]([^\'"]+)[\'"]\s*=>/', $body, $matches);
+
+        return array_values(array_unique($matches[1] ?? []));
+    }
+
+    /**
+     * Append a block of generated entries to the end of a method's returned array.
+     *
+     * @return string|null Updated contents, or null when the method / array could not be located.
+     */
+    public static function appendToMethodArray(string $contents, string $methodName, string $entriesBlock): ?string
+    {
+        $entriesBlock = rtrim($entriesBlock);
+
+        if ($entriesBlock === '') {
+            return $contents;
+        }
+
+        $location = static::locateMethodArray($contents, $methodName);
+
+        if ($location === null) {
+            return null;
+        }
+
+        $closingIndent = static::closingIndentFor($contents, $location['close']);
+        $head = rtrim(substr($contents, 0, $location['close']));
+        $tail = substr($contents, $location['close']);
+
+        if (str_ends_with($head, '[')) {
+            return $head."\n".$entriesBlock."\n".$closingIndent.$tail;
+        }
+
+        if (! str_ends_with($head, ',')) {
+            $head .= ',';
+        }
+
+        return $head."\n\n".$entriesBlock."\n".$closingIndent.$tail;
+    }
+
+    /**
+     * Remove any generated browse lines whose key already exists in the model, avoiding duplicates.
+     */
+    public static function filterExistingBrowseLines(string $browseBlock, array $existingKeys): string
+    {
+        if (empty($existingKeys) || trim($browseBlock) === '') {
+            return $browseBlock;
+        }
+
+        $kept = [];
+        foreach (explode("\n", $browseBlock) as $line) {
+            if (preg_match('/[\'"]([^\'"]+)[\'"]\s*=>/', $line, $match) && in_array($match[1], $existingKeys, true)) {
+                continue;
+            }
+
+            $kept[] = $line;
+        }
+
+        return implode("\n", $kept);
+    }
+
+    /**
+     * Ensure the given "use ...;" statements exist, inserting any missing ones after the last import.
+     */
+    public static function ensureUseStatements(string $contents, string $useStatementsBlock): string
+    {
+        $lines = array_filter(array_map('trim', explode("\n", $useStatementsBlock)));
+
+        if (empty($lines)) {
+            return $contents;
+        }
+
+        if (! preg_match_all('/^use\s+[^;]+;/m', $contents, $matches, PREG_OFFSET_CAPTURE)) {
+            return $contents;
+        }
+
+        $toAdd = [];
+        foreach ($lines as $line) {
+            if (! str_contains($contents, $line)) {
+                $toAdd[] = $line;
+            }
+        }
+
+        if (empty($toAdd)) {
+            return $contents;
+        }
+
+        $lastUse = end($matches[0]);
+        $insertPos = $lastUse[1] + strlen($lastUse[0]);
+
+        return substr($contents, 0, $insertPos)."\n".implode("\n", $toAdd).substr($contents, $insertPos);
+    }
+
+    /**
+     * Locate the returned array of a named method, returning the opening and closing bracket offsets.
+     *
+     * @return array{open: int, close: int}|null
+     */
+    protected static function locateMethodArray(string $contents, string $methodName): ?array
+    {
+        if (! preg_match('/function\s+'.preg_quote($methodName, '/').'\s*\(/', $contents, $match, PREG_OFFSET_CAPTURE)) {
+            return null;
+        }
+
+        $returnPos = strpos($contents, 'return', $match[0][1]);
+        if ($returnPos === false) {
+            return null;
+        }
+
+        $openPos = strpos($contents, '[', $returnPos);
+        if ($openPos === false) {
+            return null;
+        }
+
+        $closePos = static::findMatchingArrayEnd($contents, $openPos);
+        if ($closePos === null) {
+            return null;
+        }
+
+        return ['open' => $openPos, 'close' => $closePos];
+    }
+
+    /**
+     * Determine the whitespace indentation on the line containing the closing bracket.
+     */
+    protected static function closingIndentFor(string $contents, int $closePos): string
+    {
+        $lineStart = strrpos(substr($contents, 0, $closePos), "\n");
+        $lineStart = $lineStart === false ? 0 : $lineStart + 1;
+
+        return substr($contents, $lineStart, $closePos - $lineStart);
+    }
+
+    /**
+     * Find the offset of the "]" that matches the "[" at the given position, skipping strings and comments.
+     */
+    protected static function findMatchingArrayEnd(string $contents, int $openPos): ?int
+    {
+        $length = strlen($contents);
+        $depth = 0;
+
+        for ($i = $openPos; $i < $length; $i++) {
+            $character = $contents[$i];
+            $next = $i + 1 < $length ? $contents[$i + 1] : '';
+
+            if ($character === "'" || $character === '"') {
+                $i = static::skipString($contents, $i, $character);
+                continue;
+            }
+
+            if (($character === '/' && $next === '/') || $character === '#') {
+                $i = static::skipToLineEnd($contents, $i);
+                continue;
+            }
+
+            if ($character === '/' && $next === '*') {
+                $i = static::skipBlockComment($contents, $i);
+                continue;
+            }
+
+            if ($character === '[') {
+                $depth++;
+            } elseif ($character === ']') {
+                $depth--;
+                if ($depth === 0) {
+                    return $i;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Return the offset of the closing quote for a string starting at the given quote character.
+     */
+    protected static function skipString(string $contents, int $start, string $quote): int
+    {
+        $length = strlen($contents);
+
+        for ($i = $start + 1; $i < $length; $i++) {
+            if ($contents[$i] === '\\') {
+                $i++;
+                continue;
+            }
+
+            if ($contents[$i] === $quote) {
+                return $i;
+            }
+        }
+
+        return $length - 1;
+    }
+
+    /**
+     * Return the offset of the last character before the next newline (for line comments).
+     */
+    protected static function skipToLineEnd(string $contents, int $start): int
+    {
+        $position = strpos($contents, "\n", $start);
+
+        return $position === false ? strlen($contents) - 1 : $position - 1;
+    }
+
+    /**
+     * Return the offset of the closing "/" of a block comment starting at the given position.
+     */
+    protected static function skipBlockComment(string $contents, int $start): int
+    {
+        $position = strpos($contents, '*/', $start + 2);
+
+        return $position === false ? strlen($contents) - 1 : $position + 1;
+    }
 }

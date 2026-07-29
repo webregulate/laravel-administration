@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
+use WebRegulate\LaravelAdministration\Classes\ManageableModel;
 use WebRegulate\LaravelAdministration\Services\ManageableModelService;
 use function Laravel\Prompts\info;
 use function Laravel\Prompts\note;
@@ -44,11 +45,8 @@ class CreateManageableModelCommand extends Command
             2 => 'Modify an existing Manageable Model',
         ], 1);
 
-        // Modify is not yet supported
         if ($action === 2) {
-            info('Modifying an existing Manageable Model is coming soon. Please try again with the create option.');
-
-            return 0;
+            return $this->handleModify();
         }
 
         return $this->handleCreate();
@@ -118,6 +116,216 @@ class CreateManageableModelCommand extends Command
         $this->renderWarnings($warnings);
 
         return 1;
+    }
+
+    /**
+     * Handle modifying an existing manageable model by re-collating its migrations / table.
+     */
+    protected function handleModify(): int
+    {
+        $models = ManageableModel::$manageableModels ?? collect();
+
+        if ($models->isEmpty()) {
+            warning('No manageable models were found in app/WRLA. Create one first using the create option.');
+
+            return 0;
+        }
+
+        // Build a selectable list (value => fully qualified class, label => path relative to App\WRLA)
+        $options = [];
+        foreach ($models as $class) {
+            $options[$class] = str($class)->after('App\\WRLA\\')->replace('\\', '/')->__toString();
+        }
+        asort($options);
+
+        $selectedClass = select('Which manageable model would you like to modify?', $options);
+
+        // Locate the source file
+        $filePath = ManageableModelService::getManageableModelFilePath($selectedClass);
+
+        if (! File::exists($filePath)) {
+            warning('Could not locate the manageable model file at: '.WRLAHelper::removeBasePath($filePath));
+
+            return 0;
+        }
+
+        // Resolve the table and collate the up to date columns (migrations first, then the live table)
+        $table = ManageableModelService::resolveTableForManageableModel($selectedClass);
+        $collation = ManageableModelService::collateColumns($table);
+
+        if (empty($collation['columns'])) {
+            warning("Could not collate any columns for table '$table' (checked migrations and the database). Nothing to modify.");
+
+            return 0;
+        }
+
+        note($collation['source'] === 'migrations'
+            ? 'Collated '.count($collation['columns']).' column(s) from '.count($collation['migrationPaths'])." migration(s) for table '$table'."
+            : 'Collated '.count($collation['columns'])." column(s) from the '$table' table.");
+
+        // Choose how to apply the collation
+        $modifyAction = (int) select('What would you like to do?', [
+            1 => 'Apply the latest changes (add fields & browse columns for any new columns, keep existing ones)',
+            2 => 'Add any manageable fields missing from getManageableFields() (review the missing list first)',
+        ], 1);
+
+        return $modifyAction === 1
+            ? $this->applyLatestChanges($filePath, $selectedClass, $collation['columns'])
+            : $this->addMissingFields($filePath, $selectedClass, $collation['columns']);
+    }
+
+    /**
+     * Apply the latest changes: add manageable fields & browse columns for any newly detected columns.
+     *
+     * @param  array<string, array>  $columns
+     */
+    protected function applyLatestChanges(string $filePath, string $model, array $columns): int
+    {
+        $contents = File::get($filePath);
+
+        $existingFieldNames = ManageableModelService::extractExistingFieldNames($contents);
+        $existingBrowseKeys = ManageableModelService::extractExistingBrowseKeys($contents);
+
+        // Determine which columns are new / removed relative to what the model already defines
+        $collationNames = array_values(array_filter(
+            array_keys($columns),
+            fn ($name) => ! in_array($name, ManageableModelService::IGNORED_COLUMNS, true)
+        ));
+
+        $newColumnNames = array_values(array_diff($collationNames, $existingFieldNames));
+        $removedColumnNames = array_values(array_diff($existingFieldNames, $collationNames));
+
+        if (empty($newColumnNames)) {
+            info('No new columns detected - the manageable model is already up to date.');
+            $this->warnRemovedColumns($removedColumnNames);
+
+            return 1;
+        }
+
+        // Generate fields / browse columns for the new columns only
+        $newColumns = array_intersect_key($columns, array_flip($newColumnNames));
+        $generated = ManageableModelService::generateFromColumns($newColumns);
+
+        // Make sure the required imports are present
+        $contents = ManageableModelService::ensureUseStatements($contents, $generated['useStatements']);
+
+        // Append new manageable fields
+        $updated = ManageableModelService::appendToMethodArray($contents, 'getManageableFields', $generated['fields']);
+        if ($updated === null) {
+            warning('Could not locate the getManageableFields() method - no changes were made.');
+
+            return 0;
+        }
+        $contents = $updated;
+
+        // Append new browse columns, skipping any whose key already exists
+        $browseBlock = ManageableModelService::filterExistingBrowseLines($generated['browseColumns'], $existingBrowseKeys);
+        if (trim($browseBlock) !== '') {
+            $updated = ManageableModelService::appendToMethodArray($contents, 'getBrowseColumns', $browseBlock);
+            if ($updated === null) {
+                warning('Could not locate the getBrowseColumns() method - no changes were made.');
+
+                return 0;
+            }
+            $contents = $updated;
+        }
+
+        File::put($filePath, $contents);
+
+        info('Added '.count($newColumnNames).' new column(s) to '.$model.': '.implode(', ', $newColumnNames));
+        $this->warnRemovedColumns($removedColumnNames);
+        $this->renderWarnings($generated['warnings']);
+
+        return 1;
+    }
+
+    /**
+     * Add only the manageable fields that are missing from getManageableFields(), previewing them first.
+     *
+     * @param  array<string, array>  $columns
+     */
+    protected function addMissingFields(string $filePath, string $model, array $columns): int
+    {
+        $contents = File::get($filePath);
+
+        $existingFieldNames = ManageableModelService::extractExistingFieldNames($contents);
+        $existingBrowseKeys = ManageableModelService::extractExistingBrowseKeys($contents);
+
+        // Determine which columns are missing from the manageable fields (ignoring id / timestamps)
+        $collationNames = array_values(array_filter(
+            array_keys($columns),
+            fn ($name) => ! in_array($name, ManageableModelService::IGNORED_COLUMNS, true)
+        ));
+
+        $missingColumnNames = array_values(array_diff($collationNames, $existingFieldNames));
+
+        if (empty($missingColumnNames)) {
+            info('No missing manageable fields detected - '.$model.' already includes every collated column.');
+
+            return 1;
+        }
+
+        // Display a bullet point list of the missing fields before asking to continue
+        $bullets = implode("\n", array_map(
+            fn ($name) => '• '.$name.' ('.str($name)->headline()->__toString().')',
+            $missingColumnNames
+        ));
+        note(count($missingColumnNames).' manageable field(s) are missing from '.$model.":\n\n".$bullets);
+
+        if (! confirm('Add the missing manageable field(s) and browse column(s) listed above?', true)) {
+            warning('Modification cancelled.');
+
+            return 0;
+        }
+
+        // Generate fields / browse columns for the missing columns only
+        $missingColumns = array_intersect_key($columns, array_flip($missingColumnNames));
+        $generated = ManageableModelService::generateFromColumns($missingColumns);
+
+        // Make sure the required imports are present
+        $contents = ManageableModelService::ensureUseStatements($contents, $generated['useStatements']);
+
+        // Append the missing manageable fields
+        $updated = ManageableModelService::appendToMethodArray($contents, 'getManageableFields', $generated['fields']);
+        if ($updated === null) {
+            warning('Could not locate the getManageableFields() method - no changes were made.');
+
+            return 0;
+        }
+        $contents = $updated;
+
+        // Append the missing browse columns, skipping any whose key already exists
+        $browseBlock = ManageableModelService::filterExistingBrowseLines($generated['browseColumns'], $existingBrowseKeys);
+        if (trim($browseBlock) !== '') {
+            $updated = ManageableModelService::appendToMethodArray($contents, 'getBrowseColumns', $browseBlock);
+            if ($updated === null) {
+                warning('Could not locate the getBrowseColumns() method - no changes were made.');
+
+                return 0;
+            }
+            $contents = $updated;
+        }
+
+        File::put($filePath, $contents);
+
+        info('Added '.count($missingColumnNames).' missing field(s) to '.$model.': '.implode(', ', $missingColumnNames));
+        $this->renderWarnings($generated['warnings']);
+
+        return 1;
+    }
+
+    /**
+     * Warn about fields that exist in the model but are no longer present in the collation.
+     *
+     * @param  array<int, string>  $removed
+     */
+    protected function warnRemovedColumns(array $removed): void
+    {
+        if (empty($removed)) {
+            return;
+        }
+
+        warning(count($removed).' field(s) exist in the model but no longer appear in the collation - review manually:'."\n\n• ".implode("\n• ", $removed));
     }
 
     /**
