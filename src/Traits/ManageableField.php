@@ -906,6 +906,8 @@ trait ManageableField
     }
 
     /**
+     * BEING PHASED OUT, REPLACED BY ->when(condition, callback)
+     * 
      * If condition is true, run callback.
      * @param callable $callback (Must take $this as a parameter and return $this)
      */
@@ -916,6 +918,28 @@ trait ManageableField
         }
 
         return $callback($this);
+    }
+
+    /**
+     * If $condition is true, the callback will be executed with the manageableField as the argument
+     * Example: $manageableField->when($condition, function ($manageableField) { ... })
+     * 
+     * @param bool|callable $condition If callable, will pass the manageableField as the argument and should return a boolean
+     * @param callable $callback Takes the manageableField reference as an argument so it can be modified without returning
+     */
+    public function when(bool|callable $condition, callable $callback): static
+    {
+        $manageableField = $this;
+
+        if (is_callable($condition)) {
+            $condition = $condition($manageableField);
+        }
+
+        if ($condition) {
+            $callback($manageableField);
+        }
+
+        return $this;
     }
 
     /**

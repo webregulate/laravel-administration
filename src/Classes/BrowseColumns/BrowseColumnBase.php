@@ -149,14 +149,34 @@ class BrowseColumnBase
     }
 
     /**
+     * If $condition is true, the callback will be executed with the column as the argument
+     * Example: $column->when($condition, function ($column) { ... })
+     * 
+     * @param bool|callable $condition If callable, will pass the browse column as the argument and should return a boolean
+     * @param callable $callback Takes the browse column reference as an argument so it can be modified without returning
+     */
+    public function when(bool|callable $condition, callable $callback): static
+    {
+        $column = $this;
+
+        if (is_callable($condition)) {
+            $condition = $condition($column);
+        }
+
+        if ($condition) {
+            $callback($column);
+        }
+
+        return $this;
+    }
+
+    /**
      * Render display name of the column
      */
     public function renderDisplayName(): string
     {
         return $this->label;
     }
-
-    public static $test = 0;
 
     /**
      * Render the value of the column
