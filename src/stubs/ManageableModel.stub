@@ -16,9 +16,7 @@ use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 
 class {{ $MODEL }} extends ManageableModel
 {
-    /**
-     * Setup the main properties of the model.
-     */
+    /** Setup the main properties of the model. */
     public final static function mainSetup(): void
     {
         // Main
@@ -42,9 +40,7 @@ class {{ $MODEL }} extends ManageableModel
         ]);
     }
 
-    /**
-     * Setup browse properties of this manageable model.
-     */
+    /** Setup browse properties of this manageable model. */
     public final static function browseSetup(): void
     {
         // Browse filters
@@ -66,9 +62,7 @@ class {{ $MODEL }} extends ManageableModel
         static::setOrderBy('id', 'desc');
     }
 
-    /**
-     * Provide an array of columns to display in the browse view.
-     */
+    /** Provide an array of columns to display in the browse view. */
     public final function getBrowseColumns(): array
     {
         return [
@@ -78,9 +72,7 @@ class {{ $MODEL }} extends ManageableModel
         ];
     }
 
-    /**
-     * Provide the model instance actions.
-     */
+    /** Provide the model instance actions. */
     public final function getInstanceActions(): array
     {
         return [
@@ -91,9 +83,7 @@ class {{ $MODEL }} extends ManageableModel
         ];
     }
 
-    /**
-     * Provide an array of manageable fields to display in the upsert view.
-     */
+    /** Provide an array of manageable fields to display in the upsert view. */
     public final function getManageableFields(): array
     {
         return [
