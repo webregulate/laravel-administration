@@ -39,10 +39,13 @@ class CreateManageableModelCommand extends Command
      */
     public function handle()
     {
+        // Run commands middleware from config middleware.commands
+        WRLAHelper::runCommandMiddleware($this);
+
         // Question 1: Create or modify a manageable model
         $action = select('What would you like to do?', [
             1 => 'Create a new Manageable Model',
-            2 => 'Modify an existing Manageable Model',
+            2 => 'Modify an existing Manageable Model (WIP)',
         ], 1);
 
         if ($action === 2) {
@@ -410,10 +413,10 @@ class CreateManageableModelCommand extends Command
         $defaultConnection = config('database.default');
 
         $input = text(
-            'Which existing table should we build from?',
+            'Which existing table should we build from? (Format: connection_name:table_name)',
             default: $defaultConnection.':'.ManageableModelService::getTableName($model),
             required: true,
-            hint: "Optionally prefix with an SQL connection, eg. {$defaultConnection}:table_name"
+            hint: "Optionally prefix with a connection, eg. {$defaultConnection}:table_name"
         );
 
         // Split an optional "connection:table" prefix (defaults to the app's default connection)
