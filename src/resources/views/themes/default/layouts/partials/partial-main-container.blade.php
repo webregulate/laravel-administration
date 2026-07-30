@@ -1,6 +1,6 @@
 {{-- Right container --}}
 <div id="wrla_main_container"
-    x-bind:style="'width: ' + (window.innerWidth < 768 ? window.innerWidth : window.innerWidth - leftPanelAttemptedWidth) + 'px;'"
+    x-bind:style="'width: ' + (windowWidth < 768 ? windowWidth : windowWidth - leftPanelAttemptedWidth) + 'px;'"
     class="absolute md:relative flex-1 h-full">
     {{-- Top bar --}}
     <div style="z-index: 5;" class="relative left-0 flex w-full gap-5 h-9 justify-between items-center border-b-2 border-slate-300 dark:border-slate-700 shadow-md dark:shadow-slate-900 bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400">

@@ -6,7 +6,7 @@
         minW: 0,
         maxW: 0
     }"
-    x-bind:style="'width: ' + (window.innerWidth < 768 ? window.innerWidth : leftPanelAttemptedWidth) + 'px;'"
+    x-bind:style="'width: ' + (windowWidth < 768 ? windowWidth : leftPanelAttemptedWidth) + 'px;'"
     :class="(leftPanelOpen ? 'min-w-44 max-w-[100%] ' : 'min-w-0 max-w-0 border-none ') + (!dragging ? 'transition-all' : '')"
     id="left-panel"
     style="z-index: 6;"
