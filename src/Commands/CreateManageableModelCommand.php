@@ -407,10 +407,22 @@ class CreateManageableModelCommand extends Command
      */
     protected function handleExistingTable(string $model): array
     {
-        $table = text('Which existing table should we build from?', default: ManageableModelService::getTableName($model), required: true);
+        $defaultConnection = config('database.default');
 
-        if (! Schema::hasTable($table)) {
-            warning("Table '$table' does not exist. No fields will be auto-generated.");
+        $input = text(
+            'Which existing table should we build from?',
+            default: $defaultConnection.':'.ManageableModelService::getTableName($model),
+            required: true,
+            hint: "Optionally prefix with an SQL connection, eg. {$defaultConnection}:table_name"
+        );
+
+        // Split an optional "connection:table" prefix (defaults to the app's default connection)
+        [$connection, $table] = str_contains($input, ':')
+            ? array_map('trim', explode(':', $input, 2))
+            : [$defaultConnection, trim($input)];
+
+        if (! Schema::connection($connection)->hasTable($table)) {
+            warning("Table '$table' does not exist on connection '$connection'. No fields will be auto-generated.");
             $this->createModelIfWanted($model, false);
 
             return [];
@@ -419,7 +431,7 @@ class CreateManageableModelCommand extends Command
         // Offer to create the base model if it is missing
         $this->createModelIfWanted($model, false);
 
-        return ManageableModelService::getTableColumnMeta($table);
+        return ManageableModelService::getTableColumnMeta($table, $connection);
     }
 
     /**
