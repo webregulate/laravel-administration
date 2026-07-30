@@ -18,7 +18,7 @@ class BrowseColumnDate extends BrowseColumnBase
         $browseColumnDate = (new static($label))
             ->setOptions($options)
             ->when($options['defaultToday'] ?? false, function ($column) {
-                $column->setDefaultValue(Carbon::now()->format('Y-m-d'));
+                $column->default(Carbon::now()->format('Y-m-d'));
             });
 
         $browseColumnDate->overrideRenderValue(function ($value) use ($format) {
