@@ -194,10 +194,7 @@ class User extends ManageableModel
                 ->setActive(fn() => WRLAHelper::getCurrentUserData()?->isMaster()),
 
             JsonUI::make($this, 'wrlaUserData.settings')
-                ->mergeDefaultKeyValues(config('wr-laravel-administration.default_user_data.settings'))
-                ->jsonFormatValidation([
-                    'theme' => 'nullable|string|in:default'
-                ]),
+                ->mergeDefaultKeyValues(config('wr-laravel-administration.default_user_data.settings')),
 
             JsonUI::make($this, 'wrlaUserData.data')
                 ->mergeDefaultKeyValues(config('wr-laravel-administration.default_user_data.data')),
