@@ -373,7 +373,7 @@ class CreateManageableModelCommand extends Command
             return [];
         }
 
-        return ManageableModelService::mergeMigrationColumns($migrationPaths, $table);
+        return $this->collateColumnsFromTable($table, $migrationPaths);
     }
 
     /**
@@ -400,6 +400,47 @@ class CreateManageableModelCommand extends Command
         // Offer to create the base model if it is missing
         $this->createModelIfWanted($model, false);
 
+        return $this->collateColumnsFromTable($table, $migrationPaths);
+    }
+
+    /**
+     * Collate column metadata for the table, offering to run its migration(s) first so the fields
+     * can be built directly from the created table. Falls back to parsing the migration file(s)
+     * when the table does not (yet) exist.
+     *
+     * @param  array<int, string>  $migrationPaths  Absolute migration file paths for the table.
+     * @return array<string, array> Normalized column metadata.
+     */
+    protected function collateColumnsFromTable(string $table, array $migrationPaths): array
+    {
+        $connection = config('database.default');
+
+        // If the table already exists we can build the manageable fields straight from it.
+        if (Schema::connection($connection)->hasTable($table)) {
+            note("The '$table' table already exists - building the manageable fields directly from it.");
+
+            return ManageableModelService::getTableColumnMeta($table, $connection);
+        }
+
+        // Explain up front why running the migration matters before asking.
+        note("The '$table' table does not exist yet. To build the manageable fields directly from the table, the migration needs to be run first.");
+
+        if (confirm("Run the migration now so we can build the manageable fields from the '$table' table?", true)) {
+            $this->call('migrate');
+
+            // Confirm the migration actually created the table before reading from it.
+            if (Schema::connection($connection)->hasTable($table)) {
+                info("Migration complete - the '$table' table now exists. Building the manageable fields from it.");
+
+                return ManageableModelService::getTableColumnMeta($table, $connection);
+            }
+
+            warning("The migration ran but the '$table' table still could not be found. Falling back to reading the migration file(s) instead - double check the table was created.");
+        } else {
+            note("Skipped running the migration - the '$table' table was not created. The manageable fields will be built by reading the migration file(s) instead. Remember to run 'php artisan migrate' before using this model.");
+        }
+
+        // Fallback: parse the migration file(s) rather than the (missing) table.
         return ManageableModelService::mergeMigrationColumns($migrationPaths, $table);
     }
 

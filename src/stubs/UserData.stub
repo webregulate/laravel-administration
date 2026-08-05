@@ -303,7 +303,7 @@ class UserData extends Model
     }
 
     /**
-     * Get current theme
+     * Get current theme, if null then WRLA will fallback to the default theme
      */
     public function getCurrentThemeKey(): ?string
     {
