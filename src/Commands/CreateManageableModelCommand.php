@@ -118,7 +118,44 @@ class CreateManageableModelCommand extends Command
         // Render any warnings in a loud, non-missable way
         $this->renderWarnings($warnings);
 
+        // Offer to generate an @property docblock for the underlying Eloquent model
+        $this->offerModelDocblock($model);
+
         return 1;
+    }
+
+    /**
+     * Offer to generate an @property docblock for the newly created model, delegating to the
+     * wrla:model-docblock command when accepted. Warns (and skips) when the model class or its
+     * table cannot be found, since the docblock is built from the live table columns.
+     */
+    protected function offerModelDocblock(string $model): void
+    {
+        $modelClass = 'App\\Models\\'.$model;
+
+        // Both the Eloquent model and its table must exist to build the docblock
+        if (! class_exists($modelClass)) {
+            warning("Skipping docblock generation - the {$model} model could not be found under App\\Models.");
+
+            return;
+        }
+
+        /** @var \Illuminate\Database\Eloquent\Model $instance */
+        $instance = new $modelClass;
+        $table = str($instance->getTable())->afterLast('.')->toString();
+        $connection = $instance->getConnectionName() ?: config('database.default');
+
+        if (! Schema::connection($connection)->hasTable($table)) {
+            warning("Skipping docblock generation - the '{$table}' table does not exist yet. Run your migrations, then use 'php artisan wrla:model-docblock {$model}'.");
+
+            return;
+        }
+
+        if (! confirm('Would you like to automatically add an @property docblock to the '.class_basename($modelClass).' model?', true)) {
+            return;
+        }
+
+        $this->call('wrla:model-docblock', ['model' => $model]);
     }
 
     /**
