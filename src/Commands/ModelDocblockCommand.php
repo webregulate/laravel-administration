@@ -10,8 +10,8 @@ use Illuminate\Database\Eloquent\Model;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use function Laravel\Prompts\info;
 use function Laravel\Prompts\note;
+use function Laravel\Prompts\text;
 use function Laravel\Prompts\table;
-use function Laravel\Prompts\select;
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\warning;
 
@@ -164,7 +164,28 @@ class ModelDocblockCommand extends Command
         }
 
         // options: FQCN => display name
-        return select('Which model would you like to build a docblock for?', $models);
+        $indexed = array_values(array_keys($models));
+
+        // Present a numbered list so a plain index can be typed (nicer on Windows/PowerShell)
+        table(
+            ['#', 'Model', 'FQCN'],
+            array_map(
+                fn (int $i, string $fqcn) => [(string) $i, $models[$fqcn], $fqcn],
+                array_keys($indexed),
+                $indexed
+            )
+        );
+
+        $answer = text(
+            label: 'Which model would you like to build a docblock for?',
+            placeholder: '0',
+            default: '0',
+            validate: fn (string $value) => ctype_digit(trim($value)) && array_key_exists((int) trim($value), $indexed)
+                ? null
+                : 'Enter a number between 0 and '.(count($indexed) - 1).'.',
+        );
+
+        return $indexed[(int) trim($answer)];
     }
 
     /**
