@@ -24,6 +24,7 @@ use WebRegulate\LaravelAdministration\Commands\CreateNotificationCommand;
 use WebRegulate\LaravelAdministration\Commands\UninstallCommand;
 use WebRegulate\LaravelAdministration\Commands\CreateUserCommand;
 use WebRegulate\LaravelAdministration\Commands\SiteConfigurationCommand;
+use WebRegulate\LaravelAdministration\Commands\ModelDocblockCommand;
 use WebRegulate\LaravelAdministration\Http\Middleware\IsAdmin;
 use WebRegulate\LaravelAdministration\Http\Middleware\IsNotAdmin;
 use WebRegulate\LaravelAdministration\Livewire\NotificationsWidget;
@@ -139,6 +140,7 @@ class WRLAServiceProvider extends ServiceProvider
             UninstallCommand::class,
             DocsCommand::class,
             SiteConfigurationCommand::class,
+            ModelDocblockCommand::class,
         ]);
 
         // Custom logging channels
