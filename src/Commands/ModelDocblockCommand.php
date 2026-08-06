@@ -270,7 +270,7 @@ class ModelDocblockCommand extends Command
     {
         $lines = [];
         $lines[] = '/**';
-        $lines[] = ' * Model: '.Str::studly($table);
+        $lines[] = ' * Model: '.Str::studly(Str::singular($table));
         $lines[] = ' *';
 
         foreach ($columns as $column) {
