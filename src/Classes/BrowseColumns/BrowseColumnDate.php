@@ -18,9 +18,9 @@ class BrowseColumnDate extends BrowseColumnBase
         $browseColumnDate = (new static($label))
             ->setOptions($options);
 
-        $browseColumnDate->overrideRenderValue(function ($value) use ($format) {
+        $browseColumnDate->overrideRenderValue(function ($value) use ($format, $browseColumnDate) {
             if (empty($value)) {
-                return $this->getOption('onEmpty') ?? '';
+                return $browseColumnDate->getOption('onEmpty') ?? '';
             }
 
             return Carbon::parse($value)->format($format);
