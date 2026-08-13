@@ -4,6 +4,9 @@ namespace {{ $NAMESPACE }};
 
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
 use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionCreate;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionImport;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionExportCSV;
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionRestore;
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionEdit;
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionDelete;
@@ -52,7 +55,11 @@ class {{ $MODEL }} extends ManageableModel
         static::setRememberFilters(true);
 
         // Browse actions
-        static::setBrowseActions(static::getDefaultBrowseActions());
+        static::setBrowseActions(
+            BrowseActionCreate::make(static::class),
+            BrowseActionImport::make(static::class),
+            BrowseActionExportCSV::make(static::class),
+        );
 
         // Multi selection
         static::setMultiSelect(true);

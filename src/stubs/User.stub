@@ -23,6 +23,8 @@ use WebRegulate\LaravelAdministration\Classes\ManageableFields\Password;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\ImageCroppable;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\JsonUI;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\Select;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionCreate;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionExportCSV;
 
 class User extends ManageableModel
 {
@@ -82,8 +84,11 @@ class User extends ManageableModel
         // Remember filters
         static::setRememberFilters(true);
 
-        // Browse actions (Remove import action #51)
-        static::setBrowseActions(static::getDefaultBrowseActions()->forget(51));
+        // Browse actions (no import for users)
+        static::setBrowseActions(
+            BrowseActionCreate::make(static::class),
+            BrowseActionExportCSV::make(static::class),
+        );
 
         // Enable multi selection
         static::setMultiSelect(false);

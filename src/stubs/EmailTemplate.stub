@@ -17,6 +17,9 @@ use WebRegulate\LaravelAdministration\Classes\ManageableFields\Json;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\Text;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\TextArea;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\Select;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionCreate;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionImport;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionExportCSV;
 
 class EmailTemplate extends ManageableModel
 {
@@ -59,7 +62,11 @@ class EmailTemplate extends ManageableModel
         );
 
         // Browse actions
-        static::setBrowseActions(static::getDefaultBrowseActions());
+        static::setBrowseActions(
+            BrowseActionCreate::make(static::class),
+            BrowseActionImport::make(static::class),
+            BrowseActionExportCSV::make(static::class),
+        );
 
         // Enable multi selection
         static::setMultiSelect(true);

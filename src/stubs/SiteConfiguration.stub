@@ -13,6 +13,9 @@ use WebRegulate\LaravelAdministration\Classes\ManageableFields\Text;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\TextArea;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItemBrowse;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItemCreate;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionCreate;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionImport;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionExportCSV;
 use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
 use WebRegulate\LaravelAdministration\Enums\SiteConfigurationType;
 use Illuminate\Support\Facades\Schema;
@@ -77,7 +80,11 @@ class SiteConfiguration extends ManageableModel
         static::setRememberFilters(true);
 
         // Browse actions
-        static::setBrowseActions(static::getDefaultBrowseActions());
+        static::setBrowseActions(
+            BrowseActionCreate::make(static::class),
+            BrowseActionImport::make(static::class),
+            BrowseActionExportCSV::make(static::class),
+        );
 
         // Enable multi selection
         static::setMultiSelect(true);

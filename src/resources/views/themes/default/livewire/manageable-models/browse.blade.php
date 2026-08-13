@@ -54,7 +54,11 @@
     {{-- Browse actions --}}
     <div class="flex flex-row gap-3">
         @foreach ($manageableModelClass::getBrowseActions() as $browseAction)
-            {!! !is_string($browseAction) ? $browseAction->render() : $browseAction !!}
+            @if ($browseAction === null)
+                <div class="ml-auto"></div>
+            @else
+                {!! $browseAction->render() !!}
+            @endif
         @endforeach
     </div>
 

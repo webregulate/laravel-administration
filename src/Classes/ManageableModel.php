@@ -6,12 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\MessageBag;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\View\ComponentAttributeBag;
-use WebRegulate\LaravelAdministration\Enums\PageType;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\Text;
 use WebRegulate\LaravelAdministration\Enums\AdditionalRenderPosition;
@@ -19,9 +15,9 @@ use WebRegulate\LaravelAdministration\Classes\ManageableFields\Select;
 use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
 use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumn;
 use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumnBase;
-use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionDelete;
-use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionEdit;
-use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionRestore;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionCreate;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionExportCSV;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionImport;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItemManageableModel;
 
 abstract class ManageableModel
@@ -681,82 +677,15 @@ abstract class ManageableModel
     }
 
     /**
-     * Get browse actions
+     * Get default browse actions.
      */
-    public static function getDefaultBrowseActions(): Collection
+    public static function getDefaultBrowseActions(): array
     {
-        $browseActions = collect();
-
-        // If has_access is false, return empty collection
-        if (! static::getPermission(ManageableModelPermissions::ENABLED)) {
-            return $browseActions;
-        }
-
-        // $manageableModel = static::make(); // This makes everything crash with bytes exhausted error
-
-        // Check has create permission
-        if (static::getPermission(ManageableModelPermissions::CREATE)) {
-            $browseActions->put(-10, view(WRLAHelper::getViewPath('components.forms.button'), [
-                'text' => 'Create '.static::getDisplayName(),
-                'icon' => 'fa fa-plus',
-                'color' => 'primary',
-                'size' => 'small',
-                'href' => route('wrla.manageable-models.create', ['modelUrlAlias' => static::getStaticOption(static::class, 'urlAlias')]),
-            ]));
-        }
-
-        // At index 50 we put a forced gap to display any item after this on the right side
-        $browseActions->put(50, <<<'HTML'
-            <div class="ml-auto"></div>
-        HTML);
-
-        // Import Data
-        if (static::getPermission(ManageableModelPermissions::CREATE)) {
-            $browseActions->put(51, view(WRLAHelper::getViewPath('components.forms.button'), [
-                'text' => 'Import Data',
-                'icon' => 'fa fa-file-import',
-                'color' => 'primary',
-                'size' => 'small',
-                'attributes' => new ComponentAttributeBag([
-                    'onclick' => "window.loadLivewireModal(this, 'import-data-modal', {
-                        manageableModelClass: '".str(static::class)->replace('\\', '\\\\')."'
-                    });",
-                ]),
-            ]));
-        }
-
-        // Export as CSV
-        $browseActions->put(52, view(WRLAHelper::getViewPath('components.forms.button'), [
-            'text' => 'Export CSV',
-            'icon' => 'fa fa-file-csv',
-            'color' => 'primary',
-            'size' => 'small',
-            'attributes' => new ComponentAttributeBag([
-                'x-on:click' => <<<'JS'
-                    (() => {
-                        const totalEl = document.querySelector('[data-wrla-browse-total]');
-                        const total = totalEl ? parseInt(totalEl.getAttribute('data-wrla-browse-total'), 10) || 0 : 0;
-                        let limit = null;
-                        if (total > 1000) {
-                            const response = window.prompt(
-                                'There are ' + total + ' rows in this table, how many would you like to export?',
-                                total
-                            );
-                            if (response === null) return;
-                            const parsed = parseInt(response, 10);
-                            if (isNaN(parsed) || parsed <= 0) return;
-                            limit = parsed;
-                        }
-                        $wire.exportAsCSVAction(null, limit);
-                    })();
-                JS,
-                'wire:target' => 'exportAsCSVAction',
-                'wire:loading.attr' => 'disabled',
-                'wire:loading.class' => 'opacity-80 cursor-not-allowed',
-            ]),
-        ]));
-
-        return $browseActions;
+        return [
+            BrowseActionCreate::make(static::class),
+            BrowseActionImport::make(static::class),
+            BrowseActionExportCSV::make(static::class),
+        ];
     }
 
     /**
@@ -768,11 +697,22 @@ abstract class ManageableModel
     }
 
     /**
-     * Get browse actions.
+     * Get browse actions ordered by position (left first, then right).
      */
     public static function getBrowseActions(): Collection
     {
-        return collect(static::getStaticOption(static::class, 'browse.actions'))->sortKeys();
+        $actions = collect(static::getStaticOption(static::class, 'browse.actions'));
+
+        $left = $actions->filter(fn ($action) => $action instanceof BrowseAction && $action->position === 'left');
+        $right = $actions->filter(fn ($action) => !($action instanceof BrowseAction) || $action->position === 'right');
+
+        // Left actions, then a spacer, then right actions
+        $ordered = $left->values();
+        if ($left->isNotEmpty() && $right->isNotEmpty()) {
+            $ordered->push(null); // null acts as the spacer marker
+        }
+
+        return $ordered->merge($right->values());
     }
 
     /**
