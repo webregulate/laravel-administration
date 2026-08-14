@@ -141,6 +141,9 @@ return [
     // How the page title should be displayed
     'title_template' => '{page_title} - WebRegulate Admin',
 
+    // Favion URL
+    'favicon_url' => '/favicon.ico',
+
     // Logging
     'logging' => [
         'wrla-errors' => [
