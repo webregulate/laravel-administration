@@ -65,6 +65,12 @@ class DocumentationApp {
                 items: [
                     { title: 'Site Configuration', url: 'site-configuration.html' }
                 ]
+            },
+            {
+                title: 'Versions',
+                items: [
+                    { title: 'Version History', url: 'versions/versions.html' }
+                ]
             }
         ];
     }
@@ -137,6 +143,35 @@ class DocumentationApp {
         this.updateTitle();
         this.contentLoaded = true;
         this.initCopyButtons();
+        if (this.currentPage === 'versions/versions.html') {
+            this.loadVersionsList();
+        }
+    }
+
+    // Fetch versions.json and render the list into #versions-list
+    async loadVersionsList() {
+        const container = document.getElementById('versions-list');
+        if (!container) return;
+        try {
+            const response = await fetch('versions.json');
+            if (!response.ok) throw new Error('Failed to load');
+            const versions = await response.json();
+            if (!Array.isArray(versions) || !versions.length) {
+                container.innerHTML = '<p class="text-gray-500 italic">No versions recorded yet.</p>';
+                return;
+            }
+            container.innerHTML = versions.map(v => `
+                <a href="versions/v${v.version}.html" class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-800">v${v.version}</span>
+                        <span class="text-gray-500 text-sm">${v.date}</span>
+                    </div>
+                    <span class="text-primary-500 text-sm font-medium group-hover:underline">View release notes &rarr;</span>
+                </a>
+            `).join('');
+        } catch {
+            container.innerHTML = '<p class="text-red-500 italic text-sm">Failed to load version history.</p>';
+        }
     }
 
     // Inject an absolutely-positioned copy button into every .docs-code-block

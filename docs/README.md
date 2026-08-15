@@ -54,13 +54,14 @@ The default port is 8888. If the port is already in use, you can either:
 
 ## Contributing / Development Setup
 
-After cloning the repository, activate the pre-commit hook so that `docs/version.json` is
+After cloning the repository, activate the pre-commit hook so that `docs/versions.json` is
 automatically kept in sync with the latest `VersionUpdate` class:
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-This only needs to be done once per clone. The hook fires before every commit and updates
-`docs/version.json` if a new `Versions/Version_*.php` file has been added with a higher version
-number.
+This only needs to be done once per clone. The hook fires before every commit and prepends a new
+entry to `docs/versions.json` if a new `Versions/Version_*.php` file has been added with a higher
+version number. You should then also create the corresponding `docs/pages/versions/v{version}.html`
+release notes page.

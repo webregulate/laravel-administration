@@ -1,12 +1,12 @@
 #!/bin/sh
-# Pre-commit hook: keeps docs/version.json in sync with the highest
+# Pre-commit hook: keeps docs/versions.json in sync with the highest
 # VersionUpdate class version. Runs automatically before every commit.
 #
 # To activate after cloning:
 #   git config core.hooksPath .githooks
 
 VERSIONS_DIR="src/Classes/VersionHandler/Versions"
-DOCS_VERSION_FILE="docs/version.json"
+DOCS_VERSIONS_FILE="docs/versions.json"
 
 # Nothing to do if the Versions directory doesn't exist yet
 if [ ! -d "$VERSIONS_DIR" ]; then
@@ -14,7 +14,6 @@ if [ ! -d "$VERSIONS_DIR" ]; then
 fi
 
 # Find the highest version by natural numeric sort on each segment.
-# Works without PHP — pure POSIX sh + sort.
 LATEST=$(find "$VERSIONS_DIR" -maxdepth 1 -name 'Version_*.php' 2>/dev/null \
     | while IFS= read -r f; do basename "$f" .php; done \
     | sed 's/^Version_//' \
@@ -27,17 +26,21 @@ if [ -z "$LATEST" ]; then
     exit 0
 fi
 
-# Read the currently stored version without PHP (plain text grep)
-CURRENT=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$DOCS_VERSION_FILE" 2>/dev/null \
-    | grep -o '"[^"]*"$' \
-    | tr -d '"')
-
-# Only rewrite and stage if the version has actually changed
-if [ "$CURRENT" != "$LATEST" ]; then
-    UPDATED=$(date -u +"%Y-%m-%d %H:%M:%S")
-    printf '{\n    "version": "%s",\n    "updated": "%s"\n}\n' "$LATEST" "$UPDATED" > "$DOCS_VERSION_FILE"
-    git add "$DOCS_VERSION_FILE"
-    echo "docs/version.json updated to $LATEST"
+# Skip if this version is already recorded in versions.json
+if grep -q "\"version\"[[:space:]]*:[[:space:]]*\"$LATEST\"" "$DOCS_VERSIONS_FILE" 2>/dev/null; then
+    exit 0
 fi
+
+# Prepend the new version entry to the JSON array
+TODAY=$(date -u +"%Y-%m-%d")
+php -r "
+    \$file = '$DOCS_VERSIONS_FILE';
+    \$entries = file_exists(\$file) ? json_decode(file_get_contents(\$file), true) : [];
+    if (!is_array(\$entries)) \$entries = [];
+    array_unshift(\$entries, ['version' => '$LATEST', 'date' => '$TODAY']);
+    file_put_contents(\$file, json_encode(\$entries, JSON_PRETTY_PRINT) . PHP_EOL);
+"
+git add "$DOCS_VERSIONS_FILE"
+echo "docs/versions.json updated to include $LATEST"
 
 exit 0
