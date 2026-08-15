@@ -51,23 +51,49 @@
         <div class="flex justify-end items-end mt-4 gap-4">
             @if($authorised)
                 <div class="flex flex-col gap-1 items-end text-right">
-                    <span class="text-xs uppercase tracking-wide text-slate-500">WRLA Package Update</span>
+                    <span class="text-xs uppercase tracking-wide text-slate-500">WRLA Package Updates</span>
+                    <hr class="border-slate-700 w-full mb-3" />
                     @if($composerUpdateAvailable === true || $running)
-                        <button wire:click="runComposerOnly" wire:loading.attr="disabled" wire:target="runComposerOnly"
-                            @disabled($running) class="whitespace-nowrap disabled:opacity-50 text-amber-400 hover:text-amber-300 text-sm transition-colors">
-                            <span wire:loading.remove wire:target="runComposerOnly" class="inline-flex items-center gap-2">
-                                @if($running)
-                                    <span class="mr-2"><i class="fa-solid fa-hourglass animate-spin"></i></span>
-                                    <span class="font-medium">Update running...</span>
-                                @else
-                                    <i class="fa-solid fa-box"></i> WRLA Package not up to date — review changes and update
-                                @endif
-                            </span>
-                            <span wire:loading wire:target="runComposerOnly" class="inline-flex items-center">
-                                <span class="mr-2"><i class="fa-solid fa-hourglass animate-spin"></i></span>
+                        @if($running)
+                            <span class="inline-flex items-center gap-2 text-amber-400 text-sm">
+                                <i class="fa-solid fa-hourglass animate-spin"></i>
                                 <span class="font-medium">Update running...</span>
                             </span>
-                        </button>
+                        @else
+                            <span class="text-white font-semibold text-sm">WRLA Update Available</span>
+                            <div x-data="{ latestVersion: null }"
+                                x-init="fetch('https://webregulate.github.io/laravel-administration/versions.json')
+                                    .then(r => r.json())
+                                    .then(d => { latestVersion = d[0]?.version ?? null; })
+                                    .catch(() => {})
+                                ">
+                                <template x-if="latestVersion">
+                                    <span class="text-amber-400 text-sm">
+                                        <span x-text="`v${latestVersion} — `" class="text-white"></span>
+                                        <a :href="`https://webregulate.github.io/laravel-administration/#versions/v${latestVersion}.html`"
+                                            target="_blank"
+                                            class="inline-flex items-center gap-1 underline hover:text-amber-300"
+                                        >
+                                            <i class="fa-solid fa-arrow-up-right-from-square text-xs mr-1"></i>
+                                            <span>Review changes before updating</span>
+                                        </a>
+                                    </span>
+                                </template>
+                                <template x-if="!latestVersion">
+                                    <span class="text-slate-400 text-xs">Fetching latest version...</span>
+                                </template>
+                            </div>
+                            <button wire:click="runComposerOnly" wire:loading.attr="disabled" wire:target="runComposerOnly"
+                                class="mt-1 whitespace-nowrap disabled:opacity-50 text-emerald-400 hover:text-emerald-500 text-sm font-medium transition-colors inline-flex items-center gap-2">
+                                <span wire:loading.remove wire:target="runComposerOnly" class="inline-flex items-center gap-2">
+                                    <i class="fa-solid fa-box"></i> Click to update WRLA
+                                </span>
+                                <span wire:loading wire:target="runComposerOnly" class="inline-flex items-center gap-2">
+                                    <i class="fa-solid fa-hourglass animate-spin"></i>
+                                    <span class="font-medium">Update running...</span>
+                                </span>
+                            </button>
+                        @endif
                     @elseif($composerUpdateAvailable === false)
                         <span class="inline-flex items-center gap-2 text-emerald-400 text-sm"><i class="fa-solid fa-circle-check"></i> WRLA Package is up to date.</span>
                     @else
