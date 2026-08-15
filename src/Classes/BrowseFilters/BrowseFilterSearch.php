@@ -14,16 +14,25 @@ class BrowseFilterSearch extends BrowseFilterBase
      * returned by getBrowseColumns(), handling relationship (dot-notation) columns automatically.
      *
      * @param  string  $manageableModelClass  The manageable model class this filter belongs to.
+     * @param  ?array  $columns  Columns to search over (supports relationships via dot-notation).
+     *                           Accepts a list (['name', 'user.email']) or a column => label map.
+     *                           When null, defaults to the model's getBrowseColumns().
      * @param  string  $alias  The filter key/alias.
      * @param  ?string  $label  The filter label.
      * @param  ?string  $icon  The filter icon.
      */
     public static function make(
         string $manageableModelClass,
+        ?array $columns = null,
         string $alias = 'searchFilter',
         ?string $label = 'Search',
         ?string $icon = 'fas fa-search text-slate-400'
     ): BrowseFilter {
+        // Normalise provided columns into a column => label map (list values become their own key)
+        $searchColumns = $columns === null
+            ? null
+            : collect($columns)->mapWithKeys(fn ($value, $key) => is_int($key) ? [$value => $value] : [$key => $value]);
+
         return Text::makeBrowseFilter($alias, $label, $icon)
             ->setAttributes([
                 'autofocus' => true,
@@ -33,7 +42,10 @@ class BrowseFilterSearch extends BrowseFilterBase
             ->setOptions([
                 'mergeColumns' => [],
             ])
-            ->browseFilterApply(function (Builder $outerQuery, $table, $columns, $value) use ($manageableModelClass) {
+            ->browseFilterApply(function (Builder $outerQuery, $table, $columns, $value) use ($manageableModelClass, $searchColumns) {
+                // Use the explicitly provided columns if set, otherwise fall back to the browse columns
+                $columns = $searchColumns ?? $columns;
+
                 return $outerQuery->where(function ($query) use ($table, $columns, $value, $manageableModelClass) {
                     $whereIndex = 0;
 
