@@ -72,7 +72,7 @@ class DocumentationApp {
             return this.pageCache[filename];
         }
         try {
-            const response = await fetch(`pages/${filename}`);
+            const response = await fetch(`pages/${filename}?v=${Date.now()}`, { cache: 'no-store' });
             const html = response.ok ? await response.text() : null;
             this.pageCache[filename] = html;
             return html;

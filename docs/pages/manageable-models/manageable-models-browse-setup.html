@@ -22,7 +22,10 @@ public final static function browseSetup(): void
     static::setRememberFilters(true);
 
     // Browse actions
-    static::setBrowseActions(static::getDefaultBrowseActions());
+    static::setBrowseActions(
+        BrowseActionCreate::make(static::class),    // Default
+        BrowseActionExportCSV::make(static::class), // Default
+    );
 
     // Enable multi selection
     static::setMultiSelect(true);
@@ -192,54 +195,51 @@ static::setRememberFilters(false); // reset filters on every page load</code></p
 <div class="docs-section">
     <h2 class="docs-heading font-mono text-primary-600">setBrowseActions()</h2>
     <p class="docs-body">
-        Registers the action buttons rendered in the top-right area of the browse page (above the
-        filter bar). Pass any number of Blade view strings, Livewire-aware HTML strings, or view
-        instances; they are merged and sorted by key. The generated stub includes
-        <code class="docs-inline-code">getDefaultBrowseActions()</code> which provides a
-        <strong>Create</strong> button and an <strong>Export CSV</strong> button.
+        Registers the buttons shown at the top of the browse page. Just pass each button you want as
+        an argument. The example below shows the three built-in defaults plus one optional link button:
     </p>
     <div class="docs-code-block mb-4">
-        <pre><code>// Use the built-in defaults (Create + Export CSV)
-static::setBrowseActions(static::getDefaultBrowseActions());
-
-// Entirely custom actions
-static::setBrowseActions(
-    static::getDefaultBrowseActions(),
-    view('wrla::components.forms.button', [
-        'text'  => 'Import',
-        'icon'  => 'fa fa-upload',
-        'color' => 'secondary',
-        'size'  => 'small',
-        'href'  => route('admin.import'),
-    ]),
+        <pre><code>static::setBrowseActions(
+    BrowseActionCreate::make(static::class),
+    BrowseActionImport::make(static::class),
+    BrowseActionExportCSV::make(static::class),
+    BrowseActionURL::make(
+        url: route('some-page'),
+        text: 'Some page',
+        icon: 'fa-solid fa-eye',
+    ),
 );</code></pre>
     </div>
 
-    <!-- getDefaultBrowseActions -->
-    <h3 class="docs-subheading mt-6 mb-3">getDefaultBrowseActions()</h3>
+    <h3 class="docs-subheading mt-6 mb-3">Ready-made buttons</h3>
     <p class="docs-body">
-        Returns a keyed <code class="docs-inline-code">Collection</code> containing the two standard
-        browse actions. Both buttons are permission-aware — they only render if the corresponding
-        <code class="docs-inline-code">ManageableModelPermissions</code> is granted.
+        Four buttons come built in. Each is a one-liner — just pass
+        <code class="docs-inline-code">static::class</code> (or a URL for
+        <code class="docs-inline-code">BrowseActionURL</code>).
     </p>
     <table class="docs-table">
         <thead>
             <tr>
                 <th>Button</th>
-                <th>Required permission</th>
-                <th>Description</th>
+                <th>What it does</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td><strong>Create</strong></td>
-                <td><code class="docs-inline-code">CREATE</code></td>
-                <td>Links to the model's create route</td>
+                <td><code class="docs-inline-code">BrowseActionCreate::make(static::class)</code></td>
+                <td>Links to the create page. Only shows if the user has <code class="docs-inline-code">CREATE</code> permission.</td>
             </tr>
             <tr>
-                <td><strong>Export CSV</strong></td>
-                <td><code class="docs-inline-code">BROWSE</code></td>
-                <td>Exports the current filtered result set as a CSV file, with an optional row-count prompt</td>
+                <td><code class="docs-inline-code">BrowseActionImport::make(static::class)</code></td>
+                <td>Opens the import modal. Only shows if the user has <code class="docs-inline-code">CREATE</code> permission.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">BrowseActionExportCSV::make(static::class)</code></td>
+                <td>Exports the current (filtered) rows to CSV. Asks how many to export when there are over 1,000 rows.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">BrowseActionURL::make(url: ..., text: ..., icon: ..., color: ...)</code></td>
+                <td>A simple link button pointing anywhere you like.</td>
             </tr>
         </tbody>
     </table>
