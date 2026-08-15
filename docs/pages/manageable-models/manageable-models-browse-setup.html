@@ -23,8 +23,9 @@ public final static function browseSetup(): void
 
     // Browse actions
     static::setBrowseActions(
-        BrowseActionCreate::make(static::class),    // Default
-        BrowseActionExportCSV::make(static::class), // Default
+        BrowseActionCreate::make(static::class),
+        BrowseActionImport::make(static::class),
+        BrowseActionExportCSV::make(static::class),
     );
 
     // Enable multi selection
@@ -200,9 +201,9 @@ static::setRememberFilters(false); // reset filters on every page load</code></p
     </p>
     <div class="docs-code-block mb-4">
         <pre><code>static::setBrowseActions(
-    BrowseActionCreate::make(static::class),
-    BrowseActionImport::make(static::class),
-    BrowseActionExportCSV::make(static::class),
+    BrowseActionCreate::make(static::class),    // Default
+    BrowseActionImport::make(static::class),    // Default
+    BrowseActionExportCSV::make(static::class), // Default
     BrowseActionURL::make(
         url: route('some-page'),
         text: 'Some page',
