@@ -20,6 +20,8 @@ use WebRegulate\LaravelAdministration\Classes\ManageableFields\Select;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionCreate;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionImport;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionExportCSV;
+use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSearch;
+use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSoftDeleted;
 
 class EmailTemplate extends ManageableModel
 {
@@ -57,8 +59,8 @@ class EmailTemplate extends ManageableModel
                     if($value != 'all') $query->where('category', $value);
                     return $query;
                 }),
-            static::getBrowseFilterSearch(),
-            static::getBrowseFilterSoftDeleted(),
+            BrowseFilterSearch::make(static::class),
+            BrowseFilterSoftDeleted::make(static::class),
         );
 
         // Browse actions

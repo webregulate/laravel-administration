@@ -16,6 +16,8 @@ use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItemCrea
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionCreate;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionImport;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionExportCSV;
+use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSearch;
+use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSoftDeleted;
 use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
 use WebRegulate\LaravelAdministration\Enums\SiteConfigurationType;
 use Illuminate\Support\Facades\Schema;
@@ -72,8 +74,8 @@ class SiteConfiguration extends ManageableModel
     {
         // Browse filters
         static::setBrowseFilters(
-            static::getBrowseFilterSearch(),
-            static::getBrowseFilterSoftDeleted(),
+            BrowseFilterSearch::make(static::class),
+            BrowseFilterSoftDeleted::make(static::class),
         );
 
         // Remember filters

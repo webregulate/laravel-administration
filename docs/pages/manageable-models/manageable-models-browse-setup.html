@@ -14,8 +14,8 @@ public final static function browseSetup(): void
 {
     // Browse filters
     static::setBrowseFilters(
-        static::getBrowseFilterSearch(),
-        static::getBrowseFilterSoftDeleted(),
+        BrowseFilterSearch::make(static::class),
+        BrowseFilterSoftDeleted::make(static::class),
     );
 
     // Remember filters
@@ -41,56 +41,62 @@ public final static function browseSetup(): void
 <div class="docs-section">
     <h2 class="docs-heading font-mono text-primary-600">setBrowseFilters()</h2>
     <p class="docs-body">
-        Registers the filter controls shown above the browse table. Pass any number of
+        Registers the filter controls shown above the browse table. Just pass each filter you want as
+        an argument — the two built-in defaults plus any custom filters. Accepts any number of
         <code class="docs-inline-code">BrowseFilter</code> instances (or <code class="docs-inline-code">null</code>
         values — they are silently ignored), either as individual arguments or nested arrays; WRLA flattens
         them automatically.
     </p>
     <div class="docs-code-block mb-4">
-        <pre><code>static::setBrowseFilters(
-    static::getBrowseFilterSearch(),
-    static::getBrowseFilterSoftDeleted(),
+        <pre><code>use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSearch;
+use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSoftDeleted;
+
+static::setBrowseFilters(
+    BrowseFilterSearch::make(static::class),
+    BrowseFilterSoftDeleted::make(static::class),
 );</code></pre>
     </div>
 
-    <!-- getBrowseFilterSearch -->
-    <h3 class="docs-subheading mt-6 mb-3">getBrowseFilterSearch()</h3>
+    <h3 class="docs-subheading mt-6 mb-3">Ready-made filters</h3>
     <p class="docs-body">
-        Returns a pre-built text <code class="docs-inline-code">BrowseFilter</code> that searches
-        across every column shown in <code class="docs-inline-code">getBrowseColumns()</code>. The
-        search is case-insensitive and uses <code class="docs-inline-code">LIKE</code> matching.
-        Relationship columns (dot-notation) are handled automatically via
-        <code class="docs-inline-code">orWhereRelation</code>.
+        Two filters come built in. Each is a one-liner — just pass
+        <code class="docs-inline-code">static::class</code>.
     </p>
-    <div class="docs-code-block mb-4">
-        <pre><code>static::setBrowseFilters(
-    static::getBrowseFilterSearch(),
-);</code></pre>
-    </div>
+    <table class="docs-table mb-4">
+        <thead>
+            <tr>
+                <th>Filter</th>
+                <th>What it does</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code class="docs-inline-code">BrowseFilterSearch::make(static::class)</code></td>
+                <td>Case-insensitive <code class="docs-inline-code">LIKE</code> search across every column shown in <code class="docs-inline-code">getBrowseColumns()</code>. Relationship (dot-notation) columns are handled automatically via <code class="docs-inline-code">orWhereRelation</code>.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">BrowseFilterSoftDeleted::make(static::class)</code></td>
+                <td>Select dropdown to switch between active, soft-deleted, and all records. Returns <code class="docs-inline-code">null</code> (and is skipped) when the model has no <code class="docs-inline-code">SoftDeletes</code> — safe to always include.</td>
+            </tr>
+        </tbody>
+    </table>
     <p class="docs-body">
-        Customize the filter by chaining <code class="docs-inline-code">setOption()</code> or
-        <code class="docs-inline-code">setOptions()</code> on the returned instance:
+        Both factories accept optional overrides (alias, label, icon) and return a
+        <code class="docs-inline-code">BrowseFilter</code> you can further customize by chaining
+        <code class="docs-inline-code">setOption()</code> / <code class="docs-inline-code">setOptions()</code>:
     </p>
     <div class="docs-code-block mb-4">
         <pre><code>// Merge extra columns into the search (e.g. computed / aliased columns)
-static::getBrowseFilterSearch()
-    ->setOption('mergeColumns', ['full_name', 'tags.name']);</code></pre>
-    </div>
+BrowseFilterSearch::make(static::class)
+    ->setOption('mergeColumns', ['full_name', 'tags.name']);
 
-    <!-- getBrowseFilterSoftDeleted -->
-    <h3 class="docs-subheading mt-6 mb-3">getBrowseFilterSoftDeleted()</h3>
-    <p class="docs-body">
-        Returns a pre-built select <code class="docs-inline-code">BrowseFilter</code> that lets users
-        switch between active, soft-deleted, and all records. Only available when the underlying
-        Eloquent model uses <code class="docs-inline-code">SoftDeletes</code> — returns
-        <code class="docs-inline-code">null</code> otherwise (safe to always include).
-    </p>
-    <div class="docs-code-block mb-4">
-        <pre><code>static::setBrowseFilters(
-    static::getBrowseFilterSearch(),
-    static::getBrowseFilterSoftDeleted(), // null-safe — no-op if model has no soft deletes
-);</code></pre>
+// Customize the alias / label / icon
+BrowseFilterSearch::make(static::class, 'searchFilter', 'Search records', 'fas fa-search text-slate-400');
+BrowseFilterSoftDeleted::make(static::class, 'softDeletedFilter', 'Status');</code></pre>
     </div>
+    <p class="docs-body">
+        The soft-deleted filter exposes the following option values:
+    </p>
     <table class="docs-table">
         <thead>
             <tr>
@@ -124,12 +130,12 @@ static::getBrowseFilterSearch()
         column map, and the current filter value.
     </p>
     <div class="docs-code-block">
-        <pre><code>use WebRegulate\LaravelAdministration\Classes\BrowseFilter;
+        <pre><code>use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSearch;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\Select;
 use Illuminate\Database\Eloquent\Builder;
 
 static::setBrowseFilters(
-    static::getBrowseFilterSearch(),
+    BrowseFilterSearch::make(static::class),
 
     // Custom "Status" dropdown filter
     Select::makeBrowseFilter('statusFilter')

@@ -7,6 +7,8 @@ use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionCreate;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionImport;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionExportCSV;
+use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSearch;
+use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSoftDeleted;
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionRestore;
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionEdit;
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionDelete;
@@ -47,8 +49,8 @@ class {{ $MODEL }} extends ManageableModel
     {
         // Browse filters
         static::setBrowseFilters(
-            static::getBrowseFilterSearch(),
-            static::getBrowseFilterSoftDeleted(),
+            BrowseFilterSearch::make(static::class),
+            BrowseFilterSoftDeleted::make(static::class),
         );
 
         // Remember filters

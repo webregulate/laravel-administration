@@ -25,6 +25,8 @@ use WebRegulate\LaravelAdministration\Classes\ManageableFields\JsonUI;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\Select;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionCreate;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionExportCSV;
+use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSearch;
+use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSoftDeleted;
 
 class User extends ManageableModel
 {
@@ -77,8 +79,8 @@ class User extends ManageableModel
                     };
                 }),
 
-            static::getBrowseFilterSearch(),
-            static::getBrowseFilterSoftDeleted(),
+            BrowseFilterSearch::make(static::class),
+            BrowseFilterSoftDeleted::make(static::class),
         );
 
         // Remember filters

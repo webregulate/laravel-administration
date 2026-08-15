@@ -1,0 +1,123 @@
+<div class="flex items-center gap-2 mb-6">
+    <a href="versions/versions.html" class="text-sm text-primary-500 hover:text-primary-700 flex items-center gap-1">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Version History
+    </a>
+</div>
+
+<h1 class="docs-title">
+    <span data-version-number></span>
+    <span data-version-date class="text-lg font-normal text-gray-400 ml-3"></span>
+</h1>
+
+<!-- Breaking Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        Breaking Changes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5 mb-4">
+        <li>
+            The default browse filters are now provided by dedicated factory classes instead of
+            <code class="docs-inline-code">ManageableModel</code> helper methods. The following methods have been
+            <strong>removed</strong>:
+            <code class="docs-inline-code">getDefaultBrowseFilters()</code>,
+            <code class="docs-inline-code">getBrowseFilterSearch()</code> and
+            <code class="docs-inline-code">getBrowseFilterSoftDeleted()</code>.
+        </li>
+        <li>
+            Replace them with <code class="docs-inline-code">BrowseFilterSearch::make(static::class)</code> and
+            <code class="docs-inline-code">BrowseFilterSoftDeleted::make(static::class)</code> from the new
+            <code class="docs-inline-code">WebRegulate\LaravelAdministration\Classes\BrowseFilters</code> namespace —
+            mirroring the existing <code class="docs-inline-code">BrowseActions</code> pattern.
+        </li>
+    </ul>
+
+    <p class="docs-body font-semibold mb-1">Before</p>
+    <div class="docs-code-block mb-4">
+        <pre><code>public final static function browseSetup(): void
+{
+    // Browse filters
+    static::setBrowseFilters(static::getDefaultBrowseFilters());
+
+    // ...or, expanded:
+    static::setBrowseFilters(
+        static::getBrowseFilterSearch(),
+        static::getBrowseFilterSoftDeleted(),
+        // ...other custom filters
+    );
+}</code></pre>
+    </div>
+
+    <p class="docs-body font-semibold mb-1">After</p>
+    <div class="docs-code-block mb-4">
+        <pre><code>use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSearch;
+use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSoftDeleted;
+
+public final static function browseSetup(): void
+{
+    // Browse filters
+    static::setBrowseFilters(
+        BrowseFilterSearch::make(static::class),
+        BrowseFilterSoftDeleted::make(static::class),
+    );
+}</code></pre>
+    </div>
+
+    <div class="docs-callout docs-callout-info">
+        <div class="docs-callout-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+        </div>
+        <div class="docs-callout-body">
+            Both factories accept optional arguments (alias, label, icon) that default to the previous values, so
+            no configuration is required for a like-for-like migration.
+            <code class="docs-inline-code">BrowseFilterSoftDeleted::make()</code> still returns
+            <code class="docs-inline-code">null</code> for models without soft deletes and is safe to always include.
+        </div>
+    </div>
+</div>
+
+<!-- Features -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-primary-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        Features
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>
+            New <code class="docs-inline-code">BrowseFilters</code> namespace with
+            <code class="docs-inline-code">BrowseFilterSearch</code>,
+            <code class="docs-inline-code">BrowseFilterSoftDeleted</code> and a shared
+            <code class="docs-inline-code">BrowseFilterBase</code>, giving browse filters the same clean
+            <code class="docs-inline-code">::make(static::class)</code> factory style as browse actions.
+        </li>
+        <li>
+            Default filter factories now accept optional alias, label and icon overrides.
+        </li>
+        <li>
+            <code class="docs-inline-code">setBrowseFilters()</code> now silently ignores
+            <code class="docs-inline-code">null</code> filters, so conditionally-available filters can be passed inline.
+        </li>
+    </ul>
+</div>
+
+<!-- Bug Fixes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-green-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Bug Fixes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>None</li>
+    </ul>
+</div>

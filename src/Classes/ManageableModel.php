@@ -9,9 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
-use WebRegulate\LaravelAdministration\Classes\ManageableFields\Text;
 use WebRegulate\LaravelAdministration\Enums\AdditionalRenderPosition;
-use WebRegulate\LaravelAdministration\Classes\ManageableFields\Select;
 use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
 use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumn;
 use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumnBase;
@@ -575,11 +573,12 @@ abstract class ManageableModel
     }
 
     /**
-     * Set browse filters.
+     * Set browse filters. Accepts any number of BrowseFilter instances (or null values,
+     * which are silently ignored) either as individual arguments or nested arrays.
      */
     public static function setBrowseFilters(...$filters)
     {
-        $filters = WRLAHelper::flattenArray($filters);
+        $filters = array_values(array_filter(WRLAHelper::flattenArray($filters)));
         static::setStaticOption('browse.filters', $filters);
     }
 
@@ -776,117 +775,6 @@ abstract class ManageableModel
         $deletedAtColumn = $model->getDeletedAtColumn();
 
         return $model->{$deletedAtColumn} !== null;
-    }
-
-    /**
-     * Get default browse filters
-     */
-    public static function getDefaultBrowseFilters(): array
-    {
-        $defaultBrowseFilters = [
-            static::getBrowseFilterSearch(),
-            static::getBrowseFilterSoftDeleted()
-        ];
-
-        return $defaultBrowseFilters;
-    }
-
-    /**
-     * Browse filter: Search
-     */
-    public static function getBrowseFilterSearch(): BrowseFilter
-    {
-        return Text::makeBrowseFilter('searchFilter', 'Search', 'fas fa-search text-slate-400')
-                ->setAttributes([
-                    'autofocus' => true,
-                    'placeholder' => 'Search filter...',
-                    'autocomplete' => "off"
-                ])
-                ->setOptions([
-                    'mergeColumns' => []
-                ])
-                ->browseFilterApply(function(Builder $outerQuery, $table, $columns, $value) {
-                    return $outerQuery->where(function ($query) use ($table, $columns, $value) {
-                        $whereIndex = 0;
-
-                        // Get all actual table columns (this is because we may have custom added columns from a preQuery)
-                        $actualTableColumns = WRLAHelper::getTableColumns($table, (new (self::getBaseModelClass()))->getConnectionName());
-
-                        foreach ($columns as $column => $label) {
-                            // If column is int or begins with !, skip
-                            if (is_int($column) || str_starts_with($column, '!')) {
-                                continue;
-                            }
-
-                            // If column is relationship, then modify the column to be the related column
-                            if ((WRLAHelper::isBrowseColumnRelationship($column))) {
-                                // dump("Column is relationship: $column");
-                                $relationshipParts = WRLAHelper::parseBrowseColumnRelationship($column);
-
-                                $baseModelClass = self::getBaseModelClass();
-                                $relationship = (new $baseModelClass)->{$relationshipParts[0]}();
-                                if ($relationship?->getRelated() == null) {
-                                    continue;
-                                }
-                                $relationshipTableName = $relationship->getRelated()->getTable();
-                                $foreignColumn = $relationship->getForeignKeyName();
-
-                                // If relationship connection is not empty, generate the SQL to inject it
-                                if (! empty($relationshipConnection)) {
-                                    $relationshipConnection = "`$relationshipConnection`.";
-                                }
-
-                                $whereIndex++;
-
-                                // Safely escape value
-                                $query->orWhereRelation($relationshipParts[0], "{$relationshipTableName}.{$relationshipParts[1]}", 'like', "%{$value}%");
-                            }
-                            // If table has this column, prepend table name
-                            elseif(in_array($column, $actualTableColumns)) {
-                                // dump("Column exists in table: $column");
-                                // Force case-insensitive search using LOWER()
-                                $column = "$table.$column";
-                                $query->orWhereRaw("LOWER($column) LIKE ?", ['%' . strtolower($value) . '%']);
-                            }
-                            // Otherwise just use column name directly
-                            else {
-                                // dump("Column does not exist in table: $column");
-                                $query->orHaving($column, 'like', "%{$value}%");
-                            }
-                        }
-                    });
-                });
-    }
-
-    /**
-     * Browse filter: Soft deleted
-     */
-    public static function getBrowseFilterSoftDeleted(): ?BrowseFilter
-    {
-        if (WRLAHelper::isSoftDeletable(static::getBaseModelClass())) {
-            return Select::makeBrowseFilter('softDeletedFilter')
-                ->setLabel('Status', 'fas fa-heartbeat text-slate-400 !mr-1')
-                ->setItems([
-                    'not_trashed' => 'Active only',
-                    'trashed' => 'Soft deleted only',
-                    'all' => 'All',
-                ])
-                ->setOption('containerClass', 'w-1/6')
-                ->validation('required|in:all,trashed,not_trashed')
-                ->browseFilterApply(function (Builder $query, $table, $columns, $value) {
-                    if ($value === 'not_trashed') {
-                        return $query;
-                    } elseif ($value === 'trashed') {
-                        return $query->onlyTrashed();
-                    } elseif ($value == 'all') {
-                        return $query->withTrashed();
-                    }
-
-                    return $query;
-                });
-        }
-
-        return null;
     }
 
     /**
