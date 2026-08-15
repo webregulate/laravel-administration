@@ -846,23 +846,16 @@ class WRLAHelper
     /**
      * Whether to show the version / update indicator in the top bar.
      *
-     * Normally this is gated behind developer tools (userIsDev). However, when an
-     * application has NOT migrated to the new grouped `developer.enable` config
-     * (ie. that key is still null), we force the version info and "Update available"
-     * prompt to display for every admin user. This ensures out-of-date / unmigrated
-     * installs always surface the update prompt so they can update themselves,
-     * rather than the indicator staying permanently hidden.
+     * Shown for developers (userIsDev), or force-shown when the `developer.enable`
+     * config key is null (not yet published), so the indicator is never silently hidden.
      */
     public static function showVersionUpdateBar(): bool
     {
         return once(function() {
-            // Developer tools enabled -> always show (existing behaviour).
             if(WRLAHelper::userIsDev()) {
                 return true;
             }
 
-            // Otherwise force-show when the new `developer.enable` config is not
-            // present (null), meaning the install hasn't migrated its config yet.
             return config('wr-laravel-administration.developer.enable') === null;
         });
     }

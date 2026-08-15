@@ -48,44 +48,20 @@
             </div>
         @endif
 
-        <div class="flex justify-between items-end mt-4 gap-4">
-            {{-- LEFT: WRLA major / breaking version updates --}}
-            <div class="flex flex-col gap-1">
-                <span class="text-xs uppercase tracking-wide text-slate-500">Major / breaking updates</span>
-                @if($authorised)
-                    @if($updatesAvailable || $running)
-                        <button wire:click="runCommand" wire:loading.attr="disabled" wire:target="runCommand"
-                            @disabled($running) class="whitespace-nowrap disabled:opacity-50">
-                            <span wire:loading.remove wire:target="runCommand" class="inline-flex items-center">
+        <div class="flex justify-end items-end mt-4 gap-4">
+            @if($authorised)
+                <div class="flex flex-col gap-1 items-end text-right">
+                    <span class="text-xs uppercase tracking-wide text-slate-500">WRLA Package Update</span>
+                    @if($composerUpdateAvailable === true || $running)
+                        <button wire:click="runComposerOnly" wire:loading.attr="disabled" wire:target="runComposerOnly"
+                            @disabled($running) class="whitespace-nowrap disabled:opacity-50 text-amber-400 hover:text-amber-300 text-sm transition-colors">
+                            <span wire:loading.remove wire:target="runComposerOnly" class="inline-flex items-center gap-2">
                                 @if($running)
                                     <span class="mr-2"><i class="fa-solid fa-hourglass animate-spin"></i></span>
                                     <span class="font-medium">Update running...</span>
                                 @else
-                                    ✅ Run major / breaking updates
+                                    <i class="fa-solid fa-box"></i> WRLA Package not up to date — review changes and update
                                 @endif
-                            </span>
-                            <span wire:loading wire:target="runCommand" class="inline-flex items-center gap-2"><i class="fa-solid fa-hourglass animate-spin"></i> Starting...</span>
-                        </button>
-                    @else
-                        <span class="inline-flex items-center gap-2 text-emerald-400 text-sm"><i class="fa-solid fa-circle-check"></i> No major / breaking updates available.</span>
-                    @endif
-                @else
-                    <span class="inline-flex items-center gap-2 text-amber-400 text-sm"><i class="fa-solid fa-lock"></i> Updates are not available for your account.</span>
-                @endif
-            </div>
-
-            {{-- RIGHT: minor composer-only updates. Mirrors the left column: always
-                show the heading, then either the run button (update advertised on
-                Packagist), an emerald "up to date" message, or a muted "couldn't
-                check" message when the remote lookup failed. --}}
-            @if($authorised && !$running)
-                <div class="flex flex-col gap-1 items-end text-right">
-                    <span class="text-xs uppercase tracking-wide text-slate-500">Minor updates</span>
-                    @if($composerUpdateAvailable === true)
-                        <button wire:click="runComposerOnly" wire:loading.attr="disabled" wire:target="runComposerOnly"
-                            @disabled($running) class="whitespace-nowrap disabled:opacity-50 text-amber-400 hover:text-amber-300 text-sm transition-colors">
-                            <span wire:loading.remove wire:target="runComposerOnly" class="inline-flex items-center gap-2">
-                                <i class="fa-solid fa-box"></i> Package not up to date, minor changes available — run composer update
                             </span>
                             <span wire:loading wire:target="runComposerOnly" class="inline-flex items-center">
                                 <span class="mr-2"><i class="fa-solid fa-hourglass animate-spin"></i></span>
@@ -93,11 +69,13 @@
                             </span>
                         </button>
                     @elseif($composerUpdateAvailable === false)
-                        <span class="inline-flex items-center gap-2 text-emerald-400 text-sm"><i class="fa-solid fa-circle-check"></i> Composer is up to date.</span>
+                        <span class="inline-flex items-center gap-2 text-emerald-400 text-sm"><i class="fa-solid fa-circle-check"></i> WRLA Package is up to date.</span>
                     @else
                         <span class="inline-flex items-center gap-2 text-slate-400 text-sm"><i class="fa-solid fa-circle-question"></i> Could not check composer status.</span>
                     @endif
                 </div>
+            @else
+                <span class="inline-flex items-center gap-2 text-amber-400 text-sm"><i class="fa-solid fa-lock"></i> Updates are not available for your account.</span>
             @endif
         </div>
     </div>

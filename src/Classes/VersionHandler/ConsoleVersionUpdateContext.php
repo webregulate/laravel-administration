@@ -7,7 +7,6 @@ use Symfony\Component\Process\Process;
 
 /**
  * Console (artisan command) implementation of the version update context.
- * Questions are fully interactive and processes stream their output live.
  */
 class ConsoleVersionUpdateContext extends VersionUpdateContext
 {
@@ -33,21 +32,6 @@ class ConsoleVersionUpdateContext extends VersionUpdateContext
     public function error(string $message): void
     {
         $this->command->error($message);
-    }
-
-    public function ask(string $key, string $question, ?string $default = null): ?string
-    {
-        return $this->command->ask($question, $default);
-    }
-
-    public function confirm(string $key, string $question, bool $default = false): bool
-    {
-        return $this->command->confirm($question, $default);
-    }
-
-    public function choice(string $key, string $question, array $choices, mixed $default = null): mixed
-    {
-        return $this->command->choice($question, $choices, $default);
     }
 
     public function runProcess(array $command, ?string $workingDirectory = null, int $timeout = 600): bool

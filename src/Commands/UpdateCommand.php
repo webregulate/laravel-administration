@@ -8,38 +8,17 @@ use WebRegulate\LaravelAdministration\Classes\VersionHandler\ConsoleVersionUpdat
 
 class UpdateCommand extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'wrla:update {--composer-only : Only run composer update (and optimize:clear), skipping version migrations.}';
+    protected $signature = 'wrla:update';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'After updating this package via composer, run this command to check, update, or guide you through any changes / breaking changes.';
+    protected $description = 'Run composer update for the WRLA package and clear cached application state.';
 
-    /**
-     * Execute the console command.
-     *
-     * @return int
-     */
     public function handle()
     {
         $versionHandler = new VersionHandler(new ConsoleVersionUpdateContext($this));
 
-        if ($this->option('composer-only')) {
-            if ($versionHandler->runComposerUpdate()) {
-                $versionHandler->runOptimizeClear();
-            }
-
-            return 0;
+        if ($versionHandler->runComposerUpdate()) {
+            $versionHandler->runOptimizeClear();
         }
-
-        $versionHandler->runUpdates();
 
         return 0;
     }
