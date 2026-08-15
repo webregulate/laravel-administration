@@ -145,7 +145,27 @@ class DocumentationApp {
         this.initCopyButtons();
         if (this.currentPage === 'versions/versions.html') {
             this.loadVersionsList();
+        } else if (/^versions\/v[\d.]+\.html$/.test(this.currentPage)) {
+            this.loadVersionDetail();
         }
+    }
+
+    // Populate [data-version-number] and [data-version-date] on a version detail page
+    async loadVersionDetail() {
+        const match = this.currentPage.match(/^versions\/v([\d.]+)\.html$/);
+        if (!match) return;
+        const version = match[1];
+        try {
+            const response = await fetch('versions.json');
+            if (!response.ok) throw new Error();
+            const versions = await response.json();
+            const entry = versions.find(v => v.version === version);
+            if (!entry) return;
+            const numEl = document.querySelector('[data-version-number]');
+            const dateEl = document.querySelector('[data-version-date]');
+            if (numEl) numEl.textContent = `v${entry.version}`;
+            if (dateEl) dateEl.textContent = entry.date;
+        } catch { /* fail silently */ }
     }
 
     // Fetch versions.json and render the list into #versions-list

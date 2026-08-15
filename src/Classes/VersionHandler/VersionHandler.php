@@ -189,6 +189,40 @@ class VersionHandler
     }
 
     /**
+     * Read all entries from the bundled docs/versions.json file.
+     *
+     * @return array<int, array{version: string, date: string}>
+     */
+    public static function getVersionsJsonData(): array
+    {
+        $path = __DIR__ . '/../../../docs/versions.json';
+
+        if (!file_exists($path)) {
+            return [];
+        }
+
+        return json_decode(file_get_contents($path), true) ?: [];
+    }
+
+    /**
+     * Return the latest (highest version number) entry from docs/versions.json.
+     *
+     * @return array{version: string, date: string}|null
+     */
+    public static function getLatestWrlaVersion(): ?array
+    {
+        $versions = self::getVersionsJsonData();
+
+        if (empty($versions)) {
+            return null;
+        }
+
+        usort($versions, fn($a, $b) => version_compare($b['version'], $a['version']));
+
+        return $versions[0];
+    }
+
+    /**
      * Whether Packagist advertises a different commit reference for the installed
      * package than the one currently locked in composer.lock (i.e. a `composer
      * update` would pull new code).

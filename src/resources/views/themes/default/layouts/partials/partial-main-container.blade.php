@@ -12,6 +12,7 @@
                     $versionHandlerClass = \WebRegulate\LaravelAdministration\Classes\VersionHandler\VersionHandler::class;
                     $localComposerVersion = $versionHandlerClass::$localPackageCurrentVersion;
                     $updateAvailable = $versionHandlerClass::isComposerUpdateAvailable() === true;
+                    $wrlaVersion = $versionHandlerClass::getLatestWrlaVersion();
                 @endphp
                 <button type="button"
                     onclick="window.loadLivewireModal(this, 'dev-tools.handle-update-modal')"
@@ -22,7 +23,7 @@
                     @else
                         <i class="fas fa-code-branch text-xs mr-1"></i>
                     @endif
-                    Version: {{ $localComposerVersion }}
+                    Version: {{ $localComposerVersion }}{{ $wrlaVersion ? ' (v' . $wrlaVersion['version'] . ')' : '' }}
                     @if($updateAvailable)
                         <span class="pl-1.5 text-sky-600 font-semibold">(update available)</span>
                     @endif

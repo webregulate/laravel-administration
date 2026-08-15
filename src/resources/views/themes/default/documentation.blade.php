@@ -5,7 +5,7 @@
 @section('content')
     <iframe
         wire:ignore
-        src="{{ route('wrla.documentation.static', ['path' => 'index.html']) }}?t={{ time() }}"
+        src="https://webregulate.github.io/laravel-administration/"
         class="relative border-0 bg-white"
         frameborder="0"
         title="WRLA Documentation"
