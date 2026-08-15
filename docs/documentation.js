@@ -52,15 +52,6 @@ class DocumentationApp {
                 ]
             },
             {
-                title: 'Advanced',
-                items: [
-                    { title: 'Updating & Version Handling', url: 'version-handling.html' },
-                    { title: 'Customization', url: 'customization.html' },
-                    { title: 'Extending', url: 'extending.html' },
-                    { title: 'API Reference', url: 'api-reference.html' }
-                ]
-            },
-            {
                 title: 'Optional Features',
                 items: [
                     { title: 'Site Configuration', url: 'site-configuration.html' }
