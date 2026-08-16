@@ -45,6 +45,7 @@ class BrowseFilterSelect extends BrowseFilterBase
         ?callable $queryBuilder = null,
         ?callable $apply = null,
         string $containerClass = 'flex-1',
+        mixed $default = null,
     ): BrowseFilter {
         $filterColumn ??= $alias;
         [$allValue, $prependItems] = static::resolvePrependAll($prependAll);
@@ -73,6 +74,10 @@ class BrowseFilterSelect extends BrowseFilterBase
             }
 
             $field->setItems($items);
+        }
+
+        if ($default !== null) {
+            $field->default($default);
         }
 
         return $field->browseFilterApply(
