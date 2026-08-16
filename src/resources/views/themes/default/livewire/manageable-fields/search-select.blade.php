@@ -62,7 +62,7 @@
             x-cloak
             x-show="open"
             x-transition.opacity.duration.150ms
-            class="absolute left-0 right-0 top-full z-30 mt-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-xl overflow-hidden"
+            class="absolute left-0 top-full z-30 mt-1 min-w-full w-max max-w-[min(24rem,90vw)] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-xl overflow-hidden"
         >
             {{-- Search --}}
             <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-200 dark:border-slate-700">
