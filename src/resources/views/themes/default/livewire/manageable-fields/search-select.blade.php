@@ -13,7 +13,7 @@
             type="button"
             wire:click="cancel"
             wire:target="cancel"
-            class="absolute right-0 -top-6 flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-rose-500 transition focus:outline-none"
+            class="absolute right-0 top-[-23px] flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-rose-500 transition focus:outline-none"
             wire:loading.class.remove="hover:text-rose-500"
             wire:loading.class="cursor-default"
         >
@@ -30,7 +30,7 @@
             @disabled($disabled)
             x-on:click="if ($el.disabled) return; open = !open; if (open) { $wire.runSearch(); $nextTick(() => $refs.searchInput?.focus()) }"
             @class([
-                'flex items-center justify-between gap-2 w-full px-3 py-1.5 text-base font-normal text-left rounded-md shadow-sm border border-slate-400 dark:border-slate-500 bg-slate-200 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition focus:outline-none focus:ring-1 focus:ring-primary-500',
+                'flex items-center justify-between gap-2 w-full pt-[4px] pb-[3px] px-3  text-base font-normal text-left rounded-md shadow-sm border border-slate-400 dark:border-slate-500 bg-slate-200 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition focus:outline-none focus:ring-1 focus:ring-primary-500',
                 'opacity-70 cursor-not-allowed' => $disabled,
             ])
         >
