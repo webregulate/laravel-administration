@@ -49,16 +49,18 @@ class EmailTemplate extends ManageableModel
     {
         // Browse filters
         static::setBrowseFilters(
-            Select::makeBrowseFilter('categoryFilter', 'Category', 'fas fa-tag')
-                ->setOption('containerClass', 'w-1/4')
-                ->setItems([
-                    'all' => 'All',
+            BrowseFilterSelect::make(
+                alias: 'categoryFilter',
+                label: 'Category',
+                icon: 'fa-solid fa-tag',
+                filterColumn: 'category',
+                displayColumn: 'category',
+                source: [
                     'transactional' => 'Transactional',
-                ])
-                ->browseFilterApply(function(Builder $query, $table, $columns, $value) {
-                    if($value != 'all') $query->where('category', $value);
-                    return $query;
-                }),
+                    'marketing' => 'Marketing',
+                    'training_courses' => 'Training Courses',
+                ]
+            ),
             BrowseFilterSearch::make(static::class),
             BrowseFilterSoftDeleted::make(static::class),
         );
