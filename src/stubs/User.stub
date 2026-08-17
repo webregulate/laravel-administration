@@ -25,6 +25,7 @@ use WebRegulate\LaravelAdministration\Classes\ManageableFields\JsonUI;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\Select;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionCreate;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionExportCSV;
+use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSelect;
 use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSearch;
 use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSoftDeleted;
 
@@ -65,20 +66,23 @@ class User extends ManageableModel
     {
         // Browse filters
         static::setBrowseFilters(
-            Select::makeBrowseFilter('userTypeFilter', 'User Type', 'fas fa-user-cog text-slate-400', 'w-1/5')
-                ->setItems([
-                    'all' => 'All users',
+            BrowseFilterSelect::make(
+                alias: 'userTypeFilter',
+                label: 'User Type',
+                icon: 'fas fa-user-cog text-slate-400',
+                containerClass: 'w-1/5',
+                source: [
                     'admins_only' => 'Admins only',
                     'non_admins_only' => 'Non admins only',
-                ])
-                ->browseFilterApply(function(Builder $query, $table, $columns, $value) {
+                ],
+                apply: function(Builder $query, $table, $columns, $value) {
                     return match($value) {
                         'admins_only' => $query->where('permissions->admin', true),
                         'non_admins_only' => $query->where(fn($query) => $query->whereNull('permissions->admin')->orWhere('permissions->admin', false)),
                         default => $query,
                     };
-                }),
-
+                },
+            ),
             BrowseFilterSearch::make(static::class),
             BrowseFilterSoftDeleted::make(static::class),
         );
