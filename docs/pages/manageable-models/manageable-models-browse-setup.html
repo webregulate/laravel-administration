@@ -120,36 +120,51 @@ BrowseFilterSoftDeleted::make(static::class, 'softDeletedFilter', 'Status');</co
         </tbody>
     </table>
 
-    <!-- Custom BrowseFilter -->
-    <h3 class="docs-subheading mt-6 mb-3">Custom BrowseFilter</h3>
+    <!-- Additional filter types -->
+    <h3 class="docs-subheading mt-6 mb-3">Additional filter types</h3>
     <p class="docs-body">
-        Any manageable field type can be turned into a browse filter by calling
-        <code class="docs-inline-code">makeBrowseFilter()</code> on it and chaining
-        <code class="docs-inline-code">browseFilterApply()</code> with a closure. The closure receives
-        the current Eloquent <code class="docs-inline-code">Builder</code>, the table name, the visible
-        column map, and the current filter value.
+        These dedicated filter classes cover the most common filter needs. Just drop them into <code class="docs-inline-code">setBrowseFilters()</code> alongside the
+        standard filters if need be.
+    </p>
+    <div class="docs-code-block mb-4">
+        <pre><code>// Free-text input — matches the given column(s) with a LIKE by default.
+// Pass an array to search several columns (dot-notation for relationships).
+BrowseFilterText::make(
+    alias: 'referenceFilter',
+    columns: 'reference',
+    label: 'Reference',
+),
+
+// Static dropdown — an "All" clear option is prepended automatically,
+// and the selected value is matched against the column by default.
+BrowseFilterSelect::make(
+    alias: 'statusFilter',
+    source: ['published' => 'Published', 'draft' => 'Draft'],
+    label: 'Status',
+),
+
+// Searchable select (live server-side search over a model).
+// The selected key is matched against the filter column by default.
+BrowseFilterSearchSelect::make(
+    alias: 'userFilter',
+    source: \App\Models\User::class,
+    searchColumn: 'name',
+    label: 'User',
+),
+</code></pre>
+    </div>
+    <p class="docs-body">
+        Need to match a different column than the alias, or build options from a model? Everything is
+        just another named argument — no closures required:
     </p>
     <div class="docs-code-block">
-        <pre><code>use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSearch;
-use WebRegulate\LaravelAdministration\Classes\ManageableFields\Select;
-use Illuminate\Database\Eloquent\Builder;
-
-static::setBrowseFilters(
-    BrowseFilterSearch::make(static::class),
-
-    // Custom "Status" dropdown filter
-    Select::makeBrowseFilter('statusFilter')
-        ->setLabel('Status', 'fas fa-tag text-slate-400 !mr-1')
-        ->setItems([
-            'all'       => 'All',
-            'published' => 'Published',
-            'draft'     => 'Draft',
-        ])
-        ->setOption('containerClass', 'w-1/6')
-        ->browseFilterApply(function (Builder $query, $table, $columns, $value) {
-            if ($value === 'all') return $query;
-            return $query->where("$table.status", $value);
-        }),
+        <pre><code>// Build the dropdown options straight from a model
+BrowseFilterSelect::make(
+    alias: 'categoryFilter',
+    source: \App\Models\Category::class,
+    displayColumn: 'name',
+    filterColumn: 'category_id',
+    label: 'Category',
 );</code></pre>
     </div>
 </div>
