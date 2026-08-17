@@ -33,10 +33,11 @@ class BrowseFilterText extends BrowseFilterBase
         string $operator = 'like',
         string $containerClass = 'flex-1',
         mixed $default = null,
+        ?string $placeholder = null,
     ): BrowseFilter {
         $field = Text::makeBrowseFilter($alias, $label, $icon, $containerClass)
             ->setAttributes([
-                'placeholder' => 'Filter...',
+                'placeholder' => $placeholder ?? 'Filter...',
                 'autocomplete' => 'off',
             ]);
 

@@ -2,6 +2,7 @@
 
 namespace WebRegulate\LaravelAdministration\Classes\VersionHandler;
 
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\Process\PhpExecutableFinder;
 
 class VersionHandler
@@ -12,7 +13,20 @@ class VersionHandler
      */
     public const PACKAGE_NAME = 'webregulate/laravel-administration';
 
+    /**
+     * Cache key holding the shared "a composer update is available" flag so every
+     * consumer (top-bar version indicator, update modal, CLI) reports the same state.
+     */
+    private const UPDATE_AVAILABLE_CACHE_KEY = 'wrla.version.composer_update_available';
+
     public static $localPackageCurrentVersion = null;
+
+    /**
+     * In-request memo of the update-available flag so the version bar and modal
+     * cannot disagree within a single request, and Packagist is only queried once.
+     */
+    private static ?bool $composerUpdateAvailableMemo = null;
+    private static bool $composerUpdateAvailableResolved = false;
 
     private VersionUpdateContext $context;
 
@@ -65,6 +79,10 @@ class VersionHandler
 
         if (!$success) {
             $this->context->error('composer update failed.');
+        } else {
+            // The lock file has (potentially) changed, so drop the cached flag to
+            // force a fresh check and keep every consumer in sync.
+            self::clearComposerUpdateAvailableCache();
         }
 
         return $success;
@@ -232,6 +250,36 @@ class VersionHandler
      */
     public static function isComposerUpdateAvailable(): ?bool
     {
+        // Memoised within the request so repeated renders share one answer.
+        if (self::$composerUpdateAvailableResolved) {
+            return self::$composerUpdateAvailableMemo;
+        }
+
+        // Shared across requests so the server-rendered version bar and the
+        // Livewire update modal always report the same status.
+        $cached = Cache::get(self::UPDATE_AVAILABLE_CACHE_KEY);
+
+        if (is_bool($cached)) {
+            return self::memoiseComposerUpdateAvailable($cached);
+        }
+
+        $result = self::resolveComposerUpdateAvailable();
+
+        // Only persist a definitive answer - a transient network failure (null)
+        // should be retried next request rather than cached as "up to date".
+        if ($result !== null) {
+            Cache::put(self::UPDATE_AVAILABLE_CACHE_KEY, $result, self::updateCheckTtl());
+        }
+
+        return self::memoiseComposerUpdateAvailable($result);
+    }
+
+    /**
+     * Compare the locally locked commit reference against the one Packagist
+     * advertises for the installed constraint. Null when either is unresolved.
+     */
+    protected static function resolveComposerUpdateAvailable(): ?bool
+    {
         $local = self::getLocalComposerReference();
         $remote = self::getRemoteComposerReference();
 
@@ -240,5 +288,30 @@ class VersionHandler
         }
 
         return !hash_equals($local, $remote);
+    }
+
+    protected static function memoiseComposerUpdateAvailable(?bool $result): ?bool
+    {
+        self::$composerUpdateAvailableMemo = $result;
+        self::$composerUpdateAvailableResolved = true;
+
+        return $result;
+    }
+
+    /**
+     * Forget the cached update-available flag (and in-request memo) so the next
+     * check re-evaluates against the current composer.lock. Call after an update.
+     */
+    public static function clearComposerUpdateAvailableCache(): void
+    {
+        self::$composerUpdateAvailableMemo = null;
+        self::$composerUpdateAvailableResolved = false;
+
+        Cache::forget(self::UPDATE_AVAILABLE_CACHE_KEY);
+    }
+
+    protected static function updateCheckTtl(): int
+    {
+        return (int) config('wr-laravel-administration.developer.update.check_ttl', 600);
     }
 }

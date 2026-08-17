@@ -122,6 +122,10 @@ return [
         //  'blocking' - run synchronously and show the full output once finished
         'update' => [
             'mode' => 'live',
+
+            // How long (seconds) to cache the "update available" check so the version
+            // bar and the update modal stay in sync and avoid repeated Packagist hits.
+            'check_ttl' => 600,
         ],
     ],
 
