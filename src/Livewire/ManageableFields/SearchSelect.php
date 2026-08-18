@@ -80,6 +80,9 @@ class SearchSelect extends Component
     /** Search results: list of ['id' => mixed, 'label' => string, 'selected' => bool]. */
     public array $results = [];
 
+    /** The $selectedId that $selectedLabel was last resolved for; used to detect drift on render. */
+    public string $labelResolvedForId = '';
+
     public function mount(
         string $name,
         ?string $manageableModelClass = null,
@@ -131,11 +134,50 @@ class SearchSelect extends Component
         if ($this->selectedId === null && !empty($this->prependOption)) {
             $this->applyPrependSelection();
         }
+
+        $this->labelResolvedForId = (string) ($this->selectedId ?? '');
     }
 
     public function updatedSearch(): void
     {
         $this->runSearch();
+    }
+
+    /**
+     * Re-resolve the visible label whenever the selected id changes — including
+     * when a parent component pushes a new value in via wire:model (Modelable).
+     * Without this, the child keeps a stale label (e.g. the prepend "All" set at
+     * mount) after the parent hydrates its remembered filter value.
+     */
+    public function updatedSelectedId(): void
+    {
+        $this->refreshSelectedLabel();
+        $this->flagSelectedResults();
+    }
+
+    /**
+     * Resolve the label for the current $selectedId, handling null / empty /
+     * prepend-key cases.
+     */
+    protected function refreshSelectedLabel(): void
+    {
+        $id = $this->selectedId;
+
+        if ($id === null || $id === '') {
+            $this->selectedLabel = '';
+
+            return;
+        }
+
+        if ($this->isPrependKey((string) $id)) {
+            $this->applyPrependSelection();
+
+            return;
+        }
+
+        $model = $this->resolveItem((string) $id);
+
+        $this->selectedLabel = $model !== null ? $this->itemLabel($model) : '';
     }
 
     /**
@@ -304,6 +346,8 @@ class SearchSelect extends Component
             })
             ->values()
             ->all();
+
+        $this->labelResolvedForId = (string) ($this->selectedId ?? '');
     }
 
     /**
@@ -354,15 +398,15 @@ class SearchSelect extends Component
 
     public function render()
     {
-        // When the value is driven by a parent wire:model binding (rather than a
-        // local select()), the label won't have been resolved yet — resolve it here
-        // so the closed field shows the correct text.
-        if ($this->selectedId !== null && $this->selectedId !== '' && $this->selectedLabel === '') {
-            if ($this->isPrependKey((string) $this->selectedId)) {
-                $this->applyPrependSelection();
-            } else {
-                $this->applyInitialSelection((string) $this->selectedId);
-            }
+        // The label may fall out of sync with $selectedId whenever the id is set
+        // outside of a local select() call — most notably when a parent component
+        // hydrates its wire:model'd property (Modelable) after mount has already
+        // seeded a fallback label from the prepend option. Re-resolve whenever
+        // the id we last resolved a label for no longer matches the current id.
+        if ($this->labelResolvedForId !== (string) ($this->selectedId ?? '')) {
+            $this->refreshSelectedLabel();
+            $this->flagSelectedResults();
+            $this->labelResolvedForId = (string) ($this->selectedId ?? '');
         }
 
         return view(WRLAHelper::getViewPath('livewire.manageable-fields.search-select'));

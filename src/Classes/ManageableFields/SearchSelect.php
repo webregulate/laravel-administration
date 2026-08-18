@@ -275,15 +275,6 @@ class SearchSelect
     {
         $usesManageableModel = $this->manageableModel !== null;
 
-        // If an empty value is defined and the current value is empty, fall back to it.
-        if ($this->emptyValue !== null && empty($this->getValue())) {
-            $this->setAttribute('value', $this->emptyValue);
-        }
-
-        $serializedSearchQuery = null;
-        $serializedItemLabel = null;
-        $itemLabelColumn = null;
-
         // Detect a parent wire:model binding (set via setLivewireModel), so the embedded
         // Livewire component can be bound two-way to the parent's property. Without this the
         // isolated child component's value never reaches the parent component.
@@ -294,6 +285,27 @@ class SearchSelect
                 break;
             }
         }
+
+        // When acting as a browse filter, the parent's remembered/applied filter value lives
+        // in the static browseFilterValues store — adopt it as the field value so the child
+        // Livewire component mounts with the correct selection. This must happen before the
+        // emptyValue fallback below, otherwise the "all" placeholder would win and the child
+        // would show "All" even though a real filter is applied.
+        if ($wireModelTarget !== null && empty($this->getValue())) {
+            $browseFilterValue = $this->getBrowseFilterValue($this->getName());
+            if ($browseFilterValue !== null && $browseFilterValue !== '') {
+                $this->setAttribute('value', $browseFilterValue);
+            }
+        }
+
+        // If an empty value is defined and the current value is empty, fall back to it.
+        if ($this->emptyValue !== null && empty($this->getValue())) {
+            $this->setAttribute('value', $this->emptyValue);
+        }
+
+        $serializedSearchQuery = null;
+        $serializedItemLabel = null;
+        $itemLabelColumn = null;
 
         if (! $usesManageableModel) {
             if ($this->searchQueryCallable !== null) {
