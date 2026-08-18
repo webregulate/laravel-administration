@@ -49,9 +49,11 @@ class BrowseFilterSelect extends BrowseFilterBase
     ): BrowseFilter {
         $filterColumn ??= static::deriveForeignKeyColumn($source);
 
-        if ($filterColumn === null) {
+        // $filterColumn is only needed by the default filter query. A custom
+        // $filterQuery applies the value itself, so the column is optional then.
+        if ($filterColumn === null && $filterQuery === null) {
             throw new \InvalidArgumentException(
-                "BrowseFilterSelect [$alias]: a \$filterColumn is required when \$source is not a Model or ManageableModel class."
+                "BrowseFilterSelect [$alias]: a \$filterColumn is required when \$source is not a Model or ManageableModel class and no \$filterQuery is provided."
             );
         }
 
