@@ -24,7 +24,7 @@ class BrowseFilterSelect extends BrowseFilterBase
      * @param  string  $alias  Filter key/alias.
      * @param  array|Collection|string  $source  Items ([value => label]), Model::class, or ManageableModel::class.
      * @param  ?string  $displayColumn  Display column when $source is a model class (required for model sources).
-     * @param  ?string  $filterColumn  Browsed-table column matched against the value. Defaults to $alias.
+     * @param  ?string  $filterColumn  Browsed-table column matched against the value. Defaults to the source model's foreign-key column (e.g. Producer::class => "producer_id") when $source is a model class; otherwise required.
      * @param  ?string  $label  Filter label.
      * @param  ?string  $icon  Filter icon.
      * @param  array|bool  $prependAll  Prepend an "All" (clear) option. true => ['all' => 'All'], array => custom [value => label], false => none.
@@ -47,7 +47,14 @@ class BrowseFilterSelect extends BrowseFilterBase
         string $containerClass = 'flex-1',
         mixed $default = null,
     ): BrowseFilter {
-        $filterColumn ??= $alias;
+        $filterColumn ??= static::deriveForeignKeyColumn($source);
+
+        if ($filterColumn === null) {
+            throw new \InvalidArgumentException(
+                "BrowseFilterSelect [$alias]: a \$filterColumn is required when \$source is not a Model or ManageableModel class."
+            );
+        }
+
         [$allValue, $prependItems] = static::resolvePrependAll($prependAll);
 
         $field = Select::makeBrowseFilter($alias, $label, $icon, $containerClass);

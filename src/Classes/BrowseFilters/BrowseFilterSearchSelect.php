@@ -23,7 +23,7 @@ class BrowseFilterSearchSelect extends BrowseFilterBase
      * @param  string|callable  $source  Model::class, ManageableModel::class, or fn(string $term): Builder.
      * @param  string|callable|null  $itemLabel  Display column, or fn(Model $model): string. Defaults to $searchColumn.
      * @param  ?string  $searchColumn  Column searched when $source is a model class.
-     * @param  ?string  $filterColumn  Browsed-table column matched against the selected value. Defaults to $alias.
+     * @param  ?string  $filterColumn  Browsed-table column matched against the selected value. Defaults to the source model's foreign-key column (e.g. Producer::class => "producer_id") when $source is a model class; otherwise required.
      * @param  ?string  $label  Filter label.
      * @param  ?string  $icon  Filter icon.
      * @param  array|bool  $prependAll  Prepend an "All" (clear) option. true => ['all' => 'All'], array => custom [value => label], false => none.
@@ -44,7 +44,14 @@ class BrowseFilterSearchSelect extends BrowseFilterBase
         ?callable $apply = null,
         string $containerClass = 'flex-1',
     ): BrowseFilter {
-        $filterColumn ??= $alias;
+        $filterColumn ??= static::deriveForeignKeyColumn($source);
+
+        if ($filterColumn === null) {
+            throw new \InvalidArgumentException(
+                "BrowseFilterSearchSelect [$alias]: a \$filterColumn is required when \$source is not a Model or ManageableModel class."
+            );
+        }
+
         [$allValue, $allLabel] = static::resolvePrependAll($prependAll);
 
         $field = SearchSelect::makeBrowseFilter($alias, $label, $icon, $containerClass);
