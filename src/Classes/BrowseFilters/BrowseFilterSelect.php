@@ -28,9 +28,9 @@ class BrowseFilterSelect extends BrowseFilterBase
      * @param  ?string  $label  Filter label.
      * @param  ?string  $icon  Filter icon.
      * @param  array|bool  $prependAll  Prepend an "All" (clear) option. true => ['all' => 'All'], array => custom [value => label], false => none.
-     * @param  string  $operator  Comparison operator used by the default apply.
-     * @param  ?callable  $queryBuilder  fn(Builder $query): Builder to modify the option-source query (model sources only).
-     * @param  ?callable  $apply  fn(Builder $query, string $table, Collection $columns, mixed $value): Builder override.
+     * @param  string  $operator  Comparison operator used by the default filter query.
+     * @param  ?callable  $sourceQuery  fn(Builder $query): Builder to shape the dropdown's option-source query (model sources only).
+     * @param  ?callable  $filterQuery  fn(Builder $query, string $table, Collection $columns, mixed $value): Builder that applies the selected value to the browsed query (overrides the default).
      * @param  string  $containerClass  Wrapper container class.
      */
     public static function make(
@@ -42,8 +42,8 @@ class BrowseFilterSelect extends BrowseFilterBase
         ?string $icon = null,
         array|bool $prependAll = true,
         string $operator = '=',
-        ?callable $queryBuilder = null,
-        ?callable $apply = null,
+        ?callable $sourceQuery = null,
+        ?callable $filterQuery = null,
         string $containerClass = 'flex-1',
         mixed $default = null,
     ): BrowseFilter {
@@ -63,7 +63,7 @@ class BrowseFilterSelect extends BrowseFilterBase
             $field->setItemsFromModel(
                 $source,
                 $displayColumn,
-                $queryBuilder,
+                $sourceQuery,
                 $prependItems === null ? null : fn ($items) => $prependItems + $items,
             );
         } else {
@@ -81,7 +81,7 @@ class BrowseFilterSelect extends BrowseFilterBase
         }
 
         return $field->browseFilterApply(
-            $apply ?? function (Builder $query, $table, $columns, $value) use ($filterColumn, $allValue, $operator) {
+            $filterQuery ?? function (Builder $query, $table, $columns, $value) use ($filterColumn, $allValue, $operator) {
                 if ($value === null || $value === '' || ($allValue !== null && (string) $value === (string) $allValue)) {
                     return $query;
                 }

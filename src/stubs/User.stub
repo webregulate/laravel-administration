@@ -75,7 +75,7 @@ class User extends ManageableModel
                     'admins_only' => 'Admins only',
                     'non_admins_only' => 'Non admins only',
                 ],
-                apply: function(Builder $query, $table, $columns, $value) {
+                filterQuery: function(Builder $query, $table, $columns, $value) {
                     return match($value) {
                         'admins_only' => $query->where('permissions->admin', true),
                         'non_admins_only' => $query->where(fn($query) => $query->whereNull('permissions->admin')->orWhere('permissions->admin', false)),
