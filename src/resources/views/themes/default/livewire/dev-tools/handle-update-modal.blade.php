@@ -61,28 +61,18 @@
                             </span>
                         @else
                             <span class="text-white font-semibold text-sm">WRLA Update Available</span>
-                            <div x-data="{ latestVersion: null }"
-                                x-init="fetch('https://webregulate.github.io/laravel-administration/versions.json')
-                                    .then(r => r.json())
-                                    .then(d => { latestVersion = d[0]?.version ?? null; })
-                                    .catch(() => {})
-                                ">
-                                <template x-if="latestVersion">
-                                    <span class="text-amber-400 text-sm">
-                                        <span x-text="`v${latestVersion} — `" class="text-white"></span>
-                                        <a :href="`https://webregulate.github.io/laravel-administration/#versions/v${latestVersion}.html`"
-                                            target="_blank"
-                                            class="inline-flex items-center gap-1 underline hover:text-amber-300"
-                                        >
-                                            <i class="fa-solid fa-arrow-up-right-from-square text-xs mr-1"></i>
-                                            <span>Review changes before updating</span>
-                                        </a>
-                                    </span>
-                                </template>
-                                <template x-if="!latestVersion">
-                                    <span class="text-slate-400 text-xs">Fetching latest version...</span>
-                                </template>
-                            </div>
+                            @if($latestVersion)
+                                <span class="text-amber-400 text-sm">
+                                    <span class="text-white">v{{ $latestVersion }} &mdash; </span>
+                                    <a href="https://webregulate.github.io/laravel-administration/#versions/v{{ $latestVersion }}.html"
+                                        target="_blank"
+                                        class="inline-flex items-center gap-1 underline hover:text-amber-300"
+                                    >
+                                        <i class="fa-solid fa-arrow-up-right-from-square text-xs mr-1"></i>
+                                        <span>Review changes before updating</span>
+                                    </a>
+                                </span>
+                            @endif
                             <button wire:click="runComposerOnly" wire:loading.attr="disabled" wire:target="runComposerOnly"
                                 class="mt-1 whitespace-nowrap disabled:opacity-50 text-emerald-400 hover:text-emerald-500 text-sm font-medium transition-colors inline-flex items-center gap-2">
                                 <span wire:loading.remove wire:target="runComposerOnly" class="inline-flex items-center gap-2">

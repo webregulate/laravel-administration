@@ -60,7 +60,8 @@ class DocumentationApp {
             {
                 title: 'Versions',
                 items: [
-                    { title: 'Version History', url: 'versions/versions.html' }
+                    { title: 'Version History', url: 'versions/versions.html' },
+                    { title: 'Releasing a Version', url: 'versions/releasing.html' }
                 ]
             }
         ];
@@ -138,6 +139,54 @@ class DocumentationApp {
             this.loadVersionsList();
         } else if (/^versions\/v[\d.]+\.html$/.test(this.currentPage)) {
             this.loadVersionDetail();
+        } else if (this.currentPage === 'versions/releasing.html') {
+            this.loadLatestVersion();
+        }
+    }
+
+    // Package name on Packagist. Its published versions mirror the repository's
+    // public git tags, so the docs derive their version history straight from there.
+    get packagistPackage() {
+        return 'webregulate/laravel-administration';
+    }
+
+    // Compare two dotted numeric version strings. Returns >0 when a is newer.
+    compareVersions(a, b) {
+        const pa = String(a).split('.').map(Number);
+        const pb = String(b).split('.').map(Number);
+        const len = Math.max(pa.length, pb.length);
+        for (let i = 0; i < len; i++) {
+            const diff = (pa[i] || 0) - (pb[i] || 0);
+            if (diff !== 0) return diff;
+        }
+        return 0;
+    }
+
+    // Fetch the package's tagged versions from Packagist, newest first.
+    // Packagist's p2 metadata is CORS-enabled and always exposes `version` + `time`
+    // per release, so no bundled versions.json is required.
+    async fetchTaggedVersions() {
+        const url = `https://repo.packagist.org/p2/${this.packagistPackage}.json`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to load');
+        const data = await response.json();
+        const raw = data.packages?.[this.packagistPackage] ?? [];
+        return raw
+            .filter(v => v.version && !/dev/i.test(v.version_normalized || v.version))
+            .map(v => ({ version: String(v.version).replace(/^v/i, ''), date: (v.time || '').slice(0, 10) }))
+            .sort((a, b) => this.compareVersions(b.version, a.version));
+    }
+
+    // Populate [data-latest-version] on the releasing page with the newest tag
+    async loadLatestVersion() {
+        const el = document.querySelector('[data-latest-version]');
+        if (!el) return;
+        try {
+            const versions = await this.fetchTaggedVersions();
+            const latest = versions[0];
+            el.textContent = latest ? `v${latest.version}` : 'No tags published yet';
+        } catch {
+            el.textContent = 'Unable to load';
         }
     }
 
@@ -147,26 +196,21 @@ class DocumentationApp {
         if (!match) return;
         const version = match[1];
         try {
-            const response = await fetch('versions.json');
-            if (!response.ok) throw new Error();
-            const versions = await response.json();
+            const versions = await this.fetchTaggedVersions();
             const entry = versions.find(v => v.version === version);
-            if (!entry) return;
             const numEl = document.querySelector('[data-version-number]');
             const dateEl = document.querySelector('[data-version-date]');
-            if (numEl) numEl.textContent = `v${entry.version}`;
-            if (dateEl) dateEl.textContent = entry.date;
+            if (numEl) numEl.textContent = `v${version}`;
+            if (dateEl && entry) dateEl.textContent = entry.date;
         } catch { /* fail silently */ }
     }
 
-    // Fetch versions.json and render the list into #versions-list
+    // Fetch the tagged versions and render the list into #versions-list
     async loadVersionsList() {
         const container = document.getElementById('versions-list');
         if (!container) return;
         try {
-            const response = await fetch('versions.json');
-            if (!response.ok) throw new Error('Failed to load');
-            const versions = await response.json();
+            const versions = await this.fetchTaggedVersions();
             if (!Array.isArray(versions) || !versions.length) {
                 container.innerHTML = '<p class="text-gray-500 italic">No versions recorded yet.</p>';
                 return;

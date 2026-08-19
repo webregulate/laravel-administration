@@ -1,0 +1,86 @@
+<h1 class="docs-title"><i class="fa-solid fa-tag mr-3 text-primary-500"></i>Releasing a Version</h1>
+<p class="docs-lead">
+    Versioning is driven entirely by public <strong>git tags</strong> (published to Packagist).
+    There is no <code class="docs-inline-code">versions.json</code> to maintain &mdash; the version
+    bar, update modal and this documentation all read the tags directly.
+</p>
+
+<div class="docs-callout docs-callout-info">
+    <div class="docs-callout-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+    </div>
+    <div class="docs-callout-body">
+        Current latest tagged version:
+        <span data-latest-version class="font-semibold text-primary-600">Loading&hellip;</span>
+        <span class="text-gray-500">(pulled live from Packagist)</span>
+    </div>
+</div>
+
+<!-- Step 1 -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <span class="docs-step-badge">1</span>
+        Merge your changes into main
+    </h2>
+    <p class="docs-body">
+        Get all of the changes for this release onto the <code class="docs-inline-code">main</code>
+        branch as you normally would.
+    </p>
+</div>
+
+<!-- Step 2 -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <span class="docs-step-badge">2</span>
+        Add the release notes page
+    </h2>
+    <p class="docs-body">
+        Copy an existing release page and rename it to the new version, eg.
+        <code class="docs-inline-code">docs/pages/versions/v0.9.03.html</code>, then fill in the
+        breaking changes, features and fixes. It links into the
+        <a href="versions/versions.html" class="docs-link">Version History</a> automatically.
+    </p>
+</div>
+
+<!-- Step 3 -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <span class="docs-step-badge">3</span>
+        Tag and push
+    </h2>
+    <div class="docs-code-block">
+        <pre><code>git tag 0.9.03
+git push origin main --tags</code></pre>
+    </div>
+</div>
+
+<!-- Step 4 -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <span class="docs-step-badge">4</span>
+        Let Packagist pick it up
+    </h2>
+    <p class="docs-body">
+        Packagist detects the new tag automatically via its GitHub webhook, usually within a minute.
+        Consuming apps whose constraint allows it (eg. <code class="docs-inline-code">^0.9.03</code>)
+        then see the update in the WRLA version bar and can apply it with <strong>Update WRLA</strong>
+        or <code class="docs-inline-code">php artisan wrla:update</code>.
+    </p>
+</div>
+
+<!-- SemVer callout -->
+<div class="docs-callout docs-callout-info">
+    <div class="docs-callout-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+        </svg>
+    </div>
+    <div class="docs-callout-body">
+        Follow <a href="https://semver.org" target="_blank" class="docs-link">SemVer</a>:
+        patch (<code class="docs-inline-code">0.9.03 &rarr; 0.9.04</code>) for fixes,
+        minor (<code class="docs-inline-code">0.9 &rarr; 0.10</code>) for features,
+        major for breaking changes.
+    </div>
+</div>

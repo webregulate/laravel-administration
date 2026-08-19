@@ -19,6 +19,7 @@ class HandleUpdateModal extends ModalComponent
     public bool $authorised = true;
     public bool $updateCompleted = false;
     public ?bool $composerUpdateAvailable = null;
+    public ?string $latestVersion = null;
 
     public function mount()
     {
@@ -35,6 +36,9 @@ class HandleUpdateModal extends ModalComponent
         }
 
         $this->composerUpdateAvailable = VersionHandler::isComposerUpdateAvailable();
+
+        $latest = VersionHandler::getLatestWrlaVersion();
+        $this->latestVersion = $latest['version'] ?? null;
 
         $version = VersionHandler::$localPackageCurrentVersion ?? 'unknown';
         $this->consoleOutput = 'Installed package version: ' . $version . PHP_EOL;

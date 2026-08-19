@@ -10,7 +10,7 @@
             @if($WRLAHelper::showVersionUpdateBar())
                 @php
                     $versionHandlerClass = \WebRegulate\LaravelAdministration\Classes\VersionHandler\VersionHandler::class;
-                    $localComposerVersion = $versionHandlerClass::$localPackageCurrentVersion;
+                    $localComposerVersion = $versionHandlerClass::getLocalVersion();
                     $updateAvailable = $versionHandlerClass::isComposerUpdateAvailable() === true;
                     $wrlaVersion = $versionHandlerClass::getLatestWrlaVersion();
                 @endphp
@@ -23,9 +23,9 @@
                     @else
                         <i class="fas fa-code-branch text-xs mr-1"></i>
                     @endif
-                    Version: {{ $localComposerVersion }}{{ $wrlaVersion ? ' (v' . $wrlaVersion['version'] . ')' : '' }}
+                    Version: {{ $localComposerVersion ? 'v' . $localComposerVersion : 'unknown' }}
                     @if($updateAvailable)
-                        <span class="pl-1.5 text-sky-600 font-semibold">(update available)</span>
+                        <span class="pl-1.5 text-sky-600 font-semibold">(update available{{ $wrlaVersion ? ': v' . $wrlaVersion['version'] : '' }})</span>
                     @endif
                 </button>
             @endif

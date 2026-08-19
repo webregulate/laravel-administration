@@ -19,6 +19,12 @@ class VersionHandler
      */
     private const UPDATE_AVAILABLE_CACHE_KEY = 'wrla.version.composer_update_available';
 
+    /**
+     * Cache key holding the latest stable tagged version Packagist advertises, so the
+     * version bar, update modal and CLI all report the same "latest version".
+     */
+    private const LATEST_VERSION_CACHE_KEY = 'wrla.version.latest_remote_version';
+
     public static $localPackageCurrentVersion = null;
 
     /**
@@ -105,64 +111,62 @@ class VersionHandler
     }
 
     /**
-     * Resolve the version constraint the root project requires for WRLA (eg.
-     * "dev-main"). Falls back to "dev-main" when it cannot be determined.
+     * Resolve the tagged version of WRLA currently installed, as recorded in
+     * composer.lock. Strips any leading "v" so it can be compared with
+     * version_compare. Returns null when it cannot be determined.
      */
-    public static function getRequiredPackageConstraint(): string
+    public static function getLocalVersion(): ?string
     {
-        $composerJsonPath = base_path('composer.json');
-
-        if (file_exists($composerJsonPath)) {
-            $data = json_decode(file_get_contents($composerJsonPath), true) ?: [];
-            $constraint = $data['require'][self::PACKAGE_NAME]
-                ?? $data['require-dev'][self::PACKAGE_NAME]
-                ?? null;
-
-            if (is_string($constraint) && trim($constraint) !== '') {
-                return trim($constraint);
-            }
+        if (self::$localPackageCurrentVersion === null) {
+            self::buildLocalAndRemotePackageInformation();
         }
 
-        return 'dev-main';
-    }
+        $version = self::$localPackageCurrentVersion;
 
-    /**
-     * Resolve the git commit reference (the "hash version") that the locally
-     * installed WRLA package is locked to, as recorded in composer.lock.
-     *
-     * Returns null when composer.lock is missing or the package is not present.
-     */
-    public static function getLocalComposerReference(): ?string
-    {
-        $composerLockPath = base_path('composer.lock');
-
-        if (!file_exists($composerLockPath)) {
+        if (!is_string($version) || trim($version) === '') {
             return null;
         }
 
-        $composerData = json_decode(file_get_contents($composerLockPath), true) ?: [];
-
-        foreach (array_merge($composerData['packages'] ?? [], $composerData['packages-dev'] ?? []) as $package) {
-            if (($package['name'] ?? null) === self::PACKAGE_NAME) {
-                return $package['dist']['reference']
-                    ?? $package['source']['reference']
-                    ?? null;
-            }
-        }
-
-        return null;
+        return ltrim(trim($version), 'vV');
     }
 
     /**
-     * Fetch the latest git commit reference Packagist advertises for the package's
-     * installed constraint (dev-main by default).
+     * Fetch the latest stable tagged release Packagist advertises for the package.
+     * Packagist tags mirror the repository's public git tags, so this is the single
+     * source of truth for "what is the newest published version".
      *
-     * Returns null on any failure so callers can degrade gracefully.
+     * Cached for the configured TTL so the version bar and modal stay in sync and we
+     * avoid repeated network calls. Returns null on any failure so callers degrade
+     * gracefully rather than wrongly claiming a version.
+     *
+     * @return array{version: string, date: ?string}|null
      */
-    public static function getRemoteComposerReference(): ?string
+    public static function getLatestWrlaVersion(): ?array
     {
-        $constraint = self::getRequiredPackageConstraint();
+        $cached = Cache::get(self::LATEST_VERSION_CACHE_KEY);
 
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $latest = self::fetchLatestRemoteVersion();
+
+        // Only cache a definitive answer - a transient network failure should be
+        // retried next request rather than cached as "unknown".
+        if ($latest !== null) {
+            Cache::put(self::LATEST_VERSION_CACHE_KEY, $latest, self::updateCheckTtl());
+        }
+
+        return $latest;
+    }
+
+    /**
+     * Query Packagist's metadata for the highest stable tagged version.
+     *
+     * @return array{version: string, date: ?string}|null
+     */
+    protected static function fetchLatestRemoteVersion(): ?array
+    {
         try {
             $ctx = stream_context_create(['http' => [
                 'timeout' => 5,
@@ -170,9 +174,9 @@ class VersionHandler
                 'header' => "User-Agent: wr-laravel-administration\r\n",
             ]]);
 
-            // Dev versions (eg. dev-main) live in the ~dev metadata file.
+            // Stable tagged versions live in the main (non ~dev) metadata file.
             $json = @file_get_contents(
-                'https://repo.packagist.org/p2/' . self::PACKAGE_NAME . '~dev.json',
+                'https://repo.packagist.org/p2/' . self::PACKAGE_NAME . '.json',
                 false,
                 $ctx
             );
@@ -188,56 +192,38 @@ class VersionHandler
                 return null;
             }
 
-            // Prefer the version matching the root constraint (eg. dev-main).
-            foreach ($versions as $version) {
-                if (($version['version'] ?? null) === $constraint) {
-                    return $version['dist']['reference']
-                        ?? $version['source']['reference']
-                        ?? null;
+            $latestVersion = null;
+            $latestDate = null;
+
+            foreach ($versions as $entry) {
+                $version = $entry['version'] ?? null;
+                $normalized = $entry['version_normalized'] ?? $version;
+
+                if (!is_string($version) || $version === '') {
+                    continue;
+                }
+
+                // Ignore branch / dev releases (eg. dev-main) - we only track tags.
+                if (is_string($normalized) && str_contains($normalized, 'dev')) {
+                    continue;
+                }
+
+                $clean = ltrim($version, 'vV');
+
+                if ($latestVersion === null || version_compare($clean, $latestVersion, '>')) {
+                    $latestVersion = $clean;
+                    $latestDate = isset($entry['time']) ? substr((string) $entry['time'], 0, 10) : null;
                 }
             }
 
-            // Fall back to the most recent dev version Packagist returned.
-            return $versions[0]['dist']['reference']
-                ?? $versions[0]['source']['reference']
-                ?? null;
+            if ($latestVersion === null) {
+                return null;
+            }
+
+            return ['version' => $latestVersion, 'date' => $latestDate];
         } catch (\Throwable) {
             return null;
         }
-    }
-
-    /**
-     * Read all entries from the bundled docs/versions.json file.
-     *
-     * @return array<int, array{version: string, date: string}>
-     */
-    public static function getVersionsJsonData(): array
-    {
-        $path = __DIR__ . '/../../../docs/versions.json';
-
-        if (!file_exists($path)) {
-            return [];
-        }
-
-        return json_decode(file_get_contents($path), true) ?: [];
-    }
-
-    /**
-     * Return the latest (highest version number) entry from docs/versions.json.
-     *
-     * @return array{version: string, date: string}|null
-     */
-    public static function getLatestWrlaVersion(): ?array
-    {
-        $versions = self::getVersionsJsonData();
-
-        if (empty($versions)) {
-            return null;
-        }
-
-        usort($versions, fn($a, $b) => version_compare($b['version'], $a['version']));
-
-        return $versions[0];
     }
 
     /**
@@ -275,19 +261,26 @@ class VersionHandler
     }
 
     /**
-     * Compare the locally locked commit reference against the one Packagist
-     * advertises for the installed constraint. Null when either is unresolved.
+     * Whether Packagist advertises a newer stable tag than the version currently
+     * installed (from composer.lock). Null when either side is unresolved so the UI
+     * can degrade gracefully rather than wrongly claim the package is up to date.
      */
     protected static function resolveComposerUpdateAvailable(): ?bool
     {
-        $local = self::getLocalComposerReference();
-        $remote = self::getRemoteComposerReference();
+        $local = self::getLocalVersion();
+        $latest = self::getLatestWrlaVersion();
 
-        if ($local === null || $remote === null) {
+        if ($local === null || $latest === null || empty($latest['version'])) {
             return null;
         }
 
-        return !hash_equals($local, $remote);
+        // A non-numeric local version (eg. a legacy dev-main install) should be
+        // nudged onto a tagged release.
+        if (!preg_match('/^\d+(\.\d+)*/', $local)) {
+            return true;
+        }
+
+        return version_compare($latest['version'], $local, '>');
     }
 
     protected static function memoiseComposerUpdateAvailable(?bool $result): ?bool
@@ -308,6 +301,7 @@ class VersionHandler
         self::$composerUpdateAvailableResolved = false;
 
         Cache::forget(self::UPDATE_AVAILABLE_CACHE_KEY);
+        Cache::forget(self::LATEST_VERSION_CACHE_KEY);
     }
 
     protected static function updateCheckTtl(): int
