@@ -1,7 +1,7 @@
 <x-wrla-modal-layout title="Developer Tools" icon="fa-solid fa-screwdriver-wrench">
 
     @if(!$authorised)
-        <div class="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-sm inline-flex items-center gap-2">
+        <div class="p-4 rounded-lg bg-sky-50 dark:bg-sky-900/20 border border-sky-300 dark:border-sky-700 text-sky-700 dark:text-sky-300 text-sm inline-flex items-center gap-2">
             <i class="fa-solid fa-lock"></i> Developer tools are not available for your account.
         </div>
     @else
@@ -24,7 +24,7 @@
             <div>
                 @if($composerUpdateAvailable === true || $running)
                     @if($running && $runType === 'update')
-                        <span class="inline-flex items-center gap-2 text-amber-500 text-sm">
+                        <span class="inline-flex items-center gap-2 text-sky-500 text-sm">
                             <i class="fa-solid fa-hourglass animate-spin"></i>
                             <span class="font-medium">Update running...</span>
                         </span>
@@ -32,11 +32,11 @@
                         <div class="flex flex-col gap-1">
                             <span class="text-slate-700 dark:text-white font-semibold text-sm">WRLA Update Available</span>
                             @if($latestVersion)
-                                <span class="text-amber-600 dark:text-amber-400 text-sm">
+                                <span class="text-sky-600 dark:text-sky-400 text-sm">
                                     <span class="text-slate-700 dark:text-white">v{{ $latestVersion }} &mdash; </span>
                                     <a href="https://webregulate.github.io/laravel-administration/#versions/v{{ $latestVersion }}.html"
                                         target="_blank"
-                                        class="inline-flex items-center gap-1 underline hover:text-amber-500">
+                                        class="inline-flex items-center gap-1 underline hover:text-sky-500">
                                         <i class="fa-solid fa-arrow-up-right-from-square text-xs mr-1"></i>
                                         <span>Review changes before updating</span>
                                     </a>
@@ -71,7 +71,9 @@
             <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2 mb-1">
                 <i class="fa-solid fa-terminal text-sky-600"></i> Commands
             </h3>
-            <p class="text-sm text-slate-600 dark:text-slate-300 mb-3">Run a configured command and watch its output live.</p>
+            <p class="text-sm text-slate-600 dark:text-slate-300 mb-3">
+                Configured commands: <code class="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs">wr-laravel-administration.developer.commands</code>.
+            </p>
 
             @if(count($commands) === 0)
                 <p class="text-sm text-slate-500 dark:text-slate-400 italic">No developer commands configured.</p>
@@ -90,7 +92,7 @@
                                     {{ $cmd['label'] }}
                                 </span>
                                 <span wire:loading wire:target="runCommand({{ $cmd['index'] }})">
-                                    <i class="fa-solid fa-hourglass animate-spin text-amber-500 text-xs"></i>
+                                    <i class="fa-solid fa-hourglass animate-spin text-sky-500 text-xs"></i>
                                 </span>
                             </span>
                             <code class="block text-xs text-slate-500 dark:text-slate-400 truncate">
@@ -108,7 +110,7 @@
         <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
             Console Output:
             @if($running)
-                <span class="inline-flex items-center text-amber-400 text-sm font-normal">
+                <span class="inline-flex items-center text-sky-400 text-sm font-normal">
                     <span class="mr-2"><i class="fa-solid fa-hourglass animate-spin"></i></span>
                     <span class="font-medium">{{ $runningLabel ? $runningLabel . ' running...' : 'Running...' }}</span>
                 </span>
