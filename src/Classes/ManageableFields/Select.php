@@ -135,8 +135,11 @@ class Select
             return $this;
         }
 
-        // If $this->htmlAttributes['value'] is not set, set it to the first key in the items array
-        if (! isset($this->htmlAttributes['value']) || empty($this->getAttribute('value'))) {
+        // Only fall back to the first item when no value has been set. We must not use empty()
+        // here because a legitimately selected value of 0 / '0' (eg. a boolean "No") is truthy
+        // as a selection but empty() would treat it as unset and overwrite it with the first key.
+        $currentValue = $this->getAttribute('value');
+        if ($currentValue === null || $currentValue === '') {
             $this->setAttribute('value', array_key_first($this->items));
         }
 
