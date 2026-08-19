@@ -21,7 +21,7 @@
             </h3>
             <p class="text-sm text-slate-600 dark:text-slate-300 mb-3">Keep the administration package up to date.</p>
 
-            <div class="mt-auto">
+            <div>
                 @if($composerUpdateAvailable === true || $running)
                     @if($running && $runType === 'update')
                         <span class="inline-flex items-center gap-2 text-amber-500 text-sm">
@@ -56,7 +56,10 @@
                         </div>
                     @endif
                 @elseif($composerUpdateAvailable === false)
-                    <span class="inline-flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm"><i class="fa-solid fa-circle-check"></i> WRLA package is up to date.</span>
+                    <span class="inline-flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
+                        <i class="fa-solid fa-circle-check"></i>
+                        WRLA package is up to date.
+                    </span>
                 @else
                     <span class="inline-flex items-center gap-2 text-slate-400 text-sm"><i class="fa-solid fa-circle-question"></i> Could not check composer status.</span>
                 @endif
