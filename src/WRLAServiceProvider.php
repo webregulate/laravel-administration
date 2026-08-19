@@ -30,7 +30,6 @@ use WebRegulate\LaravelAdministration\Http\Middleware\IsNotAdmin;
 use WebRegulate\LaravelAdministration\Livewire\NotificationsWidget;
 use WebRegulate\LaravelAdministration\Livewire\ImportDataModal;
 use WebRegulate\LaravelAdministration\Livewire\DevTools\DevToolsModal;
-use WebRegulate\LaravelAdministration\Livewire\DevTools\HandleUpdateModal;
 use WebRegulate\LaravelAdministration\Classes\VersionHandler\VersionHandler;
 use WebRegulate\LaravelAdministration\Commands\CreateManageableModelCommand;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItem;
@@ -49,8 +48,9 @@ class WRLAServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Merge config
-        $this->mergeConfigFrom(__DIR__ . '/config/wr-laravel-administration.php', 'wr-laravel-administration');
+        // Merge config (recursively, so nested package defaults such as developer.commands
+        // are preserved when the site config only overrides some keys of a nested array).
+        $this->deepMergeConfigFrom(__DIR__ . '/config/wr-laravel-administration.php', 'wr-laravel-administration');
 
         // Register Livewire
         $this->app->register(\Livewire\LivewireServiceProvider::class);
@@ -69,6 +69,54 @@ class WRLAServiceProvider extends ServiceProvider
             // Check show and enabled condition enabled
             return $logsNavigationItem->checkShowCondition() && $logsNavigationItem->checkEnabledCondition();
         });
+    }
+
+    /**
+     * Merge the package config into the app config recursively. Unlike Laravel's
+     * mergeConfigFrom (a shallow array_merge), this preserves nested package defaults
+     * (eg. developer.commands) when the site config only overrides some keys of a
+     * nested associative array. The site config always wins on conflicting scalar and
+     * list values.
+     */
+    protected function deepMergeConfigFrom(string $path, string $key): void
+    {
+        if ($this->app instanceof \Illuminate\Contracts\Foundation\CachesConfiguration && $this->app->configurationIsCached()) {
+            return;
+        }
+
+        $config = $this->app->make('config');
+
+        $config->set($key, $this->deepMergeConfig(require $path, $config->get($key, [])));
+    }
+
+    /**
+     * Recursively merge $override (site config) into $default (package config).
+     * Associative arrays are merged key by key; scalar values and list arrays in
+     * $override replace those in $default.
+     */
+    protected function deepMergeConfig(array $default, array $override): array
+    {
+        foreach ($override as $key => $value) {
+            if (
+                is_int($key)
+                || !array_key_exists($key, $default)
+                || !is_array($value)
+                || !is_array($default[$key])
+                || array_is_list($value)
+                || array_is_list($default[$key])
+            ) {
+                if (is_int($key)) {
+                    $default[] = $value;
+                } else {
+                    $default[$key] = $value;
+                }
+                continue;
+            }
+
+            $default[$key] = $this->deepMergeConfig($default[$key], $value);
+        }
+
+        return $default;
     }
 
     /**
@@ -202,7 +250,6 @@ class WRLAServiceProvider extends ServiceProvider
         Livewire::component('wrla.notifications-widget', NotificationsWidget::class);
         Livewire::component('wrla.import-data-modal', ImportDataModal::class);
         Livewire::component('wrla.dev-tools.dev-tools-modal', DevToolsModal::class);
-        Livewire::component('wrla.dev-tools.handle-update-modal', HandleUpdateModal::class);
         Livewire::component('wrla.wire-elements-modal', \LivewireUI\Modal\Modal::class);
         Livewire::component('wrla.manageable-fields.searchable-value', SearchableValue::class);
         Livewire::component('wrla.manageable-fields.search-select', SearchSelect::class);

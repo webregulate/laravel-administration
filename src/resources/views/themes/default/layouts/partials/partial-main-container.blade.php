@@ -15,7 +15,7 @@
                     $wrlaVersion = $versionHandlerClass::getLatestWrlaVersion();
                 @endphp
                 <button type="button"
-                    onclick="window.loadLivewireModal(this, 'dev-tools.handle-update-modal')"
+                    onclick="window.loadLivewireModal(this, 'dev-tools.dev-tools-modal')"
                     class="hidden md:inline-flex items-center pl-6 text-xs text-gray-600 hover:text-sky-600 dark:hover:text-slate-400 transition-colors whitespace-nowrap cursor-pointer"
                     title="{{ $updateAvailable ? 'Pending version updates are available to run' : 'No pending updates' }}">
                     @if($updateAvailable)

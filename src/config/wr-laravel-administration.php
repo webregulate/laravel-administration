@@ -127,6 +127,15 @@ return [
             // bar and the update modal stay in sync and avoid repeated Packagist hits.
             'check_ttl' => 600,
         ],
+
+        // Commands that can be run from the developer tools modal, with optional arguments.
+        'commands' => [
+            [
+                'command' => 'php artisan optimize:clear',
+                'label' => 'Clear All Cache',
+                'condition' => true,
+            ],
+        ],
     ],
 
     // Documentation configuration

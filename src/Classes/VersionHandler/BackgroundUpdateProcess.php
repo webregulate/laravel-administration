@@ -28,11 +28,29 @@ class BackgroundUpdateProcess
      */
     public function start(string $logPath, string $doneMarker, string $artisanArgs): void
     {
+        $commandLine = '"' . $this->phpBinary() . '" "' . base_path('artisan') . '" ' . $artisanArgs;
+
+        $this->startRaw($logPath, $doneMarker, $commandLine);
+    }
+
+    /**
+     * Launch an arbitrary command line detached from the current request, streaming its
+     * output to the log followed by the completion marker. Used by the dev-tools modal so
+     * developers can run any configured command (not just artisan) and watch it live.
+     *
+     * @param string $logPath     Absolute path the process should append its output to.
+     * @param string $doneMarker  Marker line written to the log once the command finishes.
+     * @param string $commandLine The full command line to execute, e.g. "php artisan optimize:clear".
+     *
+     * @throws RuntimeException If the platform offers no usable way to spawn a detached process.
+     */
+    public function startRaw(string $logPath, string $doneMarker, string $commandLine): void
+    {
         // Fresh log for this run
         @mkdir(dirname($logPath), 0775, true);
         file_put_contents($logPath, '');
 
-        $script = $this->writeLauncherScript($logPath, $doneMarker, $artisanArgs);
+        $script = $this->writeLauncherScript($logPath, $doneMarker, $commandLine);
 
         $this->spawnDetached($script);
     }
@@ -67,21 +85,22 @@ class BackgroundUpdateProcess
      *
      * @return string Absolute path to the written script.
      */
-    protected function writeLauncherScript(string $logPath, string $doneMarker, string $artisanArgs): string
+    protected function writeLauncherScript(string $logPath, string $doneMarker, string $commandLine): string
     {
-        $php = $this->phpBinary();
-        $artisan = base_path('artisan');
         $dir = dirname($logPath);
+        $basePath = base_path();
 
         if ($this->isWindows()) {
             $scriptPath = $dir . DIRECTORY_SEPARATOR . 'run-update.bat';
             $script = "@echo off\r\n"
-                . "\"{$php}\" \"{$artisan}\" {$artisanArgs} >> \"{$logPath}\" 2>&1\r\n"
+                . "cd /d \"{$basePath}\"\r\n"
+                . "{$commandLine} >> \"{$logPath}\" 2>&1\r\n"
                 . "echo {$doneMarker}>> \"{$logPath}\"\r\n";
         } else {
             $scriptPath = $dir . DIRECTORY_SEPARATOR . 'run-update.sh';
             $script = "#!/bin/sh\n"
-                . "\"{$php}\" \"{$artisan}\" {$artisanArgs} >> \"{$logPath}\" 2>&1\n"
+                . "cd \"{$basePath}\"\n"
+                . "{$commandLine} >> \"{$logPath}\" 2>&1\n"
                 . "echo \"{$doneMarker}\" >> \"{$logPath}\"\n";
         }
 
