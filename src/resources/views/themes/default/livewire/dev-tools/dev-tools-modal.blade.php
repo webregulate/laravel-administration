@@ -152,6 +152,4 @@
 
     @endif
 
-    <br />
-
 </x-wrla-modal-layout>
