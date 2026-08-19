@@ -234,6 +234,13 @@ trait ManageableField
             $value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
 
+        // Preserve boolean values (eg. Eloquent 'boolean' cast) as '1'/'0' before they reach the
+        // constructor's ?string $value param. Otherwise PHP coerces false to '' which is then
+        // indistinguishable from an unset value, causing eg. Select to wrongly fall back to its first option.
+        if(is_bool($value)) {
+            $value = $value ? '1' : '0';
+        }
+
         $manageableField = new static($column, $value, $manageableModel);
 
         // If value was an array (eg. Eloquent array/json cast), decode the submitted JSON string back to an
