@@ -18,23 +18,37 @@ class BrowseFilterText extends BrowseFilterBase
      *  - A callable which overrides the query behaviour entirely
      *
      * @param  string  $alias  Filter key/alias.
-     * @param  string|array|callable  $columns  Column, list of columns (dot-notation for relationships), or an apply override of the form fn(Builder $query, string $table, Collection $columns, mixed $value): Builder.
+     * @param  string|array|callable|null  $columns  Column, list of columns (dot-notation for relationships), or an apply override of the form fn(Builder $query, string $table, Collection $columns, mixed $value): Builder. Optional when $filterQuery is provided.
      * @param  ?string  $label  Filter label.
      * @param  ?string  $icon  Filter icon.
      * @param  string  $operator  Comparison operator used to match each column. 'like' wraps the value in wildcards.
      * @param  string  $containerClass  Wrapper container class.
      * @param  mixed  $default  Default filter value.
+     * @param  ?callable  $filterQuery  fn(Builder $query, string $table, Collection $columns, mixed $value): Builder that applies the value to the browsed query (overrides the default column matching).
      */
     public static function make(
         string $alias,
-        string|array|callable $columns,
+        string|array|callable|null $columns = null,
         ?string $label = null,
         ?string $icon = null,
         string $operator = 'like',
         string $containerClass = 'flex-1',
         mixed $default = null,
         ?string $placeholder = null,
+        ?callable $filterQuery = null,
     ): BrowseFilter {
+        // A callable passed as $columns is treated as the apply override.
+        if (is_callable($columns)) {
+            $filterQuery = $columns;
+            $columns = null;
+        }
+
+        if ($columns === null && $filterQuery === null) {
+            throw new \InvalidArgumentException(
+                "BrowseFilterText [$alias]: \$columns is required when no \$filterQuery is provided."
+            );
+        }
+
         $field = Text::makeBrowseFilter($alias, $label, $icon, $containerClass)
             ->setAttributes([
                 'placeholder' => $placeholder ?? 'Filter...',
@@ -45,9 +59,9 @@ class BrowseFilterText extends BrowseFilterBase
             $field->default($default);
         }
 
-        // A callable is used verbatim as the apply override.
-        if (is_callable($columns)) {
-            return $field->browseFilterApply($columns);
+        // A custom filter query overrides the default column matching entirely.
+        if ($filterQuery !== null) {
+            return $field->browseFilterApply($filterQuery);
         }
 
         $filterColumns = (array) $columns;
