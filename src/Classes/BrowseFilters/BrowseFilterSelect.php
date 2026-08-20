@@ -101,6 +101,95 @@ class BrowseFilterSelect extends BrowseFilterBase
     }
 
     /**
+     * Build a <select> dropdown browse filter from an inline option list.
+     *
+     * Thin, strongly-typed wrapper around make() for the array/Collection case.
+     *
+     * @param  string  $alias  Filter key/alias.
+     * @param  array|Collection  $source  Options in [value => label] format.
+     * @param  ?string  $filterColumn  Browsed-table column matched against the value. Required unless $filterQuery is provided.
+     * @param  ?string  $label  Filter label.
+     * @param  ?string  $icon  Filter icon.
+     * @param  array|bool  $prependAll  Prepend an "All" (clear) option. true => ['all' => 'All'], array => custom [value => label], false => none.
+     * @param  string  $operator  Comparison operator used by the default filter query.
+     * @param  ?callable  $filterQuery  fn(Builder $query, string $table, Collection $columns, mixed $value): Builder that applies the selected value to the browsed query (overrides the default).
+     * @param  string  $containerClass  Wrapper container class.
+     */
+    public static function makeArray(
+        string $alias,
+        array|Collection $source,
+        ?string $filterColumn = null,
+        ?string $label = null,
+        ?string $icon = null,
+        array|bool $prependAll = true,
+        string $operator = '=',
+        ?callable $filterQuery = null,
+        string $containerClass = 'flex-1',
+        mixed $default = null,
+    ): BrowseFilter {
+        return static::make(
+            alias: $alias,
+            source: $source,
+            filterColumn: $filterColumn,
+            label: $label,
+            icon: $icon,
+            prependAll: $prependAll,
+            operator: $operator,
+            filterQuery: $filterQuery,
+            containerClass: $containerClass,
+            default: $default,
+        );
+    }
+
+    /**
+     * Build a <select> dropdown browse filter with options sourced from a model.
+     *
+     * Thin, strongly-typed wrapper around make() for the model class-string case.
+     * $source may be a Model class-string or a ManageableModel class-string.
+     *
+     * @param  string  $alias  Filter key/alias.
+     * @param  string  $source  Model::class or ManageableModel::class.
+     * @param  string  $displayColumn  Column used for the option labels.
+     * @param  ?string  $filterColumn  Browsed-table column matched against the value. Defaults to the source model's foreign-key column.
+     * @param  ?string  $label  Filter label.
+     * @param  ?string  $icon  Filter icon.
+     * @param  array|bool  $prependAll  Prepend an "All" (clear) option. true => ['all' => 'All'], array => custom [value => label], false => none.
+     * @param  string  $operator  Comparison operator used by the default filter query.
+     * @param  ?callable  $sourceQuery  fn(Builder $query): Builder to shape the dropdown's option-source query.
+     * @param  ?callable  $filterQuery  fn(Builder $query, string $table, Collection $columns, mixed $value): Builder that applies the selected value to the browsed query (overrides the default).
+     * @param  string  $containerClass  Wrapper container class.
+     */
+    public static function makeModel(
+        string $alias,
+        string $source,
+        string $displayColumn,
+        ?string $filterColumn = null,
+        ?string $label = null,
+        ?string $icon = null,
+        array|bool $prependAll = true,
+        string $operator = '=',
+        ?callable $sourceQuery = null,
+        ?callable $filterQuery = null,
+        string $containerClass = 'flex-1',
+        mixed $default = null,
+    ): BrowseFilter {
+        return static::make(
+            alias: $alias,
+            source: $source,
+            displayColumn: $displayColumn,
+            filterColumn: $filterColumn,
+            label: $label,
+            icon: $icon,
+            prependAll: $prependAll,
+            operator: $operator,
+            sourceQuery: $sourceQuery,
+            filterQuery: $filterQuery,
+            containerClass: $containerClass,
+            default: $default,
+        );
+    }
+
+    /**
      * Normalise the $prependAll argument into [allValue, prependItemsMap|null].
      *
      * @return array{0: mixed, 1: ?array}
