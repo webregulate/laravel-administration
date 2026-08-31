@@ -23,6 +23,7 @@ class DevToolsModal extends ModalComponent
     public ?string $runningLabel = null;
     public ?bool $composerUpdateAvailable = null;
     public ?string $latestVersion = null;
+    public ?string $currentVersion = null;
 
     /** Whatever is currently running, so polling knows how to finish: 'update' | 'command' | null. */
     public ?string $runType = null;
@@ -55,6 +56,7 @@ class DevToolsModal extends ModalComponent
 
         $latest = VersionHandler::getLatestWrlaVersion();
         $this->latestVersion = $latest['version'] ?? null;
+        $this->currentVersion = VersionHandler::$localPackageCurrentVersion;
 
         $version = VersionHandler::$localPackageCurrentVersion ?? 'unknown';
         $this->consoleOutput = 'Installed package version: ' . $version . PHP_EOL;

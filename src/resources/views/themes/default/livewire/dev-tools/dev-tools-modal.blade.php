@@ -56,10 +56,20 @@
                         </div>
                     @endif
                 @elseif($composerUpdateAvailable === false)
-                    <span class="inline-flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
-                        <i class="fa-solid fa-circle-check"></i>
-                        WRLA package is up to date.
-                    </span>
+                    <div class="flex flex-col gap-1">
+                        <span class="inline-flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
+                            <i class="fa-solid fa-circle-check"></i>
+                            WRLA package is up to date.
+                        </span>
+                        @if($currentVersion)
+                            <a href="https://webregulate.github.io/laravel-administration/#versions/v{{ $currentVersion }}.html"
+                                target="_blank"
+                                class="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400 text-sm underline hover:text-sky-500">
+                                <i class="fa-solid fa-arrow-up-right-from-square text-xs mr-1"></i>
+                                <span>View documentation for v{{ $currentVersion }}</span>
+                            </a>
+                        @endif
+                    </div>
                 @else
                     <span class="inline-flex items-center gap-2 text-slate-400 text-sm"><i class="fa-solid fa-circle-question"></i> Could not check composer status.</span>
                 @endif
