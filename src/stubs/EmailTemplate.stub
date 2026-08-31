@@ -249,14 +249,14 @@ class EmailTemplate extends ManageableModel
                         <div style="background: white; margin-bottom: 10px; width:100%; font-weight: 600; border: 1px solid #cccccc; border-radius: 6px; padding: 15px 10px; background:#ffffff; display:block;">
                             $subject
                         </div>
-                        <div class="bg-white rounded-lg overflow-hidden border border-slate-200">
+                        <div style="border: 1px solid #cccccc; border-radius: 6px; padding: 15px; background:#ffffff;">
                             @verbatim
                             <iframe
                                 srcdoc="$iframeSrcdoc"
                                 title="Email preview"
                                 scrolling="no"
-                                style="width:100%; min-height:150px; border: 1px solid #cccccc; border-radius: 6px; padding: 15px; background:#ffffff; display:block;"
-                                onload="this.style.height=(this.contentWindow.document.documentElement.scrollHeight)+'px';"
+                                style="box-sizing:content-box; width:100%; min-height:150px; border:0; background:#ffffff; display:block;"
+                                onload="this.style.height=(this.contentWindow.document.documentElement.scrollHeight + 2)+'px';"
                             ></iframe>
                             @endverbatim
                         </div>
