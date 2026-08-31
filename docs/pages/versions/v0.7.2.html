@@ -1,0 +1,77 @@
+<div class="flex items-center gap-2 mb-6">
+    <a href="versions/versions.html" class="text-sm text-primary-500 hover:text-primary-700 flex items-center gap-1">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Version History
+    </a>
+</div>
+
+<h1 class="docs-title">
+    <span data-version-number></span>
+    <span data-version-date class="text-lg font-normal text-gray-400 ml-3"></span>
+</h1>
+
+<p class="docs-lead">
+    Adds a per-template <code class="docs-inline-code">type</code> (Markdown or HTML) to email templates,
+    so each template decides how its body is rendered instead of relying on a single global config value.
+</p>
+
+<!-- Breaking Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        Breaking Changes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5 mb-4">
+        <li>
+            This release ships a new migration that adds a <code class="docs-inline-code">type</code>
+            column to the <code class="docs-inline-code">wrla_email_templates</code> table. After updating
+            you <strong>must</strong> run <code class="docs-inline-code">php artisan migrate</code>.
+            The migration backfills all existing templates to <code class="docs-inline-code">markdown</code>,
+            preserving their current rendering behaviour.
+        </li>
+    </ul>
+</div>
+
+<!-- Features -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-primary-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        Features
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>
+            Email templates now have a <code class="docs-inline-code">type</code> field
+            (<code class="docs-inline-code">markdown</code> or <code class="docs-inline-code">html</code>,
+            defaulting to <code class="docs-inline-code">markdown</code>), selectable from a dropdown in the
+            template editor.
+        </li>
+        <li>
+            Sending an email now uses each template's own <code class="docs-inline-code">type</code> to
+            decide how the body is built, falling back to the global
+            <code class="docs-inline-code">email_templates.render_mode</code> config for inline templates
+            created via <code class="docs-inline-code">EmailTemplate::make()</code>.
+        </li>
+    </ul>
+</div>
+
+<!-- Bug Fixes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-green-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Bug Fixes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>
+            Markdown email bodies now allow all markdown syntax (including inline HTML) through to the
+            rendered email, instead of stripping it during conversion.
+        </li>
+    </ul>
+</div>
