@@ -249,7 +249,7 @@ class EmailTemplate extends ManageableModel
                         <div style="background: white; margin-bottom: 10px; width:100%; font-weight: 600; border: 1px solid #cccccc; border-radius: 6px; padding: 15px 10px; background:#ffffff; display:block;">
                             $subject
                         </div>
-                        <div style="border: 1px solid #cccccc; border-radius: 6px; padding: 15px; background:#ffffff;">
+                        <div style="border: 1px solid #cccccc; border-radius: 6px; padding-bottom: 15px; padding-left: 15px; padding-right: 15px; background:#ffffff;">
                             @verbatim
                             <iframe
                                 srcdoc="$iframeSrcdoc"
