@@ -1,11 +1,26 @@
-@component('mail::message')
-# {!! $emailTemplate->getFinalSubject() !!}
+<html>
+    <head>
+        <style>
+            * {
+                color: #000000 !important;
+            }
 
-@component('mail::panel')
-{!! $emailTemplate->getFinalBody() !!}
-@endcomponent
-
-<br>
-Thanks,<br>
-{{ config('app.name') }}
-@endcomponent
+            a {
+                color: #007bff !important;
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        @if($emailTemplate->getRenderMode() === 'html')
+            {{-- Raw HTML body, output as-is --}}
+            {!! $emailTemplate->getFinalBody($renderMode ?? 'email') !!}
+        @else
+            {{-- Markdown body, allow all markdown + inline HTML through to the email --}}
+            {!! Str::markdown($emailTemplate->getFinalBody($renderMode ?? 'email'), [
+                'html_input' => 'allow',
+                'allow_unsafe_links' => true,
+            ]) !!}
+        @endif
+    </body>
+</html>

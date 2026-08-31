@@ -16,6 +16,7 @@ use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
  * @property int $id bigint unsigned
  * @property string $category varchar(255)
  * @property string $alias varchar(255)
+ * @property string $type varchar(255)
  * @property string $subject varchar(255)
  * @property string $body text
  * @property string $mappings json
@@ -392,6 +393,17 @@ class EmailTemplate extends Model
     }
 
     /**
+     * Resolve the render mode used to build the email ('markdown', 'html' or 'text').
+     *
+     * Prefers the per-template `type` column when set, otherwise falls back to the
+     * global config so inline templates (via make()) keep their previous behaviour.
+     */
+    public function getRenderMode(): string
+    {
+        return $this->type ?: config('wr-laravel-administration.email_templates.render_mode', 'markdown');
+    }
+
+    /**
      * Get final subject
      */
     public function getFinalSubject(string $renderMode = self::RENDER_MODE_EMAIL): string
@@ -530,7 +542,7 @@ class EmailTemplate extends Model
             $mail->to($toAddresses[0]);
 
             // Body
-            match(config('wr-laravel-administration.email_templates.render_mode', 'markdown')) {
+            match($this->getRenderMode()) {
                 'markdown' => $mail->html($this->renderEmail(self::RENDER_MODE_EMAIL)),
                 'html' => $mail->html($this->renderEmail(self::RENDER_MODE_EMAIL)),
                 default => $mail->text($this->getFinalBody(self::RENDER_MODE_EMAIL)),
@@ -580,7 +592,7 @@ class EmailTemplate extends Model
      */
     public function renderEmail(string $renderMode = EmailTemplate::RENDER_MODE_EMAIL)
     {
-        return match(config('wr-laravel-administration.email_templates.render_mode', 'markdown')) {
+        return match($this->getRenderMode()) {
             'markdown' => app(Markdown::class)->render('email.wrla.email-template-mail', [
                 'emailTemplate' => $this,
                 'renderMode' => $renderMode,

@@ -153,6 +153,14 @@ class EmailTemplate extends ManageableModel
                 ->validation('string|min:3|max:255')
                 ->notes('Minimum 5 characters. After set and in use, do not change this value.'),
 
+            Select::make($this, 'type')->setLabel('Type')
+                ->required()
+                ->default('markdown')
+                ->setItems([
+                    'markdown' => 'Markdown',
+                    'html' => 'HTML',
+                ]),
+
             Json::make($this, 'mappings')->setLabel('Mappings')
                 ->hideContainingBraces()
                 ->default('"user": {
@@ -216,10 +224,16 @@ class EmailTemplate extends ManageableModel
 
             $emailTemplate->subject = ManageableModel::getLivewireField('subject');
             $emailTemplate->body = ManageableModel::getLivewireField('body');
+            $emailTemplate->type = ManageableModel::getLivewireField('type') ?: $emailTemplate->type;
 
             // Inject variables into the blade variables
             $subject = $emailTemplate->getFinalSubject($emailTemplate::RENDER_MODE_BLADE);
-            $body = Str::markdown($emailTemplate->getFinalBody($emailTemplate::RENDER_MODE_BLADE));
+            $body = $emailTemplate->getRenderMode() === 'html'
+                ? $emailTemplate->getFinalBody($emailTemplate::RENDER_MODE_BLADE)
+                : Str::markdown($emailTemplate->getFinalBody($emailTemplate::RENDER_MODE_BLADE), [
+                    'html_input' => 'allow',
+                    'allow_unsafe_links' => true,
+                ]);
             $mappingsList = $emailTemplate->getMappingsListFormattedHTML();
 
             // Return the blade element
