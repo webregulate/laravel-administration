@@ -9,6 +9,17 @@ use Illuminate\Support\Collection;
 use WebRegulate\LaravelAdministration\Classes\NotificationBase;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 
+/**
+ * Model: WrlaNotification
+ * 
+ * @property int $id bigint unsigned
+ * @property string $type varchar(255)
+ * @property string $user_id varchar(255)
+ * @property string $data json
+ * @property string $read_at timestamp
+ * @property string $created_at timestamp
+ * @property string $updated_at timestamp
+ */
 class Notification extends Model
 {
     protected $table = 'wrla_notifications';

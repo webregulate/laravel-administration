@@ -10,6 +10,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 
+/**
+ * Model: WrlaEmailTemplate
+ * 
+ * @property int $id bigint unsigned
+ * @property string $category varchar(255)
+ * @property string $alias varchar(255)
+ * @property string $subject varchar(255)
+ * @property string $body text
+ * @property string $mappings json
+ * @property string $description text
+ * @property int $requires_attachment tinyint(1)
+ * @property string $created_at timestamp
+ * @property string $updated_at timestamp
+ * @property string $deleted_at timestamp
+ */
 class EmailTemplate extends Model
 {
     use SoftDeletes;
