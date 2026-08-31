@@ -228,12 +228,9 @@ class EmailTemplate extends ManageableModel
 
             // Inject variables into the blade variables
             $subject = $emailTemplate->getFinalSubject($emailTemplate::RENDER_MODE_BLADE);
-            $body = $emailTemplate->getRenderMode() === 'html'
-                ? $emailTemplate->getFinalBody($emailTemplate::RENDER_MODE_BLADE)
-                : Str::markdown($emailTemplate->getFinalBody($emailTemplate::RENDER_MODE_BLADE), [
-                    'html_input' => 'allow',
-                    'allow_unsafe_links' => true,
-                ]);
+            // Render the full email HTML and escape it for the iframe srcdoc, so the
+            // preview displays with its natural HTML styling, isolated from Tailwind.
+            $iframeSrcdoc = htmlspecialchars($emailTemplate->renderEmail($emailTemplate::RENDER_MODE_EMAIL), ENT_QUOTES);
             $mappingsList = $emailTemplate->getMappingsListFormattedHTML();
 
             // Return the blade element
@@ -245,13 +242,23 @@ class EmailTemplate extends ManageableModel
                     </div>
                     <div class="relative border border-slate-300 mt-2 p-3">
                         <div wire:loading class="absolute top-2 right-4 flex justify-end items-center gap-2 font-medium text-slate-600 text-sm">
-                            <i class="fas fa-spinner fa-spin"></i>
+                            <i class="fas fa-spinner animate-spin inline-block"></i>
                             <span style="padding-left: 4px;">Loading...</span>
                         </div>
-                        <b class="font-medium">Preview:</b><br />
-                        <p class="pb-2"><span class="font-light">$subject</span></p>
-                        <div class="px-3 py-2 bg-slate-200 dark:bg-slate-800 bg-opacity-80 rounded-lg">
-                            <div class="font-light [&_a]:underline">$body</div>
+                        <b class="font-medium mb-1">Preview:</b><br />
+                        <div style="background: white; margin-bottom: 10px; width:100%; font-weight: 600; border: 1px solid #cccccc; border-radius: 6px; padding: 15px 10px; background:#ffffff; display:block;">
+                            $subject
+                        </div>
+                        <div class="bg-white rounded-lg overflow-hidden border border-slate-200">
+                            @verbatim
+                            <iframe
+                                srcdoc="$iframeSrcdoc"
+                                title="Email preview"
+                                scrolling="no"
+                                style="width:100%; min-height:150px; border: 1px solid #cccccc; border-radius: 6px; padding: 15px; background:#ffffff; display:block;"
+                                onload="this.style.height=(this.contentWindow.document.documentElement.scrollHeight)+'px';"
+                            ></iframe>
+                            @endverbatim
                         </div>
                     </div>
                 </div>

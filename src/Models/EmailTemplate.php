@@ -4,6 +4,7 @@ namespace WebRegulate\LaravelAdministration\Models;
 
 use Illuminate\Mail\Markdown;
 use Illuminate\Mail\SentMessage;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Database\Eloquent\Model;
@@ -362,8 +363,12 @@ class EmailTemplate extends Model
                 $buildString = str_replace('$', '&#36;', $buildString);
             }
 
-            // Replace new lines with <br> tags
-            $buildString = nl2br($buildString);
+            // Only convert newlines to <br> for plain-text output. Markdown and HTML
+            // control their own line/paragraph breaks, and running nl2br first would
+            // break block-level markdown parsing (headings, lists, etc).
+            if ($this->getRenderMode() === 'text') {
+                $buildString = nl2br($buildString);
+            }
         } catch (\Exception $e) {
             $this->errorFound = true;
             $this->errorMessage = $e->getMessage();
@@ -420,6 +425,28 @@ class EmailTemplate extends Model
     public function getFinalBody(string $renderMode = self::RENDER_MODE_EMAIL): string
     {
         return $this->injectVariablesIntoString($this->body ?? '', $renderMode);
+    }
+
+    /**
+     * Render the body to HTML honouring the template's render mode. Markdown bodies
+     * are converted (allowing inline HTML, and treating single newlines as line
+     * breaks); HTML bodies are returned as-is.
+     */
+    public function getRenderedBody(string $renderMode = self::RENDER_MODE_EMAIL): string
+    {
+        $body = $this->getFinalBody($renderMode);
+
+        if ($this->getRenderMode() === 'html') {
+            return $body;
+        }
+
+        return (string) Str::markdown($body, [
+            'html_input' => 'allow',
+            'allow_unsafe_links' => true,
+            'renderer' => [
+                'soft_break' => "<br />\n",
+            ],
+        ]);
     }
 
     /**

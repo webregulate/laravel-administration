@@ -12,15 +12,7 @@
         </style>
     </head>
     <body>
-        @if($emailTemplate->getRenderMode() === 'html')
-            {{-- Raw HTML body, output as-is --}}
-            {!! $emailTemplate->getFinalBody($renderMode ?? 'email') !!}
-        @else
-            {{-- Markdown body, allow all markdown + inline HTML through to the email --}}
-            {!! Str::markdown($emailTemplate->getFinalBody($renderMode ?? 'email'), [
-                'html_input' => 'allow',
-                'allow_unsafe_links' => true,
-            ]) !!}
-        @endif
+        {{-- Body rendered per the template's type (markdown converted, html as-is) --}}
+        {!! $emailTemplate->getRenderedBody($renderMode ?? 'email') !!}
     </body>
 </html>
