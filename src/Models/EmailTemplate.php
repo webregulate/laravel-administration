@@ -2,7 +2,6 @@
 
 namespace WebRegulate\LaravelAdministration\Models;
 
-use Illuminate\Mail\Markdown;
 use Illuminate\Mail\SentMessage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
@@ -620,12 +619,7 @@ class EmailTemplate extends Model
     public function renderEmail(string $renderMode = EmailTemplate::RENDER_MODE_EMAIL)
     {
         return match($this->getRenderMode()) {
-            'markdown' => app(Markdown::class)->render('email.wrla.email-template-mail', [
-                'emailTemplate' => $this,
-                'renderMode' => $renderMode,
-            ])->toHtml(),
-
-            'html' => view('email.wrla.email-template-mail', [
+            'markdown', 'html' => view('email.wrla.email-template-mail', [
                 'emailTemplate' => $this,
                 'renderMode' => $renderMode,
             ])->render(),
