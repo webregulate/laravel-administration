@@ -2,6 +2,7 @@
 
 namespace WebRegulate\LaravelAdministration\Models;
 
+use Illuminate\Mail\Markdown;
 use Illuminate\Mail\SentMessage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
@@ -618,8 +619,15 @@ class EmailTemplate extends Model
      */
     public function renderEmail(string $renderMode = EmailTemplate::RENDER_MODE_EMAIL)
     {
+        // Markdown emails go through the mail Markdown renderer so the <style> block is
+        // inlined onto elements (email clients such as Gmail strip <head> styles).
         return match($this->getRenderMode()) {
-            'markdown', 'html' => view('email.wrla.email-template-mail', [
+            'markdown' => app(Markdown::class)->render('email.wrla.email-template-mail', [
+                'emailTemplate' => $this,
+                'renderMode' => $renderMode,
+            ])->toHtml(),
+
+            'html' => view('email.wrla.email-template-mail', [
                 'emailTemplate' => $this,
                 'renderMode' => $renderMode,
             ])->render(),
