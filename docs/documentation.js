@@ -144,10 +144,14 @@ class DocumentationApp {
         }
     }
 
-    // Package name on Packagist. Its published versions mirror the repository's
-    // public git tags, so the docs derive their version history straight from there.
-    get packagistPackage() {
-        return 'webregulate/laravel-administration';
+    // Released doc pages. Packagist's p2 metadata has no CORS headers, so it can't be
+    // fetched from the browser — add an entry here whenever a new
+    // docs/pages/versions/vX.Y.Z.html page is added (see releasing.html step 2).
+    getVersionManifest() {
+        return [
+            { version: '0.7.0', date: '2026-08-19' },
+            { version: '0.7.13', date: '2026-08-31' },
+        ];
     }
 
     // Compare two dotted numeric version strings. Returns >0 when a is newer.
@@ -162,71 +166,70 @@ class DocumentationApp {
         return 0;
     }
 
-    // Fetch the package's tagged versions from Packagist, newest first.
-    // Packagist's p2 metadata is CORS-enabled and always exposes `version` + `time`
-    // per release, so no bundled versions.json is required.
-    async fetchTaggedVersions() {
-        const url = `https://repo.packagist.org/p2/${this.packagistPackage}.json`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Failed to load');
-        const data = await response.json();
-        const raw = data.packages?.[this.packagistPackage] ?? [];
-        return raw
-            .filter(v => v.version && !/dev/i.test(v.version_normalized || v.version))
-            .map(v => ({ version: String(v.version).replace(/^v/i, ''), date: (v.time || '').slice(0, 10) }))
-            .sort((a, b) => this.compareVersions(b.version, a.version));
+    // Manifest entries, newest first
+    getSortedVersions() {
+        return [...this.getVersionManifest()].sort((a, b) => this.compareVersions(b.version, a.version));
     }
 
-    // Populate [data-latest-version] on the releasing page with the newest tag
-    async loadLatestVersion() {
+    // Populate [data-latest-version] on the releasing page with the newest release
+    loadLatestVersion() {
         const el = document.querySelector('[data-latest-version]');
         if (!el) return;
-        try {
-            const versions = await this.fetchTaggedVersions();
-            const latest = versions[0];
-            el.textContent = latest ? `v${latest.version}` : 'No tags published yet';
-        } catch {
-            el.textContent = 'Unable to load';
-        }
+        const latest = this.getSortedVersions()[0];
+        el.textContent = latest ? `v${latest.version}` : 'No versions published yet';
     }
 
     // Populate [data-version-number] and [data-version-date] on a version detail page
-    async loadVersionDetail() {
+    loadVersionDetail() {
         const match = this.currentPage.match(/^versions\/v([\d.]+)\.html$/);
         if (!match) return;
         const version = match[1];
-        try {
-            const versions = await this.fetchTaggedVersions();
-            const entry = versions.find(v => v.version === version);
-            const numEl = document.querySelector('[data-version-number]');
-            const dateEl = document.querySelector('[data-version-date]');
-            if (numEl) numEl.textContent = `v${version}`;
-            if (dateEl && entry) dateEl.textContent = entry.date;
-        } catch { /* fail silently */ }
+        const entry = this.getVersionManifest().find(v => v.version === version);
+        const numEl = document.querySelector('[data-version-number]');
+        const dateEl = document.querySelector('[data-version-date]');
+        if (numEl) numEl.textContent = `v${version}`;
+        if (dateEl && entry) dateEl.textContent = entry.date;
     }
 
-    // Fetch the tagged versions and render the list into #versions-list
-    async loadVersionsList() {
+    // Render the manifest into #versions-list and wire up the search filter
+    loadVersionsList() {
         const container = document.getElementById('versions-list');
         if (!container) return;
-        try {
-            const versions = await this.fetchTaggedVersions();
-            if (!Array.isArray(versions) || !versions.length) {
-                container.innerHTML = '<p class="text-gray-500 italic">No versions recorded yet.</p>';
-                return;
-            }
-            container.innerHTML = versions.map(v => `
-                <a href="versions/v${v.version}.html" class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors group">
-                    <div class="flex items-center gap-3">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-800">v${v.version}</span>
-                        <span class="text-gray-500 text-sm">${v.date}</span>
-                    </div>
-                    <span class="text-primary-500 text-sm font-medium group-hover:underline">View release notes &rarr;</span>
-                </a>
-            `).join('');
-        } catch {
-            container.innerHTML = '<p class="text-red-500 italic text-sm">Failed to load version history.</p>';
+        const versions = this.getSortedVersions();
+        if (!versions.length) {
+            container.innerHTML = '<p class="text-gray-500 italic">No versions recorded yet.</p>';
+            return;
         }
+        container.innerHTML = versions.map(v => `
+            <a href="versions/v${v.version}.html" data-version="${v.version}" class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-800">v${v.version}</span>
+                    <span class="text-gray-500 text-sm">${v.date}</span>
+                </div>
+                <span class="text-primary-500 text-sm font-medium group-hover:underline">View release notes &rarr;</span>
+            </a>
+        `).join('');
+        this.initVersionSearch();
+    }
+
+    // Filter the rendered version list live as the user types in #version-search
+    initVersionSearch() {
+        const input = document.getElementById('version-search');
+        const container = document.getElementById('versions-list');
+        const empty = document.getElementById('version-search-empty');
+        if (!input || !container) return;
+        input.value = '';
+        empty?.classList.add('hidden');
+        input.addEventListener('input', () => {
+            const query = input.value.trim().toLowerCase();
+            let visibleCount = 0;
+            container.querySelectorAll('[data-version]').forEach(el => {
+                const matches = el.dataset.version.toLowerCase().includes(query);
+                el.classList.toggle('hidden', !matches);
+                if (matches) visibleCount++;
+            });
+            empty?.classList.toggle('hidden', visibleCount !== 0);
+        });
     }
 
     // Inject an absolutely-positioned copy button into every .docs-code-block

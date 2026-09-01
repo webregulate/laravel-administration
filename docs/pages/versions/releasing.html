@@ -1,8 +1,9 @@
 <h1 class="docs-title"><i class="fa-solid fa-tag mr-3 text-primary-500"></i>Releasing a Version</h1>
 <p class="docs-lead">
-    Versioning is driven entirely by public <strong>git tags</strong> (published to Packagist).
-    There is no <code class="docs-inline-code">versions.json</code> to maintain &mdash; the version
-    bar, update modal and this documentation all read the tags directly.
+    Versioning is driven by public <strong>git tags</strong> (published to Packagist). The WRLA
+    version bar and update modal read the tags directly. Packagist's metadata isn't CORS-enabled
+    though, so this documentation site keeps its own small manifest of released versions in
+    <code class="docs-inline-code">docs/documentation.js</code> (<code class="docs-inline-code">getVersionManifest()</code>).
 </p>
 
 <div class="docs-callout docs-callout-info">
@@ -12,9 +13,9 @@
         </svg>
     </div>
     <div class="docs-callout-body">
-        Current latest tagged version:
+        Latest version in the docs manifest:
         <span data-latest-version class="font-semibold text-primary-600">Loading&hellip;</span>
-        <span class="text-gray-500">(pulled live from Packagist)</span>
+        <span class="text-gray-500">(from getVersionManifest())</span>
     </div>
 </div>
 
@@ -39,8 +40,10 @@
     <p class="docs-body">
         Copy an existing release page and rename it to the new version, eg.
         <code class="docs-inline-code">docs/pages/versions/v0.7.1.html</code>, then fill in the
-        breaking changes, features and fixes. It links into the
-        <a href="versions/versions.html" class="docs-link">Version History</a> automatically.
+        breaking changes, features and fixes. Also add an entry (version + date) to
+        <code class="docs-inline-code">getVersionManifest()</code> in
+        <code class="docs-inline-code">docs/documentation.js</code> so it shows up on the
+        <a href="versions/versions.html" class="docs-link">Version History</a> page.
     </p>
 </div>
 
