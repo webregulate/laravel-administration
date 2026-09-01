@@ -149,8 +149,8 @@ class DocumentationApp {
     // docs/pages/versions/vX.Y.Z.html page is added (see releasing.html step 2).
     getVersionManifest() {
         return [
-            { version: '0.7.0', date: '2026-08-19' },
-            { version: '0.7.13', date: '2026-08-31' },
+            { version: '0.8.0', date: '2026-08-19' },
+            { version: '0.8.1', date: '2026-09-01' },
         ];
     }
 

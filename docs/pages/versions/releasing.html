@@ -39,7 +39,7 @@
     </h2>
     <p class="docs-body">
         Copy an existing release page and rename it to the new version, eg.
-        <code class="docs-inline-code">docs/pages/versions/v0.7.1.html</code>, then fill in the
+        <code class="docs-inline-code">docs/pages/versions/v0.8.2.html</code>, then fill in the
         breaking changes, features and fixes. Also add an entry (version + date) to
         <code class="docs-inline-code">getVersionManifest()</code> in
         <code class="docs-inline-code">docs/documentation.js</code> so it shows up on the
@@ -54,7 +54,7 @@
         Tag and push
     </h2>
     <div class="docs-code-block">
-        <pre><code>git tag 0.7.1
+        <pre><code>git tag 0.8.2
 git push origin main --tags</code></pre>
     </div>
 </div>
@@ -67,7 +67,7 @@ git push origin main --tags</code></pre>
     </h2>
     <p class="docs-body">
         Packagist detects the new tag automatically via its GitHub webhook, usually within a minute.
-        Consuming apps whose constraint allows it (eg. <code class="docs-inline-code">^0.7.0</code>)
+        Consuming apps whose constraint allows it (eg. <code class="docs-inline-code">^0.8.0</code>)
         then see the update in the WRLA version bar and can apply it with <strong>Update WRLA</strong>
         or <code class="docs-inline-code">php artisan wrla:update</code>.
     </p>
@@ -82,8 +82,8 @@ git push origin main --tags</code></pre>
     </div>
     <div class="docs-callout-body">
         Follow <a href="https://semver.org" target="_blank" class="docs-link">SemVer</a>:
-        patch (<code class="docs-inline-code">0.7.0 &rarr; 0.7.1</code>) for fixes,
-        minor (<code class="docs-inline-code">0.7 &rarr; 0.8</code>) for features,
+        patch (<code class="docs-inline-code">0.8.1 &rarr; 0.8.2</code>) for fixes,
+        minor (<code class="docs-inline-code">0.8 &rarr; 0.9</code>) for features,
         major for breaking changes.
     </div>
 </div>
