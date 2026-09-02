@@ -94,12 +94,14 @@
 
         {{-- Generic error message --}}
         @error('error')
-            @themeComponent('alert', ['type' => 'error', 'message' => $message])
+            <div wire:key="upsert-alert-error-{{ $saveCounter }}">
+                @themeComponent('alert', ['type' => 'error', 'message' => $message])
+            </div>
         @enderror
 
         {{-- Inline success message (shown after a successful livewire save, no page refresh) --}}
         @if(!empty($successMessage))
-            <div class="mt-10">
+            <div wire:key="upsert-alert-success-{{ $saveCounter }}" class="mt-10">
                 @themeComponent('alert', ['type' => 'success', 'message' => $successMessage])
             </div>
         @endif
@@ -131,7 +133,7 @@
         <div class="border border-slate-300 rounded-md p-2 mt-10 text-slate-500">
             <p class=" text-sm font-semibold">Debug Information:</p>
             <hr class="my-1 border-slate-300">
-            Upsert version: 0.8.9 <br />
+            Upsert version: 0.8.10 <br />
             Render counter: {{ $numberOfRenders }}<br />
             Livewire data ({{ count($livewireData) }}):<br />
             @foreach($livewireData as $key => $value)

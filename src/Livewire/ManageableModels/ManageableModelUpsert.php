@@ -44,6 +44,13 @@ class ManageableModelUpsert extends WRLAPageComponent
     public int $numberOfRenders = 0;
 
     /**
+     * Incremented on every save() attempt. Used to key the inline success/error
+     * alerts so a dismissed alert is replaced (and re-shown) on the next submit
+     * rather than being kept hidden by Alpine state surviving the livewire morph.
+     */
+    public int $saveCounter = 0;
+
+    /**
      * Refresh manageable field values
      */
     public bool $refreshManageableFields = false;
@@ -346,6 +353,11 @@ class ManageableModelUpsert extends WRLAPageComponent
 
         // Clear any previous inline success message
         $this->successMessage = null;
+
+        // Bump the save counter so the inline alerts get a fresh wire:key, forcing
+        // livewire to replace any previously dismissed alert element (Alpine keeps
+        // its show=false state across a morph otherwise).
+        $this->saveCounter++;
 
         // Set page type and manageable model class
         WRLAHelper::setCurrentPageType($this->upsertType);
