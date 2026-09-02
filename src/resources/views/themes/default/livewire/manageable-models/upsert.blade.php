@@ -131,7 +131,7 @@
         <div class="border border-slate-300 rounded-md p-2 mt-10 text-slate-500">
             <p class=" text-sm font-semibold">Debug Information:</p>
             <hr class="my-1 border-slate-300">
-            Upsert version: 0.98 <br />
+            Upsert version: 0.99 <br />
             Render counter: {{ $numberOfRenders }}<br />
             Livewire data ({{ count($livewireData) }}):<br />
             @foreach($livewireData as $key => $value)

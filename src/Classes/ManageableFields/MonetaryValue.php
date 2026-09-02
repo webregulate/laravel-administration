@@ -34,6 +34,23 @@ class MonetaryValue
     }
 
     /**
+     * Convert the stored integer value (in the currency's smallest unit, e.g. pence) into the
+     * decimal amount shown in and edited by the input.
+     */
+    protected function toDisplayValue(mixed $storedValue): string
+    {
+        return number_format((float) $storedValue / $this->options['currencyDecimalMultiplier'], $this->options['decimalPlaces'], '.', '');
+    }
+
+    /**
+     * The value seeded into livewire / bound to the input. Must match render()'s input value.
+     */
+    public function getLivewireValue(): mixed
+    {
+        return $this->toDisplayValue($this->getValue());
+    }
+
+    /**
      * Upload the image from request and apply the value.
      */
     public function applySubmittedValue(Request $request, mixed $value): mixed
@@ -52,8 +69,7 @@ class MonetaryValue
      */
     public function render(): mixed
     {
-        $actualValue = old($this->getAttribute('name'), $this->getValue());
-        $value = number_format($actualValue / $this->options['currencyDecimalMultiplier'], $this->options['decimalPlaces']);
+        $value = $this->toDisplayValue(old($this->getAttribute('name'), $this->getValue()));
 
         return view(WRLAHelper::getViewPath('components.forms.input-monetary-value'), [
             'label' => $this->getLabel(),

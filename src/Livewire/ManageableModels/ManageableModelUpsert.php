@@ -247,7 +247,7 @@ class ManageableModelUpsert extends WRLAPageComponent
                         // before this page component's own render, which corrupts Livewire's
                         // full-page layout detection and throws a MissingLayoutException.
                         $manageableField->prepareLivewireValue();
-                        $this->livewireData[$manageableField->getAttribute('name')] = $manageableField->getValue();
+                        $this->livewireData[$manageableField->getAttribute('name')] = $manageableField->getLivewireValue();
                     }
                 }
 

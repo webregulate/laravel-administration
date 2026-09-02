@@ -383,6 +383,20 @@ trait ManageableField
     }
 
     /**
+     * The value that is seeded into the upsert component's livewireData and bound to the
+     * input via wire:model. It MUST match the representation the field's render() places in
+     * the input, and applySubmittedValue() MUST be its inverse.
+     *
+     * Defaults to the stored value. Override when the edited/input representation differs
+     * from what is stored (e.g. MonetaryValue stores integer pence but edits pounds), or
+     * when the stored value must never be exposed to the client (e.g. Password hashes).
+     */
+    public function getLivewireValue(): mixed
+    {
+        return $this->getValue();
+    }
+
+    /**
      * Get name attribute.
      *
      * @return string

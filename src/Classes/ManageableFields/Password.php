@@ -28,10 +28,25 @@ class Password
     }
 
     /**
+     * The value seeded into livewire / bound to the input. Passwords are write-only: never seed
+     * the stored hash into livewireData (it would be exposed to the client and re-hashed on save).
+     */
+    public function getLivewireValue(): mixed
+    {
+        return '';
+    }
+
+    /**
      * Apply submitted value. May be overriden in special cases, such as when applying a hash to a password.
      */
     public function applySubmittedValue(Request $request, mixed $value): mixed
     {
+        // A blank submission means the password was left unchanged — keep the existing value
+        // rather than hashing an empty string.
+        if ($value === null || $value === '') {
+            return $this->getValue();
+        }
+
         // Hash password by user data hashPassword method if available
         if(method_exists(WRLAHelper::getUserDataModelClass(), 'hashPassword')) {
             return WRLAHelper::getUserDataModelClass()::hashPassword($value);
