@@ -70,18 +70,22 @@ class WysiwygHandler extends ConfiguredModeBasedHandler
         return Blade::render(<<<'HTML'
             <script src="https://cdn.tiny.cloud/1/{{ $currentWysiwygEditorSettings['apikey'] }}/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
             <script>
+                // Register a form-sync flush so the upsert page's capture-phase
+                // FormData read gets the latest editor content. TinyMCE keeps its
+                // content in an iframe and only writes it back to the underlying
+                // <textarea> when asked, so triggerSave() must run just before sync.
+                (window.wrlaBeforeFormSync = window.wrlaBeforeFormSync || []).push(function () {
+                    if (window.tinymce && typeof window.tinymce.triggerSave === 'function') {
+                        window.tinymce.triggerSave();
+                    }
+                });
+
                 tinymce.init({
                     selector: '.wrla_wysiwyg',
                     plugins: '{{ $currentWysiwygEditorSettings["plugins"] }}',
                     menubar: '{{ $currentWysiwygEditorSettings["menubar"] }}',
                     toolbar: '{{ $currentWysiwygEditorSettings["toolbar"] }}',
                     paste_data_images: true,
-                    // Keep the underlying textarea in sync on every change so the
-                    // capture-phase livewire form sync always reads the latest content
-                    // (a submit-time save would run too late and submit stale/empty data).
-                    setup: (editor) => {
-                        editor.on('change input undo redo', () => editor.save());
-                    },
                     // images_upload_url: '{{ route("wrla.upload-wysiwyg-image") }}',
                     images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
                         var xhr, formData;

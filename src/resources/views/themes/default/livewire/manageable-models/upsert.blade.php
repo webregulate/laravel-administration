@@ -131,7 +131,7 @@
         <div class="border border-slate-300 rounded-md p-2 mt-10 text-slate-500">
             <p class=" text-sm font-semibold">Debug Information:</p>
             <hr class="my-1 border-slate-300">
-            Upsert mode: Livewire<br />
+            Upsert version: 0.98 <br />
             Render counter: {{ $numberOfRenders }}<br />
             Livewire data ({{ count($livewireData) }}):<br />
             @foreach($livewireData as $key => $value)
@@ -246,6 +246,16 @@
 
             var wire = window.Livewire.find(root.getAttribute('wire:id'));
             if (!wire) return;
+
+            // Let fields flush any external state into their native form controls
+            // before FormData is read (eg. WYSIWYG editors whose content lives in an
+            // iframe/hidden element). Editors register callbacks in this registry from
+            // their own setup JS, keeping this page editor-agnostic.
+            if (Array.isArray(window.wrlaBeforeFormSync)) {
+                window.wrlaBeforeFormSync.forEach(function (fn) {
+                    try { fn(form); } catch (err) { /* ignore individual hook failures */ }
+                });
+            }
 
             window.wrlaSyncFormToLivewire(form, wire);
         }, true);
