@@ -453,6 +453,13 @@ class ManageableModelUpsert extends WRLAPageComponent
                 WRLAHelper::setCurrentPageType($this->upsertType);
             }
 
+            // Reset any write-only fields (e.g. passwords) server-side so stale values are not
+            // resubmitted on a subsequent save, and notify the client so their inputs clear too.
+            foreach ($manageableFields as $manageableField) {
+                $manageableField->resetLivewireAfterSave($this->livewireData);
+            }
+            $this->dispatch('wrla-upsert-saved');
+
             $this->successMessage = $defaultSuccessMessage;
 
             return null;

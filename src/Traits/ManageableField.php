@@ -1119,6 +1119,17 @@ trait ManageableField
     }
 
     /**
+     * Reset this field's livewire state after a successful save. Default is a no-op; fields whose
+     * value is write-only (e.g. Password) override this to clear their keys so a stale value is not
+     * resubmitted on the next save.
+     *
+     * @param  array  $livewireData  The upsert component's livewire data (by reference).
+     */
+    public function resetLivewireAfterSave(array &$livewireData): void
+    {
+    }
+
+    /**
      * Render the input field.
      */
     public function render(): mixed

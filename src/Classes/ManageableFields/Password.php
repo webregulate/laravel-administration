@@ -20,9 +20,16 @@ class Password
      */
     public function postConstructed(): static
     {
-        $this->validation('required_if:wrla_show_password,1|string|confirmed|min:6|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/');
+        $name = $this->getAttribute('name');
+
+        $this->validation('required_if_accepted:wrla_show_'.$name.'|string|confirmed|min:6|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/');
         $this->setAttribute('placeholder', 'Atleast 6 characters, and have atleast 1 uppercase, 1 lowercase, 1 number');
         $this->setOption('ignoreOld', true);
+
+        // Opt out of the upsert component's automatic single wire:model binding. This field
+        // renders two independent inputs (password + confirmation) and manages their values
+        // itself via Alpine, so a shared livewire binding must not be applied to both.
+        $this->setAttribute('wire:model', 'livewireData.'.$name);
 
         return $this;
     }
@@ -37,10 +44,39 @@ class Password
     }
 
     /**
+     * Passwords are always seeded empty (write-only), so there is nothing to normalise. Overridden
+     * to avoid rendering the field during the upsert component's first-render seeding pass.
+     */
+    public function prepareLivewireValue(): void
+    {
+    }
+
+    /**
+     * Clear this field's livewire state after a successful save so a stale value is never
+     * resubmitted on a subsequent save (which would otherwise re-change the password).
+     *
+     * @param  array  $livewireData  The upsert component's livewire data (by reference).
+     */
+    public function resetLivewireAfterSave(array &$livewireData): void
+    {
+        $name = $this->getAttribute('name');
+        $livewireData[$name] = '';
+        $livewireData[$name.'_confirmation'] = '';
+        $livewireData['wrla_show_'.$name] = false;
+    }
+
+    /**
      * Apply submitted value. May be overriden in special cases, such as when applying a hash to a password.
      */
     public function applySubmittedValue(Request $request, mixed $value): mixed
     {
+        // On the edit page the password only changes when the user explicitly ticked the
+        // "change password" checkbox — ignore any value otherwise so an abandoned entry never
+        // overwrites the stored password.
+        if (WRLAHelper::isEditPage() && !$request->boolean('wrla_show_'.$this->getAttribute('name'))) {
+            return $this->getValue();
+        }
+
         // A blank submission means the password was left unchanged — keep the existing value
         // rather than hashing an empty string.
         if ($value === null || $value === '') {
@@ -60,77 +96,112 @@ class Password
      */
     public function render(): mixed
     {
-        $HTML = '';
+        $name = $this->getAttribute('name');
+        $confirmName = $name.'_confirmation';
+        $confirmPlaceholder = 'Confirm '.strtolower((string) $this->getLabel());
 
-        if (WRLAHelper::isEditPage()) {
-            // Check if wrla_show_name is set
-            $wrla_show = old('wrla_show_'.$this->getAttribute('name')) == '1' ? 'true' : 'false';
+        // Base input attributes with any auto-applied wire:model binding removed, and the stored
+        // value (a password hash on edit) stripped so it is never exposed in the rendered HTML.
+        // The password and confirmation inputs stay independent, bound via Alpine (x-model)
+        // rather than sharing a single livewire binding.
+        $baseAttributes = collect($this->htmlAttributes)
+            ->reject(fn ($value, $key) => $key === 'value' || str_contains((string) $key, 'wire:model'))
+            ->all();
 
-            // Contain password and checkbox within a parent div
-            $HTML .= <<<HTML
-                <div x-data="{ userWantsToChange: $wrla_show }" class="w-full">
+        // Create page: password + confirmation, always visible.
+        if (!WRLAHelper::isEditPage()) {
+            $HTML = <<<'HTML'
+                <div x-data="{ password: '', passwordConfirmation: '' }" class="w-full flex flex-col gap-2">
             HTML;
 
-            $HTML .= view(WRLAHelper::getViewPath('components.forms.label'), [
+            $HTML .= view(WRLAHelper::getViewPath('components.forms.input-text'), [
                 'label' => $this->getLabel(),
-                'attributes' => new ComponentAttributeBag(array_merge($this->htmlAttributes, [
-                    'for' => $this->getAttribute('name'),
-                    'class' => 'mb-2',
+                'attributes' => new ComponentAttributeBag(array_merge($baseAttributes, [
+                    'name' => $name,
+                    'type' => 'password',
+                    'autocomplete' => 'new-password',
+                    'x-model' => 'password',
                 ])),
             ])->render();
 
-            // Flex container
-            $HTML .= '<div class="flex flex-col gap-2">';
-
-            // Checkbox to show/enable password field
-            $HTML .= view(WRLAHelper::getViewPath('components.forms.input-checkbox'), [
-                'label' => 'Change '.Str::title(str_replace('_', ' ', $this->getLabel())),
-                'attributes' => new ComponentAttributeBag(array_merge($this->htmlAttributes, [
-                    'name' => 'wrla_show_'.$this->getAttribute('name'),
-                    'value' => $wrla_show == 'true',
-                    '@click' => 'userWantsToChange = !userWantsToChange;
-                        if (userWantsToChange) {
-                            $nextTick(() => { $refs.passwordField.focus(); });
-                        }',
+            $HTML .= view(WRLAHelper::getViewPath('components.forms.input-text'), [
+                'attributes' => new ComponentAttributeBag(array_merge($baseAttributes, [
+                    'name' => $confirmName,
+                    'type' => 'password',
+                    'autocomplete' => 'new-password',
+                    'placeholder' => $confirmPlaceholder,
+                    'x-model' => 'passwordConfirmation',
                 ])),
             ])->render();
+
+            return $HTML.'</div>';
         }
 
-        // Render password field (hide if checkbox not checked)
+        // Edit page: hidden behind a "change password" checkbox. Alpine owns the field values so
+        // unticking (or a successful save, via the wrla-upsert-saved event) reliably clears them,
+        // and the inputs are disabled while hidden so they are excluded from the submitted form
+        // data (leaving the stored password untouched).
+        $HTML = <<<HTML
+            <div
+                x-data="{ userWantsToChange: false, password: '', passwordConfirmation: '' }"
+                x-init="\$watch('userWantsToChange', value => {
+                    if (value) {
+                        \$nextTick(() => \$refs.passwordField?.focus());
+                    } else {
+                        password = '';
+                        passwordConfirmation = '';
+                    }
+                })"
+                x-on:wrla-upsert-saved.window="userWantsToChange = false"
+                class="w-full"
+            >
+        HTML;
+
+        $HTML .= view(WRLAHelper::getViewPath('components.forms.label'), [
+            'label' => $this->getLabel(),
+            'attributes' => new ComponentAttributeBag([
+                'for' => $name,
+                'class' => 'mb-2',
+            ]),
+        ])->render();
+
+        $HTML .= '<div class="flex flex-col gap-2">';
+
+        // Checkbox to reveal / enable the password fields.
+        $HTML .= view(WRLAHelper::getViewPath('components.forms.input-checkbox'), [
+            'label' => 'Change '.Str::title(str_replace('_', ' ', (string) $this->getLabel())),
+            'name' => 'wrla_show_'.$name,
+            'attributes' => new ComponentAttributeBag([
+                'x-model' => 'userWantsToChange',
+            ]),
+        ])->render();
+
+        // Password field (hidden + disabled until the checkbox is ticked).
         $HTML .= view(WRLAHelper::getViewPath('components.forms.input-text'), [
-            'label' => WRLAHelper::isEditPage() ? null : $this->getLabel(),
-            'attributes' => new ComponentAttributeBag(array_merge($this->htmlAttributes, [
-                'name' => $this->getAttribute('name'),
-                'value' => '',
+            'attributes' => new ComponentAttributeBag(array_merge($baseAttributes, [
+                'name' => $name,
                 'type' => 'password',
-            ], WRLAHelper::isEditPage() ? [
+                'autocomplete' => 'new-password',
                 'x-ref' => 'passwordField',
+                'x-model' => 'password',
                 'x-show' => 'userWantsToChange',
-                'x-bind:disabled' => '!userWantsToChange',
-            ] : [])),
+                'x-bind:disabled' => '! userWantsToChange',
+            ])),
         ])->render();
 
-        // Render confirm password field (hide if checkbox not checked)
+        // Confirm password field (hidden + disabled until the checkbox is ticked).
         $HTML .= view(WRLAHelper::getViewPath('components.forms.input-text'), [
-            'attributes' => new ComponentAttributeBag(array_merge($this->htmlAttributes, [
-                'name' => $this->getAttribute('name').'_confirmation',
-                'value' => '',
+            'attributes' => new ComponentAttributeBag(array_merge($baseAttributes, [
+                'name' => $confirmName,
                 'type' => 'password',
-                'placeholder' => 'Confirm '.strtolower((string) $this->getLabel()),
-            ], WRLAHelper::isEditPage() ? [
+                'autocomplete' => 'new-password',
+                'placeholder' => $confirmPlaceholder,
+                'x-model' => 'passwordConfirmation',
                 'x-show' => 'userWantsToChange',
-                'x-bind:disabled' => '!userWantsToChange',
-            ] : [])),
+                'x-bind:disabled' => '! userWantsToChange',
+            ])),
         ])->render();
 
-        if (WRLAHelper::isEditPage()) {
-            // Close parent div
-            $HTML .= <<<'HTML'
-                    </div>
-                </div>
-            HTML;
-        }
-
-        return $HTML;
+        return $HTML.'</div></div>';
     }
 }

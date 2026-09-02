@@ -9,11 +9,6 @@
 
     <br />
 
-    {{-- Generic error message --}}
-    @error('error')
-        @themeComponent('alert', ['type' => 'error', 'message' => $message])
-    @enderror
-
     {{-- Heading --}}
     <div class="flex justify-between">
         <div class="text-xl font-semibold">
@@ -97,6 +92,11 @@
             @endif
         </div>
 
+        {{-- Generic error message --}}
+        @error('error')
+            @themeComponent('alert', ['type' => 'error', 'message' => $message])
+        @enderror
+        
         {{-- Inline success message (shown after a successful livewire save, no page refresh) --}}
         @if(!empty($successMessage))
             <div class="mt-10">
@@ -131,7 +131,7 @@
         <div class="border border-slate-300 rounded-md p-2 mt-10 text-slate-500">
             <p class=" text-sm font-semibold">Debug Information:</p>
             <hr class="my-1 border-slate-300">
-            Upsert version: 0.99 <br />
+            Upsert version: 0.100 <br />
             Render counter: {{ $numberOfRenders }}<br />
             Livewire data ({{ count($livewireData) }}):<br />
             @foreach($livewireData as $key => $value)
