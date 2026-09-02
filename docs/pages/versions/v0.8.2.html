@@ -1,0 +1,165 @@
+<div class="flex items-center gap-2 mb-6">
+    <a href="versions/versions.html" class="text-sm text-primary-500 hover:text-primary-700 flex items-center gap-1">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Version History
+    </a>
+</div>
+
+<h1 class="docs-title">
+    <span data-version-number></span>
+    <span data-version-date class="text-lg font-normal text-gray-400 ml-3"></span>
+</h1>
+
+<p class="docs-lead">
+    Simplifies how custom WRLA pages are registered. Full-page Livewire components are now
+    registered with a plain <code class="docs-inline-code">Route::get()</code> in a renamed
+    <code class="docs-inline-code">buildRoutes()</code> method, replacing the old
+    <code class="docs-inline-code">buildCustomRoutes()</code> +
+    <code class="docs-inline-code">WRLAHelper::registerLivewireRoute()</code> approach.
+</p>
+
+<!-- Breaking Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        Breaking Changes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5 mb-4">
+        <li>
+            <code class="docs-inline-code">WRLASettings::buildCustomRoutes()</code> has been renamed to
+            <code class="docs-inline-code">buildRoutes()</code>. If you don't rename it, your custom
+            routes will stop being registered.
+        </li>
+        <li>
+            <code class="docs-inline-code">WRLAHelper::registerLivewireRoute()</code> has been removed.
+            Register full-page routes with a plain
+            <code class="docs-inline-code">Route::get('url', Component::class)-&gt;name('wrla.name')</code>.
+        </li>
+        <li>
+            Custom full-page Livewire components must now extend
+            <code class="docs-inline-code">WRLAPageComponent</code> instead of
+            <code class="docs-inline-code">Livewire\Component</code> so they render inside the WRLA admin
+            layout.
+        </li>
+    </ul>
+</div>
+
+<!-- Upgrade Guide -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-primary-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+        </svg>
+        Upgrade Guide
+    </h2>
+
+    <!-- Step 1 -->
+    <h3 class="text-base font-semibold text-gray-800 mt-2 mb-2">
+        1. Rename <code class="docs-inline-code">buildCustomRoutes()</code> to <code class="docs-inline-code">buildRoutes()</code>
+    </h3>
+    <p class="docs-body">
+        In <code class="docs-inline-code">app/WRLA/WRLASettings.php</code>, rename the method:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>// Before
+public static function buildCustomRoutes(): void
+
+// After
+public static function buildRoutes(): void</code></pre>
+    </div>
+
+    <!-- Step 2 -->
+    <h3 class="text-base font-semibold text-gray-800 mt-5 mb-2">
+        2. Register each page with a plain <code class="docs-inline-code">Route::get()</code>
+    </h3>
+    <p class="docs-body">
+        Replace every <code class="docs-inline-code">registerLivewireRoute()</code> call inside
+        <code class="docs-inline-code">buildRoutes()</code> with a normal route pointing at the
+        component class:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>use Illuminate\Support\Facades\Route;
+use App\Livewire\WRLA\MyPage;
+
+// Before
+WRLAHelper::registerLivewireRoute(
+    'my-page', 'wrla.my-page', MyPage::class, [], 'My Page'
+);
+
+// After
+Route::get('my-page', MyPage::class)-&gt;name('wrla.my-page');</code></pre>
+    </div>
+
+    <!-- Step 3 -->
+    <h3 class="text-base font-semibold text-gray-800 mt-5 mb-2">
+        3. Make each page component extend <code class="docs-inline-code">WRLAPageComponent</code>
+    </h3>
+    <p class="docs-body">
+        Update your full-page Livewire components so they render inside the admin layout. Use the
+        standard Livewire <code class="docs-inline-code">#[Title]</code> attribute to set the page title:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>use Livewire\Attributes\Title;
+use WebRegulate\LaravelAdministration\Livewire\WRLAPageComponent;
+
+#[Title('My Page')]
+class MyPage extends WRLAPageComponent
+{
+    public function render()
+    {
+        return view('livewire.wrla.my-page');
+    }
+}</code></pre>
+    </div>
+    <p class="docs-body">
+        The component's view is now a plain Livewire view (a single root
+        <code class="docs-inline-code">&lt;div&gt;</code>) &mdash; you no longer need the
+        <code class="docs-inline-code">@extends</code> / <code class="docs-inline-code">@section</code>
+        wrapper.
+    </p>
+</div>
+
+<!-- Features -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-primary-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        Features
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>
+            New <code class="docs-inline-code">WRLAPageComponent</code> base class renders any Livewire
+            component as a full page in the WRLA admin layout. Set a static title with
+            <code class="docs-inline-code">#[Title]</code> or override
+            <code class="docs-inline-code">getPageTitle()</code> for a dynamic one.
+        </li>
+        <li>
+            Registering WRLA pages now uses standard Laravel routing
+            (<code class="docs-inline-code">Route::get('url', Component::class)</code>), so it works the
+            same as any other Livewire full-page route.
+        </li>
+        <li>
+            The built-in <code class="docs-inline-code">wrla.dashboard</code> route can now be overridden
+            simply by defining your own in <code class="docs-inline-code">buildRoutes()</code>. If you
+            don't, the default dashboard is still registered automatically.
+        </li>
+    </ul>
+</div>
+
+<!-- Bug Fixes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-green-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Bug Fixes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>None</li>
+    </ul>
+</div>
