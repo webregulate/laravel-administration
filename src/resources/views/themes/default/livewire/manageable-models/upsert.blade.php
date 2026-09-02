@@ -265,9 +265,56 @@
         }, true);
     }
 
+    if (!window.wrlaFastSmoothScroll) {
+        // Fast, custom smooth scroll (native behavior:'smooth' speed is not
+        // controllable). Animates scrollTop of the given scroller (or the window)
+        // to `top` over `duration` ms using ease-out.
+        window.wrlaFastSmoothScroll = function (scroller, top, duration) {
+            duration = duration || 250;
+            var isWindow = !scroller;
+            var start = isWindow ? window.pageYOffset : scroller.scrollTop;
+            var change = top - start;
+            if (change === 0) return;
+            var startTime = null;
+
+            var step = function (now) {
+                if (startTime === null) startTime = now;
+                var elapsed = now - startTime;
+                var t = Math.min(elapsed / duration, 1);
+                var eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+                var pos = start + change * eased;
+                if (isWindow) {
+                    window.scrollTo(0, pos);
+                } else {
+                    scroller.scrollTop = pos;
+                }
+                if (t < 1) requestAnimationFrame(step);
+            };
+
+            requestAnimationFrame(step);
+        };
+    }
+
     if (!window.wrlaScrollToFirstError) {
-        // Smooth-scroll the page so the topmost error message sits a little below the
-        // top of the viewport, giving context to the field it relates to. Covers the
+        // Find the nearest scrollable ancestor. The admin layout scrolls inside a
+        // container div (its overflow-x-auto forces overflow-y to auto), not the
+        // window, so window.scrollTo would do nothing.
+        window.wrlaGetScrollParent = function (node) {
+            var el = node ? node.parentElement : null;
+            while (el) {
+                var style = window.getComputedStyle(el);
+                var oy = style.overflowY;
+                if ((oy === 'auto' || oy === 'scroll' || oy === 'overlay') &&
+                    el.scrollHeight > el.clientHeight) {
+                    return el;
+                }
+                el = el.parentElement;
+            }
+            return null; // fall back to the window
+        };
+
+        // Smooth-scroll so the topmost error message sits a little below the top of
+        // its scroll area, giving context to the field it relates to. Covers the
         // various ways errors are rendered (error alerts, inline red text, upload errors).
         window.wrlaScrollToFirstError = function () {
             var selectors = [
@@ -282,7 +329,7 @@
             document.querySelectorAll(selectors.join(',')).forEach(function (el) {
                 // Skip anything not currently rendered (eg. hidden alerts).
                 if (el.getClientRects().length === 0) return;
-                var top = el.getBoundingClientRect().top + window.pageYOffset;
+                var top = el.getBoundingClientRect().top;
                 if (top < targetTop) {
                     targetTop = top;
                     target = el;
@@ -292,7 +339,24 @@
             if (!target) return false;
 
             var offset = 140; // leave room above the error for the related field
-            window.scrollTo({ top: Math.max(targetTop - offset, 0), behavior: 'smooth' });
+            var scroller = window.wrlaGetScrollParent(target);
+
+            if (scroller) {
+                var delta = target.getBoundingClientRect().top
+                    - scroller.getBoundingClientRect().top - offset;
+                window.wrlaFastSmoothScroll(
+                    scroller,
+                    Math.max(scroller.scrollTop + delta, 0),
+                    250
+                );
+            } else {
+                window.wrlaFastSmoothScroll(
+                    null,
+                    Math.max(targetTop + window.pageYOffset - offset, 0),
+                    250
+                );
+            }
+
             return true;
         };
     }
