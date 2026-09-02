@@ -35,6 +35,13 @@ trait ManageableField
     ];
 
     /**
+     * Explicit wire:key override for this field. When null, renderParent() derives a key
+     * from the field's name (falling back to its position). Set this on a nameless field
+     * that holds client state so its DOM node stays stable if the field list changes live.
+     */
+    protected ?string $wireKey = null;
+
+    /**
      * Validation rule
      */
     public string $validationRules = '';
@@ -511,6 +518,18 @@ trait ManageableField
     public function endGroup(): static
     {
         $this->options['endGroup'] = true;
+        return $this;
+    }
+
+    /**
+     * Set an explicit, stable wire:key for this field. Use for a nameless field that holds
+     * client state so its DOM node is not tied to its position in the field list.
+     *
+     * @return $this
+     */
+    public function wireKey(string $key): static
+    {
+        $this->wireKey = $key;
         return $this;
     }
 
@@ -1066,8 +1085,11 @@ trait ManageableField
 
     /**
      * Return view component.
+     *
+     * @param  ?int  $index  The field's position in the form, used as a stable wire:key
+     *                       fallback for fields that have no name attribute.
      */
-    public function renderParent(PageType $upsertType, array $fields): mixed
+    public function renderParent(PageType $upsertType, array $fields, ?int $index = null): mixed
     {
         if(!in_array($upsertType, $this->showOnPages))
         {
@@ -1077,11 +1099,9 @@ trait ManageableField
         // Set static fields
         ManageableModel::setLivewireFields($fields);
 
-        $HTML = $this->getOption('beginGroup') == true ? '<div class="w-full flex flex-col md:flex-row items-center gap-6">' : '';
-        $HTML .= $this->render();
-        $HTML .= $this->getOption('endGroup') == true ? '</div>' : '';
+        $renderedField = $this->render();
 
-        if(empty($HTML))
+        if(empty($renderedField))
         {
             return <<<HTML_WRAP
                 <br />
@@ -1091,12 +1111,33 @@ trait ManageableField
                 <br />
             HTML_WRAP;
         }
-        else
-        {
-            return <<<HTML
-                $HTML
-            HTML;
-        }
+
+        // Give every field a stable wire:key so Livewire's DOM morph always re-associates a
+        // field with its previous node across re-renders (e.g. after a save). Without this,
+        // inserting/removing sibling nodes (success/error alerts, create->edit transition) can
+        // make morphdom reuse the wrong DOM and reset stateful fields (Alpine widgets, JS
+        // editors), causing them to visually revert to a stale value. The wrapper uses
+        // display:contents so it stays transparent to the surrounding flex layout.
+        //
+        // Key precedence: explicit wireKey() > name (stable, position-independent) > index.
+        // Named fields (all stateful inputs have a name) are keyed by name, so reordering or
+        // adding/removing fields live cannot desync them. The index is only a fallback for
+        // nameless, display-only fields; a nameless field that holds state should call wireKey().
+        $fieldName = $this->htmlAttributes['name'] ?? null;
+        $wireKey = 'wrla-field-'.($this->wireKey
+            ?? ($fieldName !== null && $fieldName !== ''
+                ? preg_replace('/[^A-Za-z0-9_\-]/', '-', $fieldName)
+                : 'idx-'.($index ?? 0)));
+
+        // Group open/close tags stay OUTSIDE the per-field key wrapper because a group can span
+        // multiple fields (beginGroup on the first field, endGroup on the last).
+        $HTML = $this->getOption('beginGroup') == true ? '<div class="w-full flex flex-col md:flex-row items-center gap-6">' : '';
+        $HTML .= '<div wire:key="'.$wireKey.'" class="contents">'.$renderedField.'</div>';
+        $HTML .= $this->getOption('endGroup') == true ? '</div>' : '';
+
+        return <<<HTML
+            $HTML
+        HTML;
     }
 
     /**

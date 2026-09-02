@@ -6,7 +6,9 @@
 
 {{-- @dd($hideKeyValues) --}}
 
-<div x-data="{
+<div
+    wire:key="wrla-json-ui-{{ $attributes->get('name') }}-{{ md5((string) $json) }}"
+    x-data="{
     data: {},
     hideKeyValues: @js($hideKeyValues),
     init() {
