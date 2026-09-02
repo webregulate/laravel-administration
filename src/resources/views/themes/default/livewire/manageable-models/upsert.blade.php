@@ -26,8 +26,6 @@
                     Editing {{ $manageableModel->getDisplayName() }} #{{ $manageableModel->model()->id }}
                 @endif
             @endif
-
-            Test
         </div>
 
         <div class="flex justify-end gap-2 !text-sm">
@@ -99,6 +97,13 @@
             @endif
         </div>
 
+        {{-- Inline success message (shown after a successful livewire save, no page refresh) --}}
+        @if(!empty($successMessage))
+            <div class="mt-10">
+                @themeComponent('alert', ['type' => 'success', 'message' => $successMessage])
+            </div>
+        @endif
+
         <div class="flex justify-center gap-4 mt-10">
             @themeComponent('forms.button', [
                 'type' => 'submit',
@@ -126,6 +131,7 @@
         <div class="border border-slate-300 rounded-md p-2 mt-10 text-slate-500">
             <p class=" text-sm font-semibold">Debug Information:</p>
             <hr class="my-1 border-slate-300">
+            Upsert mode: Livewire<br />
             Render counter: {{ $numberOfRenders }}<br />
             Livewire data ({{ count($livewireData) }}):<br />
             @foreach($livewireData as $key => $value)
@@ -139,10 +145,10 @@
 </div>
 
 {{-- Sync all native (non-file) form inputs into this component's livewireData just
-     before the wire:submit handler runs, so save() receives them via the rebuilt
-     request. This covers composite fields (multi-image / multi-field) whose nested
-     livewire components write native inputs, as well as standard fields. File
-     inputs are handled separately as native livewire uploads. --}}
+    before the wire:submit handler runs, so save() receives them via the rebuilt
+    request. This covers composite fields (multi-image / multi-field) whose nested
+    livewire components write native inputs, as well as standard fields. File
+    inputs are handled separately as native livewire uploads. --}}
 @once
 @push('append-body')
 <script>

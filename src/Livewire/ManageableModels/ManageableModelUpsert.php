@@ -82,6 +82,13 @@ class ManageableModelUpsert extends WRLAPageComponent
      */
     public ?string $overrideSuccessMessage = null;
 
+    /**
+     * Success message shown inline (above the form buttons) after a successful
+     * save. Kept as a livewire property so the component stays on the page instead
+     * of performing a full-page redirect/refresh.
+     */
+    public ?string $successMessage = null;
+
     /* Livewire Methods / Hooks
     --------------------------------------------------------------------------*/
 
@@ -337,6 +344,9 @@ class ManageableModelUpsert extends WRLAPageComponent
     {
         $manageableModelClass = $this->manageableModelClass;
 
+        // Clear any previous inline success message
+        $this->successMessage = null;
+
         // Set page type and manageable model class
         WRLAHelper::setCurrentPageType($this->upsertType);
         WRLAHelper::setCurrentActiveManageableModelClass($manageableModelClass);
@@ -420,8 +430,9 @@ class ManageableModelUpsert extends WRLAPageComponent
             $manageableModel->postUpdateModelInstance($request, $manageableModel->model());
 
             // Default success message
-            $defaultSuccessMessage = 'Saved '.$manageableModel->getDisplayName().' #'.$manageableModel->model()->id.' successfully.';
-            $defaultSuccessMessage .= $this->modelId === null
+            $savedId = $manageableModel->model()->id;
+            $defaultSuccessMessage = 'Saved '.$manageableModel->getDisplayName().' #'.$savedId.' successfully.';
+            $defaultSuccessMessage .= $created
                 ? ' <a href="'.route('wrla.manageable-models.create', ['modelUrlAlias' => $manageableModel->getUrlAlias()]).'" class="font-bold underline">Click here</a> to create another '.$manageableModel->getDisplayName(false).' record.'
                 : '';
 
@@ -432,11 +443,19 @@ class ManageableModelUpsert extends WRLAPageComponent
                 return redirect()->route($this->overrideRedirectRoute)->with('success', $message);
             }
 
-            // Redirect to the edit page with success
-            return redirect()->route('wrla.manageable-models.edit', [
-                'modelUrlAlias' => $manageableModel->getUrlAlias(),
-                'id' => $manageableModel->model()->id,
-            ])->with('success', $defaultSuccessMessage);
+            // Stay on the page (no full-page refresh) and surface the result inline.
+            // When a new record was just created, transition the component into edit
+            // mode for that record so subsequent saves update it rather than creating
+            // duplicate records.
+            if ($created) {
+                $this->modelId = $savedId;
+                $this->upsertType = PageType::EDIT;
+                WRLAHelper::setCurrentPageType($this->upsertType);
+            }
+
+            $this->successMessage = $defaultSuccessMessage;
+
+            return null;
 
         // Catch
         }, function (Throwable $e) {

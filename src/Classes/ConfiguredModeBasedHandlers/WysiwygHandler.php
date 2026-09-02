@@ -76,6 +76,12 @@ class WysiwygHandler extends ConfiguredModeBasedHandler
                     menubar: '{{ $currentWysiwygEditorSettings["menubar"] }}',
                     toolbar: '{{ $currentWysiwygEditorSettings["toolbar"] }}',
                     paste_data_images: true,
+                    // Keep the underlying textarea in sync on every change so the
+                    // capture-phase livewire form sync always reads the latest content
+                    // (a submit-time save would run too late and submit stale/empty data).
+                    setup: (editor) => {
+                        editor.on('change input undo redo', () => editor.save());
+                    },
                     // images_upload_url: '{{ route("wrla.upload-wysiwyg-image") }}',
                     images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
                         var xhr, formData;
@@ -199,8 +205,13 @@ class WysiwygHandler extends ConfiguredModeBasedHandler
                             form.appendChild(hidden);
                         }
 
-                        // Sync on submit
-                        form.addEventListener('submit', () => {
+                        // Keep the hidden input in sync with the editor at all times. The
+                        // livewire form sync reads FormData in the capture phase, which runs
+                        // before any bubble-phase submit listener could copy the value in, so
+                        // relying on 'submit' alone would submit an empty value and wipe the
+                        // field. Seed it now and update on every edit.
+                        hidden.value = quill.root.innerHTML;
+                        quill.on('text-change', () => {
                             hidden.value = quill.root.innerHTML;
                         });
                     });
