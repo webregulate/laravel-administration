@@ -46,6 +46,7 @@ class DocumentationApp {
                             { title: 'browseSetup', url: 'manageable-models/manageable-models-browse-setup.html' },
                         ]
                     },
+                    { title: 'Custom Pages', url: 'custom-pages.html' },
                     { title: 'Authentication', url: 'authentication.html' },
                     { title: 'Authorization', url: 'authorization.html' },
                     { title: 'Permissions', url: 'permissions.html' }

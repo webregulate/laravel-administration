@@ -13,7 +13,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <link rel="icon" href="{{ config('wr-laravel-administration.favicon_url') }}" />
     <title>{{ $WRLAHelper::buildPageTitle(
-        app()->view->getSections()['title'] ?? '(page title not set)',
+        $title ?? (app()->view->getSections()['title'] ?? '(page title not set)'),
     ) }}</title>
     
 

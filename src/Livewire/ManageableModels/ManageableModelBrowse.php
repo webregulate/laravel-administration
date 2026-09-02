@@ -2,7 +2,6 @@
 
 namespace WebRegulate\LaravelAdministration\Livewire\ManageableModels;
 
-use Livewire\Component;
 use Livewire\Features\SupportRedirects\HandlesRedirects;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumnBase;
@@ -11,6 +10,7 @@ use WebRegulate\LaravelAdministration\Classes\ManageableModel;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
 use WebRegulate\LaravelAdministration\Enums\PageType;
+use WebRegulate\LaravelAdministration\Livewire\WRLAPageComponent;
 use WebRegulate\LaravelAdministration\Traits\ManageableField;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -22,7 +22,7 @@ use Throwable;
  *
  * This class represents a Livewire component for browsing manageable models.
  */
-class ManageableModelBrowse extends Component
+class ManageableModelBrowse extends WRLAPageComponent
 {
     use HandlesRedirects, WithPagination;
 
@@ -169,19 +169,33 @@ class ManageableModelBrowse extends Component
     /**
      * Mount the component.
      *
-     * @param  string  $manageableModelClass  The class name of the manageable model.
-     * @param  ?array  $preFilters  Pre filters passed from the AdminController::browse -> livewire-content view
+     * @param  string  $modelUrlAlias  The URL alias of the manageable model to browse.
+     * @param  ?array  $preFilters  Optional pre filters (also read from the ?preFilters query parameter).
      * @return \Illuminate\Http\RedirectResponse|null
      */
-    public function mount(string $manageableModelClass, ?array $preFilters = null)
+    public function mount(string $modelUrlAlias, ?array $preFilters = null)
     {
         // Set the page type so page-type aware logic resolves correctly for the browse view.
         WRLAHelper::setCurrentPageType(PageType::BROWSE);
 
+        // Resolve the manageable model class from its URL alias.
+        $manageableModelClass = ManageableModel::getByUrlAlias($modelUrlAlias);
+
         // If the manageable model reference is null, redirect to the dashboard
         if (is_null($manageableModelClass)) {
-            return redirect()->route('wrla.dashboard')->with('error', "Manageable model `$manageableModelClass` not found.");
+            return redirect()->route('wrla.dashboard')->with('error', "Manageable model with url alias `$modelUrlAlias` not found.");
         }
+
+        // Set current active manageable model class
+        WRLAHelper::setCurrentActiveManageableModelClass($manageableModelClass);
+
+        // Check the user has permission to browse this manageable model.
+        if (! $manageableModelClass::getPermission(ManageableModelPermissions::BROWSE)) {
+            return redirect()->route('wrla.dashboard')->with('error', 'You do not have permission to browse '.$manageableModelClass::getDisplayName().'.');
+        }
+
+        // Pre filters may be supplied directly or as a query parameter (?preFilters[...]=...).
+        $preFilters ??= request()->get('preFilters');
 
         // Get the manageable model and base model class
         $this->manageableModelClass = $manageableModelClass;
@@ -322,6 +336,14 @@ class ManageableModelBrowse extends Component
             'models' => $models,
             'hasFilters' => $this->hasFilters(),
         ]);
+    }
+
+    /**
+     * Page title shown in the WRLA admin layout.
+     */
+    protected function getPageTitle(): ?string
+    {
+        return 'Browse '.$this->manageableModelClass::getDisplayName();
     }
 
     /* Methods

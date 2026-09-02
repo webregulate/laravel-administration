@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use WebRegulate\LaravelAdministration\Http\Controllers\WRLAAdminController;
 use WebRegulate\LaravelAdministration\Http\Controllers\WRLAAuthController;
 use WebRegulate\LaravelAdministration\Http\Controllers\WRLADocumentationController;
+use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelBrowse;
+use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelUpsert;
+use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageAccount;
 
 Route::group(['namespace' => 'WebRegulate\LaravelAdministration\Http\Controllers'], function (): void {
 
@@ -43,25 +46,14 @@ Route::group(['namespace' => 'WebRegulate\LaravelAdministration\Http\Controllers
             // Base Url if logged in
             Route::get('', fn () => redirect()->route('wrla.dashboard'));
 
-            // Dashboard
-            Route::get('dashboard', 'index')->name('dashboard');
+            // Dashboard route ('wrla.dashboard') is registered from the service
+            // provider AFTER custom routes, so it can be overridden by the app in
+            // WRLASettings::buildRoutes().
 
             // Serve private filesystem files (base64-encoded path) — admin-only
             Route::get('serve-file/{disk}/{encodedPath}', 'serveFile')->name('serve-file');
 
-            // View file manager
-            Route::get('file-manager', 'fileManager')->name('file-manager');
-
-            // View logs
-            Route::get('logs', 'logs')->name('logs');
-
-            // Manage account
-            Route::get('manage-account', 'manageAccount')->name('manage-account');
-
-            // Manageable model routes
-            Route::get('browse/{modelUrlAlias}', 'browse')->name('manageable-models.browse');
-            Route::get('create/{modelUrlAlias}', 'upsert')->name('manageable-models.create');
-            Route::get('edit/{modelUrlAlias}/{id}', 'upsert')->name('manageable-models.edit');
+            // Manageable model upsert submit
             Route::post('create/{modelUrlAlias}/{modelId?}', 'upsertPost')->name('manageable-models.upsert.post');
             Route::post('edit/{modelUrlAlias}/{modelId?}', 'upsertPost')->name('manageable-models.upsert.post');
         });
@@ -80,3 +72,22 @@ Route::group(['namespace' => 'WebRegulate\LaravelAdministration\Http\Controllers
         Route::get('logout', [WRLAAuthController::class, 'logout'])->name('logout');
     });
 });
+
+// Full-page Livewire component routes.
+//
+// These are defined outside the controller "namespace" group above so their
+// invokable component class strings are not incorrectly prefixed with the
+// controller namespace. They still share the WRLA base url, "wrla." name prefix
+// and admin middleware.
+Route::prefix(config('wr-laravel-administration.base_url', 'wr-admin'))
+    ->name('wrla.')
+    ->middleware('wrla_is_admin')
+    ->group(function (): void {
+        // Manage account
+        Route::get('manage-account', ManageAccount::class)->name('manage-account');
+
+        // Manageable model browse & upsert
+        Route::get('browse/{modelUrlAlias}', ManageableModelBrowse::class)->name('manageable-models.browse');
+        Route::get('create/{modelUrlAlias}', ManageableModelUpsert::class)->name('manageable-models.create');
+        Route::get('edit/{modelUrlAlias}/{id}', ManageableModelUpsert::class)->name('manageable-models.edit');
+    });

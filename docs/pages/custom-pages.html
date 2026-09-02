@@ -1,0 +1,234 @@
+<h1 class="docs-title"><i class="fa-solid fa-file-code mr-3 text-primary-500"></i>Custom Pages</h1>
+<p class="docs-lead">
+    Add your own full-page screens to the admin panel by writing a standard Livewire v3 component
+    that extends <code class="docs-inline-code">WRLAPageComponent</code>. It renders inside the WRLA
+    admin layout automatically — sidebar, header, and theme included.
+</p>
+
+<!-- ── What is it? ─────────────────────────────────────────── -->
+<div class="docs-section">
+    <h2 class="docs-heading"><i class="fa-solid fa-circle-info mr-3 text-primary-500"></i>What is it?</h2>
+    <p class="docs-body">
+        <code class="docs-inline-code">WRLAPageComponent</code> is a thin base class that extends
+        <code class="docs-inline-code">Livewire\Component</code>. Extend it instead of
+        <code class="docs-inline-code">Livewire\Component</code> and your component's view is wrapped in the
+        WRLA admin layout on full-page loads — no <code class="docs-inline-code">@extends</code> or layout
+        boilerplate in your Blade file. This is the same mechanism WRLA's own internal pages
+        (browse, create/edit, file manager, logs) are built on.
+    </p>
+    <div class="docs-callout docs-callout-info">
+        <div class="docs-callout-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+        </div>
+        <div class="docs-callout-body">
+            <strong>Why not <code class="docs-inline-code">#[Layout]</code>?</strong> The WRLA layout path is
+            theme-dynamic, so a literal <code class="docs-inline-code">#[Layout('...')]</code> attribute
+            can't be used. The base class applies the correct theme layout through a
+            <code class="docs-inline-code">rendering()</code> lifecycle hook instead.
+        </div>
+    </div>
+</div>
+
+<!-- ── Step 1: Create the component ────────────────────────── -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <span class="docs-step-badge">1</span>
+        Create the component
+    </h2>
+    <p class="docs-body">
+        Create a Livewire component anywhere in your app (for example
+        <code class="docs-inline-code">app/Livewire/WRLA/</code>) and extend
+        <code class="docs-inline-code">WRLAPageComponent</code>. Its <code class="docs-inline-code">render()</code>
+        returns a normal Blade view just like any Livewire component.
+    </p>
+    <div class="docs-code-block mb-4">
+        <pre><code>&lt;?php
+
+namespace App\Livewire\WRLA;
+
+use Livewire\Attributes\Title;
+use WebRegulate\LaravelAdministration\Livewire\WRLAPageComponent;
+
+#[Title('My Page')]
+class MyPage extends WRLAPageComponent
+{
+    public function render()
+    {
+        return view('livewire.wrla.my-page');
+    }
+}</code></pre>
+    </div>
+</div>
+
+<!-- ── Step 2: Create the view ─────────────────────────────── -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <span class="docs-step-badge">2</span>
+        Create the view
+    </h2>
+    <p class="docs-body">
+        Your Blade file only contains the page's own content — no layout wrapper. WRLA injects it into the
+        admin layout's <code class="docs-inline-code">content</code> section automatically.
+    </p>
+    <div class="docs-code-block mb-4">
+        <pre><code>{{-- resources/views/livewire/wrla/my-page.blade.php --}}
+&lt;div&gt;
+    &lt;h1 class="text-2xl font-semibold"&gt;My Page&lt;/h1&gt;
+    &lt;p&gt;Hello from a custom WRLA page.&lt;/p&gt;
+&lt;/div&gt;</code></pre>
+    </div>
+    <div class="docs-callout docs-callout-info">
+        <div class="docs-callout-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+        </div>
+        <div class="docs-callout-body">
+            As with all Livewire components, the view must have a single root element.
+        </div>
+    </div>
+</div>
+
+<!-- ── Step 3: Register a route ────────────────────────────── -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <span class="docs-step-badge">3</span>
+        Register a route
+    </h2>
+    <p class="docs-body">
+        Register the component against a route in your
+        <code class="docs-inline-code">WRLASettings::buildRoutes()</code> method
+        (<code class="docs-inline-code">app/WRLA/WRLASettings.php</code>). Routes defined here are
+        already wrapped in a group that applies the admin
+        <code class="docs-inline-code">base_url</code> prefix and the
+        <code class="docs-inline-code">wrla_is_admin</code> middleware, so you don't need to add them
+        yourself. It is recommended to prefix custom route names with
+        <code class="docs-inline-code">wrla.</code>.
+    </p>
+    <div class="docs-code-block mb-4">
+        <pre><code>use Illuminate\Support\Facades\Route;
+use App\Livewire\WRLA\MyPage;
+
+public static function buildRoutes(): void
+{
+    Route::get('my-page', MyPage::class)
+        ->name('wrla.my-page');
+}</code></pre>
+    </div>
+    <p class="docs-body">
+        The page is now reachable at
+        <code class="docs-inline-code">/{base_url}/my-page</code> (for example
+        <code class="docs-inline-code">/wr-admin/my-page</code>), and only accessible to admin users.
+    </p>
+</div>
+
+<!-- ── Page titles ─────────────────────────────────────────── -->
+<div class="docs-section">
+    <h2 class="docs-heading"><i class="fa-solid fa-heading mr-3 text-primary-500"></i>Page titles</h2>
+    <p class="docs-body">There are two ways to set the browser/page title:</p>
+    <ul class="list-disc list-inside text-gray-600 mb-4 space-y-1 text-sm">
+        <li>
+            <strong>Static</strong> — add the standard Livewire
+            <code class="docs-inline-code">#[Title('My Page')]</code> attribute to the class (shown above).
+        </li>
+        <li>
+            <strong>Dynamic</strong> — override
+            <code class="docs-inline-code">protected function getPageTitle(): ?string</code> and return the
+            title at runtime. Returning <code class="docs-inline-code">null</code> falls back to the
+            <code class="docs-inline-code">#[Title]</code> attribute (or leaves the title unset).
+        </li>
+    </ul>
+    <div class="docs-code-block mb-4">
+        <pre><code>use WebRegulate\LaravelAdministration\Livewire\WRLAPageComponent;
+
+class MyPage extends WRLAPageComponent
+{
+    public ?string $recordName = null;
+
+    protected function getPageTitle(): ?string
+    {
+        return $this->recordName
+            ? "Editing {$this->recordName}"
+            : 'My Page';
+    }
+
+    // ...
+}</code></pre>
+    </div>
+</div>
+
+<!-- ── Add it to the navigation ────────────────────────────── -->
+<div class="docs-section">
+    <h2 class="docs-heading"><i class="fa-solid fa-bars mr-3 text-primary-500"></i>Add it to the navigation</h2>
+    <p class="docs-body">
+        To surface your page in the admin sidebar, register a navigation item in
+        <code class="docs-inline-code">WRLASettings::buildNavigation()</code> pointing at your route name.
+    </p>
+    <div class="docs-code-block mb-4">
+        <pre><code>use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItem;
+
+public static function buildNavigation(): array
+{
+    return [
+        // ...existing items...
+
+        NavigationItem::make(url: route('wrla.my-page'), name: 'My Page', icon: 'fa fa-file'),
+    ];
+}</code></pre>
+    </div>
+</div>
+
+<!-- ── Overriding the built-in pages ────────────────────────── -->
+<div class="docs-section">
+    <h2 class="docs-heading"><i class="fa-solid fa-gauge-high mr-3 text-primary-500"></i>Overriding the built-in pages</h2>
+    <p class="docs-body">
+        WRLA's built-in pages — the <code class="docs-inline-code">Dashboard</code>,
+        <code class="docs-inline-code">FileManager</code> and <code class="docs-inline-code">Logs</code> — are all
+        just full-page components wired up in <code class="docs-inline-code">buildRoutes()</code>. Fresh installs
+        ship them there so they're visible and easy to change. To replace one, point its route at your own
+        component; to disable one, remove its route.
+    </p>
+    <div class="docs-code-block mb-4">
+        <pre><code>use Illuminate\Support\Facades\Route;
+use WebRegulate\LaravelAdministration\Livewire\Dashboard;
+use WebRegulate\LaravelAdministration\Livewire\FileManager;
+use WebRegulate\LaravelAdministration\Livewire\Logs;
+use App\Livewire\WRLA\CustomDashboard;
+
+public static function buildRoutes(): void
+{
+    // Defaults — the built-in WRLA pages:
+    Route::get('dashboard', Dashboard::class)->name('wrla.dashboard');
+    Route::get('file-manager', FileManager::class)->name('wrla.file-manager');
+    Route::get('logs', Logs::class)->name('wrla.logs');
+
+    // Swap any of them for your own full-page component instead:
+    // Route::get('dashboard', CustomDashboard::class)
+    //     ->name('wrla.dashboard');
+}</code></pre>
+    </div>
+    <p class="docs-body">
+        Build <code class="docs-inline-code">CustomDashboard</code> like any other custom page (extend
+        <code class="docs-inline-code">WRLAPageComponent</code>). To keep the notifications widget from the
+        default dashboard, include it in your view:
+    </p>
+    <div class="docs-code-block mb-4">
+        <pre><code>@livewire('wrla.notifications-widget', [
+    'userIds' => config('wr-laravel-administration.dashboard.notifications.user_groups'),
+])</code></pre>
+    </div>
+    <div class="docs-callout docs-callout-info">
+        <div class="docs-callout-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+        </div>
+        <div class="docs-callout-body">
+            The dashboard has a safety net — if no <code class="docs-inline-code">wrla.dashboard</code> route is
+            defined, WRLA falls back to its built-in one. File manager and logs are only available when their
+            routes are present.
+        </div>
+    </div>
+</div>

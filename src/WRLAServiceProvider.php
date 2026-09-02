@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use WebRegulate\LaravelAdministration\Livewire\Dashboard;
 use Opcodes\LogViewer\Facades\LogViewer;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\ComponentAttributeBag;
@@ -35,6 +36,7 @@ use WebRegulate\LaravelAdministration\Commands\CreateManageableModelCommand;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItem;
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelBrowse;
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelUpsert;
+use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageAccount;
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelDynamicBrowseFilters;
 use WebRegulate\LaravelAdministration\Livewire\MultiUploadFields\MultiImageUploads;
 use WebRegulate\LaravelAdministration\Livewire\MultiUploadFields\MultiFormGroups;
@@ -222,12 +224,28 @@ class WRLAServiceProvider extends ServiceProvider
             $this->loadRoutesFrom(__DIR__ . '/routes/wr-laravel-administration-routes.php');
 
             // Load custom routes from WRLASettings if exists
-            if(class_exists(\App\WRLA\WRLASettings::class) && method_exists(\App\WRLA\WRLASettings::class, 'buildCustomRoutes')) {
+            if(class_exists(\App\WRLA\WRLASettings::class) && method_exists(\App\WRLA\WRLASettings::class, 'buildRoutes')) {
                 Route::prefix(config('wr-laravel-administration.base_url', 'wr-admin'))->group(function (): void {
                     Route::group(['middleware' => ['wrla_is_admin']], function (): void {
-                        \App\WRLA\WRLASettings::buildCustomRoutes();
+                        \App\WRLA\WRLASettings::buildRoutes();
                     });
                 });
+            }
+
+            // Backwards-compat fallback: newer installs define the default
+            // 'wrla.dashboard' route in WRLASettings::buildRoutes() (see stub),
+            // but older WRLASettings files predate it. Only register the built-in
+            // dashboard here if the app hasn't already defined the route.
+            // refreshNameLookups() ensures fluently named custom routes are visible
+            // to Route::has() at this point.
+            Route::getRoutes()->refreshNameLookups();
+            if (! Route::has('wrla.dashboard')) {
+                Route::prefix(config('wr-laravel-administration.base_url', 'wr-admin'))
+                    ->name('wrla.')
+                    ->middleware('wrla_is_admin')
+                    ->group(function (): void {
+                        Route::get('dashboard', Dashboard::class)->name('dashboard');
+                    });
             }
         });
 
@@ -244,9 +262,11 @@ class WRLAServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__ . '/resources/views', 'wr-laravel-administration');
 
         // Livewire component registering and asset injection
+        Livewire::component('wrla.dashboard', Dashboard::class);
         Livewire::component('wrla.manageable-models.dynamic-browse-filters', ManageableModelDynamicBrowseFilters::class);
         Livewire::component('wrla.manageable-models.browse', ManageableModelBrowse::class);
         Livewire::component('wrla.manageable-models.upsert', ManageableModelUpsert::class);
+        Livewire::component('wrla.manageable-models.manage-account', ManageAccount::class);
         Livewire::component('wrla.notifications-widget', NotificationsWidget::class);
         Livewire::component('wrla.import-data-modal', ImportDataModal::class);
         Livewire::component('wrla.dev-tools.dev-tools-modal', DevToolsModal::class);

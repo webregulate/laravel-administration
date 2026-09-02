@@ -3,10 +3,11 @@
 namespace WebRegulate\LaravelAdministration\Livewire;
 
 use Illuminate\Support\Facades\File;
-use Livewire\Component;
+use Livewire\Attributes\Title;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 
-class Logs extends Component
+#[Title('View Logs')]
+class Logs extends WRLAPageComponent
 {
     /* Properties
     --------------------------------------------------------------------------*/
@@ -20,11 +21,29 @@ class Logs extends Component
 
     public int $viewLogMaxCharacters = 0;
 
+    /**
+     * opcodesio/log-viewer iframe src. Null when using the built-in WRLA log viewer.
+     */
+    public ?string $logViewerIframeSrc = null;
+
     /* Livewire Methods / Hooks
     --------------------------------------------------------------------------*/
     public function mount()
     {
-        // Config
+        // opcodesio/log-viewer mode: redirect out to the standalone viewer, or embed
+        // it in an iframe when configured to display within WRLA.
+        if (config('wr-laravel-administration.logs.current') === 'opcodesio/log-viewer') {
+            $logViewerPath = '/'.config('log-viewer.route_path', 'log-viewer');
+
+            if (config('wr-laravel-administration.logs.opcodesio/log-viewer.display_within_wrla', false) !== true) {
+                return redirect()->to($logViewerPath);
+            }
+
+            $this->logViewerIframeSrc = $logViewerPath;
+            return;
+        }
+
+        // Built-in WRLA log viewer
         $this->viewLogMaxCharacters = config('wr-laravel-administration.logs.wrla.max_characters', 200000);
 
         // Set all log files and directories
@@ -36,6 +55,13 @@ class Logs extends Component
 
     public function render()
     {
+        // opcodesio/log-viewer embedded within WRLA
+        if ($this->logViewerIframeSrc !== null) {
+            return view(WRLAHelper::getViewPath('livewire.logs-log-viewer'), [
+                'src' => $this->logViewerIframeSrc,
+            ]);
+        }
+
         // Get current directories and files
         $currentDirectoriesAndFiles = empty($this->viewingLogsDirectory)
             ? $this->logDirectoriesAndFiles

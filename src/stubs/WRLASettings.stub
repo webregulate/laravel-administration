@@ -1,7 +1,11 @@
 <?php
 namespace App\WRLA;
 
+use Illuminate\Support\Facades\Route;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
+use WebRegulate\LaravelAdministration\Livewire\Dashboard;
+use WebRegulate\LaravelAdministration\Livewire\FileManager;
+use WebRegulate\LaravelAdministration\Livewire\Logs;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItem;
 
 class WRLASettings
@@ -52,18 +56,24 @@ class WRLASettings
     }
 
     /**
-     * Build custom routes. It is recommended to prefix all custom route names with 'wrla.'
-     *
-     * @return void
+     * Build routes. Livewire routes should extend WRLAPageComponent.
      */
-    public static function buildCustomRoutes(): void
+    public static function buildRoutes(): void
     {
-        // WRLAHelper::registerLivewireRoute(
-        //     'url-route',
-        //     'wrla.dummy-livewire-component',
-        //     DummyLivewireComponent::class,
-        //     [],
-        //     'Page Meta Title',
-        // );
+        // Dashboard
+        Route::get('dashboard', Dashboard::class)
+            ->name('wrla.dashboard');
+
+        // File manager - Enabled via `wr-laravel-administration.file_manager.enabled` configuration
+        Route::get('file-manager', FileManager::class)
+            ->name('wrla.file-manager');
+
+        // View logs - Set via `wr-laravel-administration.logs.current` configuration
+        Route::get('logs', Logs::class)
+            ->name('wrla.logs');
+
+        // Custom route example
+        // Route::get('url-route', MyComponent::class)
+        //     ->name('wrla.my-component');
     }
 }

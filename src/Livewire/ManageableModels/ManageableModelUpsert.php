@@ -2,20 +2,20 @@
 
 namespace WebRegulate\LaravelAdministration\Livewire\ManageableModels;
 
-use Livewire\Component;
 use Livewire\Features\SupportRedirects\HandlesRedirects;
 use Livewire\WithFileUploads;
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
 use WebRegulate\LaravelAdministration\Enums\PageType;
+use WebRegulate\LaravelAdministration\Livewire\WRLAPageComponent;
 
 /**
  * Class ManageableModelUpsert
  *
  * This class represents a Livewire component for upserting a manageable model.
  */
-class ManageableModelUpsert extends Component
+class ManageableModelUpsert extends WRLAPageComponent
 {
     /* Traits
     --------------------------------------------------------------------------*/
@@ -74,20 +74,37 @@ class ManageableModelUpsert extends Component
     ];
 
     /**
-     * Mount the component.
+     * Mount the component from a route.
+     *
+     * @param  string  $modelUrlAlias  The URL alias of the manageable model.
+     * @param  ?int  $id  The id of the model to edit, null when creating.
+     * @return \Illuminate\Http\RedirectResponse|null
+     */
+    public function mount(string $modelUrlAlias, ?int $id = null)
+    {
+        // Resolve the manageable model class from its URL alias.
+        $manageableModelClass = ManageableModel::getByUrlAlias($modelUrlAlias);
+
+        // If the manageable model reference is null, redirect to the dashboard
+        if (is_null($manageableModelClass)) {
+            return redirect()->route('wrla.dashboard')->with('error', "Manageable model with url alias `$modelUrlAlias` not found.");
+        }
+
+        return $this->initialise($manageableModelClass, $id === null ? PageType::CREATE : PageType::EDIT, $id);
+    }
+
+    /**
+     * Initialise the component state. Shared by the route mount and subclasses
+     * (e.g. the manage account page) that resolve the manageable model differently.
      *
      * @param  string  $manageableModelClass  The class name of the manageable model.
      * @param  PageType  $upsertType  The type of upsert page.
      * @param  ?int  $modelId  The id of the model to upsert, null if creating a new model.
+     * @param  ?string  $overrideTitle  Optional title override.
      * @return \Illuminate\Http\RedirectResponse|null
      */
-    public function mount(string $manageableModelClass, PageType $upsertType, ?int $modelId = null, ?string $overrideTitle = null)
+    protected function initialise(string $manageableModelClass, PageType $upsertType, ?int $modelId = null, ?string $overrideTitle = null)
     {
-        // If the manageable model reference is null, redirect to the dashboard
-        if (is_null($manageableModelClass)) {
-            return redirect()->route('wrla.dashboard')->with('error', "Manageable model `$manageableModelClass` not found.");
-        }
-
         // Get the manageable model and base model class
         $this->manageableModelClass = $manageableModelClass;
         $manageableModelInstance = $this->manageableModelClass::make($this->modelId, true);
@@ -221,6 +238,15 @@ class ManageableModelUpsert extends Component
 
             return '<div></div>';
         }
+    }
+
+    /**
+     * Page title shown in the WRLA admin layout.
+     */
+    protected function getPageTitle(): ?string
+    {
+        return $this->overrideTitle
+            ?? str($this->upsertType->value)->lower()->title()->toString().' '.$this->manageableModelClass::getDisplayName();
     }
 
     /**

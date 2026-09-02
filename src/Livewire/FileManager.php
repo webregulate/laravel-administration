@@ -5,12 +5,13 @@ namespace WebRegulate\LaravelAdministration\Livewire;
 use Exception;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use Livewire\Component;
+use Livewire\Attributes\Title;
 use Livewire\WithFileUploads;
 use Symfony\Component\Mime\MimeTypes;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 
-class FileManager extends Component
+#[Title('File Manager')]
+class FileManager extends WRLAPageComponent
 {
     use WithFileUploads;
 

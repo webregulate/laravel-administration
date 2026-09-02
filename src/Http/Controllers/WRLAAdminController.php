@@ -2,9 +2,7 @@
 
 namespace WebRegulate\LaravelAdministration\Http\Controllers;
 
-use Exception;
 use Throwable;
-use Illuminate\View\View;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -13,8 +11,6 @@ use Illuminate\Support\Facades\Validator;
 use WebRegulate\LaravelAdministration\Enums\PageType;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
-use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
-use WebRegulate\LaravelAdministration\Classes\ConfiguredModeBasedHandlers\LogsHandler;
 
 /**
  * Class WRLAAdminController
@@ -24,90 +20,6 @@ use WebRegulate\LaravelAdministration\Classes\ConfiguredModeBasedHandlers\LogsHa
  */
 class WRLAAdminController extends Controller
 {
-    /**
-     * index / dashboard view
-     */
-    public function index(Request $request)
-    {
-        return view(WRLAHelper::getViewPath('dashboard'));
-    }
-
-    /**
-     * ManageableModel browse view
-     */
-    public function browse(Request $request, string $modelUrlAlias): View|RedirectResponse
-    {
-        // Set page type
-        WRLAHelper::setCurrentPageType(PageType::BROWSE);
-
-        // Get preFilters from Get url
-        $preFilters = $request->get('preFilters') ?? null;
-
-        // Get the manageable model class by its URL alias
-        $manageableModelClass = ManageableModel::getByUrlAlias($modelUrlAlias);
-
-        // If the manageable model is null, redirect to the dashboard with error
-        if (is_null($manageableModelClass)) {
-            return redirect()->route('wrla.dashboard')->with('error', "Manageable model with url alias `$modelUrlAlias` not found.");
-        }
-
-        // Set current active manageable model class
-        WRLAHelper::setCurrentActiveManageableModelClass($manageableModelClass);
-
-        // Check has browse permission
-        if (! $manageableModelClass::getPermission(ManageableModelPermissions::BROWSE)) {
-            return redirect()->route('wrla.dashboard')->with('error', 'You do not have permission to browse '.$manageableModelClass::getDisplayName().'.');
-        }
-
-        return view(WRLAHelper::getViewPath('livewire-content'), [
-            'title' => 'Browse '.$manageableModelClass::getDisplayName(),
-            'livewireComponentAlias' => 'wrla.manageable-models.browse',
-            'livewireComponentData' => [
-                'manageableModelClass' => $manageableModelClass,
-                'preFilters' => $preFilters ?? null,
-            ],
-        ]);
-    }
-
-    /**
-     * ManageableModel upsert view
-     */
-    public function upsert(Request $request, string $modelUrlAlias, null|int|string $modelId = null): View|RedirectResponse
-    {
-        try {
-            // Get the manageable model and instance by its URL alias and id
-            $manageableModelClass = ManageableModel::getByUrlAlias($modelUrlAlias);
-            $manageableModelInstance = $manageableModelClass::make((int)$modelId, true);
-    
-            // If the manageable model is null, redirect to the dashboard with error
-            if (is_null($manageableModelClass)) {
-                return redirect()->route('wrla.dashboard')->with('error', "Manageable model with url alias `$modelUrlAlias` not found.");
-            }
-    
-            // Set page type
-            $upsertType = WRLAHelper::setCurrentPageType($modelId == null ? PageType::CREATE : PageType::EDIT);
-            WRLAHelper::setCurrentActiveManageableModelClass($manageableModelClass);
-    
-            // If model id doesn't exist then return to dashboard with error
-            if ($modelId != null && $manageableModelInstance->model() == null) {
-                return redirect()->route('wrla.dashboard')->with('error', 'Model '.$manageableModelClass." with ID `$modelId` not found.");
-            }
-    
-            return view(WRLAHelper::getViewPath('livewire-content'), [
-                'title' => str($upsertType->value)->lower()->title()->toString().' '.$manageableModelClass::getDisplayName(),
-                'livewireComponentAlias' => 'wrla.manageable-models.upsert',
-                'livewireComponentData' => [
-                    'manageableModelClass' => $manageableModelClass,
-                    'upsertType' => $modelId == null ? PageType::CREATE : PageType::EDIT,
-                    'modelId' => $modelId,
-                ],
-            ]);
-        } catch (Exception $e) {
-            // If an error occurs, redirect to the dashboard with an error message
-            return redirect()->route('wrla.dashboard')->with('error', "Error loading manageable model `$manageableModelClass`: ".$e->getMessage());
-        }
-    }
-
     /**
      * ManageableModel upsert submit
      */
@@ -281,51 +193,5 @@ class WRLAAdminController extends Controller
         return response($storage->get($path), 200)
             ->header('Content-Type', $mimeType)
             ->header('Cache-Control', 'private, max-age=3600');
-    }
-
-    /**
-     * View file manager
-     */
-    public function fileManager(Request $request): View
-    {
-        return view(WRLAHelper::getViewPath('livewire-content'), [
-            'title' => 'File Manager',
-            'livewireComponentAlias' => 'wrla.file-manager',
-            'livewireComponentData' => [],
-        ]);
-    }
-
-    /**
-     * View logs
-     */
-    public function logs(Request $request): View|RedirectResponse|string
-    {
-        $logsHandler = new LogsHandler();
-        return $logsHandler->getView();
-    }
-
-    /**
-     * Manage account view
-     */
-    public function manageAccount(Request $request): View
-    {
-        // Set page type
-        WRLAHelper::setCurrentPageType(PageType::EDIT);
-        $userManageableModelClass = WRLAHelper::getUserManageableModelClass();
-        WRLAHelper::setCurrentActiveManageableModelClass($userManageableModelClass);
-
-        // Get manageable model instance
-        $manageableModel = WRLAHelper::getCurrentUserManageableModel();
-
-        return view(WRLAHelper::getViewPath('livewire-content'), [
-            'title' => 'Manage Account',
-            'livewireComponentAlias' => 'wrla.manageable-models.upsert',
-            'livewireComponentData' => [
-                'manageableModelClass' => $userManageableModelClass,
-                'upsertType' => PageType::EDIT,
-                'modelId' => $manageableModel->model()->id,
-                'overrideTitle' => 'Manage Account',
-            ],
-        ]);
     }
 }
