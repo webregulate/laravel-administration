@@ -118,10 +118,10 @@
 
             @themeComponent('forms.button', [
                 'href' => $manageableModelClass::urlBrowse(),
-                'text' => 'Cancel',
+                'text' => $manageableModelClass::getDisplayName(true),
                 'size' => 'medium',
                 'color' => 'secondary',
-                'icon' => 'fa fa-times',
+                'icon' => 'fa fa-arrow-left',
             ])
         </div>
 
