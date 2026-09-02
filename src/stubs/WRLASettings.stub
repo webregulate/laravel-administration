@@ -12,8 +12,6 @@ class WRLASettings
 {
     /**
      * Build navigation for the WRLA application
-     *
-     * @return array
      */
     public static function buildNavigation(): array
     {
