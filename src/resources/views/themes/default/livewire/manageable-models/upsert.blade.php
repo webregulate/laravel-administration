@@ -96,7 +96,7 @@
         @error('error')
             @themeComponent('alert', ['type' => 'error', 'message' => $message])
         @enderror
-        
+
         {{-- Inline success message (shown after a successful livewire save, no page refresh) --}}
         @if(!empty($successMessage))
             <div class="mt-10">
@@ -131,7 +131,7 @@
         <div class="border border-slate-300 rounded-md p-2 mt-10 text-slate-500">
             <p class=" text-sm font-semibold">Debug Information:</p>
             <hr class="my-1 border-slate-300">
-            Upsert version: 0.100 <br />
+            Upsert version: 0.8.8 <br />
             Render counter: {{ $numberOfRenders }}<br />
             Livewire data ({{ count($livewireData) }}):<br />
             @foreach($livewireData as $key => $value)
@@ -247,6 +247,10 @@
             var wire = window.Livewire.find(root.getAttribute('wire:id'));
             if (!wire) return;
 
+            // Mark that an upsert save was just submitted so the livewire commit hook
+            // knows to scroll to the first validation error if the save is rejected.
+            window.wrlaUpsertSubmitPending = true;
+
             // Let fields flush any external state into their native form controls
             // before FormData is read (eg. WYSIWYG editors whose content lives in an
             // iframe/hidden element). Editors register callbacks in this registry from
@@ -259,6 +263,71 @@
 
             window.wrlaSyncFormToLivewire(form, wire);
         }, true);
+    }
+
+    if (!window.wrlaScrollToFirstError) {
+        // Smooth-scroll the page so the topmost error message sits a little below the
+        // top of the viewport, giving context to the field it relates to. Covers the
+        // various ways errors are rendered (error alerts, inline red text, upload errors).
+        window.wrlaScrollToFirstError = function () {
+            var selectors = [
+                '.alert .bg-red-100',      // themed error alert (field + generic errors)
+                'p.text-red-500',          // inline errors (checkbox / button fields)
+                '.border-red-400.bg-red-50' // multi-image / upload errors
+            ];
+
+            var target = null;
+            var targetTop = Infinity;
+
+            document.querySelectorAll(selectors.join(',')).forEach(function (el) {
+                // Skip anything not currently rendered (eg. hidden alerts).
+                if (el.getClientRects().length === 0) return;
+                var top = el.getBoundingClientRect().top + window.pageYOffset;
+                if (top < targetTop) {
+                    targetTop = top;
+                    target = el;
+                }
+            });
+
+            if (!target) return false;
+
+            var offset = 140; // leave room above the error for the related field
+            window.scrollTo({ top: Math.max(targetTop - offset, 0), behavior: 'smooth' });
+            return true;
+        };
+    }
+
+    if (!window.wrlaUpsertErrorScrollBound) {
+        window.wrlaUpsertErrorScrollBound = true;
+
+        var bindErrorScrollHook = function () {
+            if (!window.Livewire || !window.Livewire.hook) return;
+
+            // After the save commit is applied to the DOM, scroll to the first error
+            // (if any) but only when it followed an upsert form submit.
+            window.Livewire.hook('commit', function (payload) {
+                var succeed = payload.succeed;
+                if (typeof succeed !== 'function') return;
+
+                succeed(function () {
+                    if (!window.wrlaUpsertSubmitPending) return;
+                    window.wrlaUpsertSubmitPending = false;
+
+                    // Wait for the morph to apply so error nodes exist before scrolling.
+                    requestAnimationFrame(function () {
+                        requestAnimationFrame(function () {
+                            window.wrlaScrollToFirstError();
+                        });
+                    });
+                });
+            });
+        };
+
+        if (window.Livewire && window.Livewire.hook) {
+            bindErrorScrollHook();
+        } else {
+            document.addEventListener('livewire:init', bindErrorScrollHook);
+        }
     }
 </script>
 @endpush
