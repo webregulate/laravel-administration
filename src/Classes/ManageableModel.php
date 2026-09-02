@@ -1393,7 +1393,7 @@ abstract class ManageableModel
                     $this->preUpdateRelationshipInstanceField($this->modelInstance, $relationshipInstance, $manageableField->getRelationshipName(), $manageableField->getRelationshipFieldName(), $fieldValue);
 
                     // Update field and save the relationship instance
-                    $relationshipInstance->{$manageableField->getRelationshipFieldName()} = $fieldValue;
+                    $relationshipInstance->{$manageableField->getRelationshipFieldName()} = WRLAHelper::normaliseEmptyValueForColumn($relationshipInstance, $manageableField->getRelationshipFieldName(), $fieldValue);
                     $relationshipInstance->save();
 
                     // if(isset($jsonNotation) && str($jsonNotation)->contains('avatar')) {
@@ -1401,7 +1401,7 @@ abstract class ManageableModel
                     // }
                 } else {
                     // Update the field value of the model instance
-                    $this->modelInstance->{$fieldName} = $fieldValue;
+                    $this->modelInstance->{$fieldName} = WRLAHelper::normaliseEmptyValueForColumn($this->modelInstance, $fieldName, $fieldValue);
                 }
             }
         }

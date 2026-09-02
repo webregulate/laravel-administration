@@ -1604,6 +1604,70 @@ class WRLAHelper
     }
 
     /**
+     * Get a [column => ['nullable' => bool, 'type' => string]] map for the given table.
+     * Uses Schema::getColumns() (Laravel 10.37+); returns [] if unavailable.
+     */
+    public static function getTableColumnDefinitions(string $table, ?string $connection = null): array
+    {
+        return once(function () use ($table, $connection) {
+            try {
+                $schema = empty($connection) ? Schema::getFacadeRoot() : Schema::connection($connection);
+                $columns = $schema->getColumns($table);
+            } catch (\Throwable) {
+                return [];
+            }
+
+            $definitions = [];
+            foreach ($columns as $column) {
+                $name = $column['name'] ?? null;
+                if ($name === null) {
+                    continue;
+                }
+                $definitions[$name] = [
+                    'nullable' => (bool) ($column['nullable'] ?? false),
+                    'type' => strtolower((string) ($column['type_name'] ?? $column['type'] ?? '')),
+                ];
+            }
+
+            return $definitions;
+        });
+    }
+
+    /**
+     * Normalise an empty string to null when the target column cannot store '' under a strict
+     * SQL mode (temporal, numeric, boolean types) and is nullable. String/text/json/binary/enum
+     * columns keep the empty string. Non-column attributes and non-empty values pass through.
+     */
+    public static function normaliseEmptyValueForColumn(Model $model, string $column, mixed $value): mixed
+    {
+        if ($value !== '') {
+            return $value;
+        }
+
+        $connection = $model->getConnectionName();
+        $table = $model->getTable();
+
+        if (str_contains($table, '.')) {
+            $tableParts = explode('.', $table);
+            $table = end($tableParts);
+        }
+
+        $definition = static::getTableColumnDefinitions($table, $connection)[$column] ?? null;
+        if ($definition === null || !$definition['nullable']) {
+            return $value;
+        }
+
+        // Types that legitimately store an empty string — leave those untouched.
+        $stringLikeTypes = [
+            'char', 'varchar', 'string', 'tinytext', 'text', 'mediumtext', 'longtext',
+            'enum', 'set', 'json', 'binary', 'varbinary',
+            'tinyblob', 'blob', 'mediumblob', 'longblob', 'uuid', 'inet', 'cidr', 'macaddr',
+        ];
+
+        return in_array($definition['type'], $stringLikeTypes, true) ? $value : null;
+    }
+
+    /**
      * Determine whether the given attribute on the model uses an array/json-style cast
      * (e.g. 'array', 'json', 'collection', 'object', or Eloquent's AsArrayObject / AsCollection
      * class-based casts). Used to distinguish nested JSON access from relationship access when
@@ -1648,8 +1712,7 @@ class WRLAHelper
      * Model's table has column
      */
     public static function modelTableHasColumn(Model $model, string $column): bool
-    {
-        // Get connection and table
+    {        // Get connection and table
         $connection = $model->getConnectionName();
         $table = $model->getTable();
 
