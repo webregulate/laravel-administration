@@ -21,7 +21,7 @@
         : '<span class="float-right text-red-500">Image not found</span>';
 @endphp
 
-<div wire:ignore class="{{ $options['containerClass'] ?? 'w-full flex-1 md:flex-auto' }}">
+<div wire:ignore data-wrla-field-name="{{ $attributes->get('name') }}" class="{{ $options['containerClass'] ?? 'w-full flex-1 md:flex-auto' }}">
 
 @if(!empty($label))
     @themeComponent('forms.label', [
@@ -124,6 +124,18 @@
 
 @once
 <script>
+    // Resolve the livewire ($wire) component instance that owns the given element.
+    function wrla_croppable_getWire(el) {
+        var root = el.closest('[wire\\:id]');
+        return (root && window.Livewire) ? window.Livewire.find(root.getAttribute('wire:id')) : null;
+    }
+
+    // Field name (livewireData key) for the given croppable image field element.
+    function wrla_croppable_getFieldName(el) {
+        var root = el.closest('[data-wrla-field-name]');
+        return root ? root.getAttribute('data-wrla-field-name') : null;
+    }
+
     function wrla_setPreviewImage(input) {
         if (input.files && input.files[0]) {
             var previewImageElement = input.parentElement.parentElement.parentElement.querySelector('.wrla_image_preview');
@@ -142,6 +154,13 @@
             if (removeButton) {
                 removeButton.value = 'false';
                 removeButton.parentElement.querySelector('button').style.display = 'block';
+            }
+
+            // Clear any pending removal flag in livewire (the cropped file is uploaded on submit)
+            var wire = wrla_croppable_getWire(input);
+            var name = wrla_croppable_getFieldName(input);
+            if (wire && name) {
+                wire.set('livewireData.wrla_remove_' + name, 'false', false);
             }
         }
     }
@@ -172,6 +191,15 @@
         if(imageExists) {
             removeInput.value = 'true';
         }
+
+        // Mirror the removal into livewire state (clears any pending upload + rotation)
+        var wire = wrla_croppable_getWire(button);
+        var name = wrla_croppable_getFieldName(button);
+        if (wire && name) {
+            wire.set('livewireData.' + name, null, false);
+            wire.set('livewireData.wrla_rotation_' + name, 0, false);
+            wire.set('livewireData.wrla_remove_' + name, imageExists ? 'true' : 'false', false);
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -183,6 +211,13 @@
 
         // Hide preview om start
         imageToCropContainer.style.display = 'none';
+
+        // Livewire binding for this field (deferred until save)
+        const wrlaName = @js($name);
+        function wrlaWire() {
+            var root = imageInput.closest('[wire\\:id]');
+            return (root && window.Livewire) ? window.Livewire.find(root.getAttribute('wire:id')) : null;
+        }
 
         let cropper;
 
@@ -219,6 +254,12 @@
             wrla_croppable_updateRotationLabel(current);
             if (croppedImagePreview) {
                 croppedImagePreview.style.transform = 'rotate(' + current + 'deg)';
+            }
+
+            // Mirror the rotation into livewire state so the server rotates the stored file
+            var wire = wrlaWire();
+            if (wire) {
+                wire.set('livewireData.wrla_rotation_' + wrlaName, current, false);
             }
         }
 
@@ -308,29 +349,38 @@
             }
         });
 
-        // Override standard form submission
+        // Override standard submission: when a new image has been cropped, upload the
+        // cropped canvas to livewire as a native file upload and then run the save
+        // action. Runs in the capture phase so it pre-empts livewire's own wire:submit
+        // handler; when there's no active cropper we let livewire submit normally.
         form.addEventListener('submit', function (e) {
             try {
-                if (!cropper) return; // No cropper, let it submit normally
-    
-                e.preventDefault(); // Stop it briefly while we insert the cropped file
-    
+                if (!cropper) return; // No cropper, let livewire submit normally
+
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
                 cropper.getCroppedCanvas().toBlob(function (blob) {
                     const file = new File([blob], 'cropped.png', { type: 'image/png' });
-    
-                    // Create a DataTransfer to simulate file input
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-    
-                    // Replace the hidden file input's files
-                    imageInput.files = dataTransfer.files;
-    
-                    form.submit(); // Now submit the form normally
+                    const wire = wrlaWire();
+
+                    if (!wire) return;
+
+                    // Sync all other native form inputs into livewire first, then
+                    // upload the cropped image and run the save action.
+                    if (window.wrlaSyncFormToLivewire) {
+                        window.wrlaSyncFormToLivewire(form, wire);
+                    }
+
+                    wire.upload('livewireData.' + wrlaName, file, function () {
+                        wire.set('livewireData.wrla_remove_' + wrlaName, 'false', false);
+                        wire.call('save');
+                    });
                 }, 'image/png');
             } catch (error) {
                 alert('Error during form submission:' + error);
             }
-        });
+        }, true);
     });
 </script>
 @endonce

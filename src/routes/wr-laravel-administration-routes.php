@@ -52,10 +52,6 @@ Route::group(['namespace' => 'WebRegulate\LaravelAdministration\Http\Controllers
 
             // Serve private filesystem files (base64-encoded path) — admin-only
             Route::get('serve-file/{disk}/{encodedPath}', 'serveFile')->name('serve-file');
-
-            // Manageable model upsert submit
-            Route::post('create/{modelUrlAlias}/{modelId?}', 'upsertPost')->name('manageable-models.upsert.post');
-            Route::post('edit/{modelUrlAlias}/{modelId?}', 'upsertPost')->name('manageable-models.upsert.post');
         });
 
         // Documentation routes

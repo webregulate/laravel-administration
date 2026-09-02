@@ -26,6 +26,8 @@
                     Editing {{ $manageableModel->getDisplayName() }} #{{ $manageableModel->model()->id }}
                 @endif
             @endif
+
+            Test
         </div>
 
         <div class="flex justify-end gap-2 !text-sm">
@@ -39,16 +41,10 @@
     {{-- Form --}}
     <form
         id="upsert-form"
-        action="{{ route('wrla.manageable-models.upsert.post', [
-            'modelUrlAlias' => $manageableModel->getUrlAlias(),
-            'modelId' => $manageableModel->model()->id,
-        ]) }}"
         autocomplete="off"
-        enctype="multipart/form-data"
-        method="POST"
-        class="w-full">
-        @csrf
-
+        wire:submit="save"
+        class="w-full"
+    >
         <div class="flex flex-wrap gap-6 mt-4 p-4 bg-slate-100 dark:bg-slate-800 dark:border-slate-700 border shadow-slate-300 dark:shadow-slate-850 rounded-lg shadow-lg">
             @if(!empty($manageableFields))
                 @foreach($manageableFields as $manageableField)
@@ -110,6 +106,9 @@
                 'color' => 'primary',
                 'text' => 'Save',
                 'icon' => 'fa fa-edit',
+                'attributes' => Arr::toAttributeBag([
+                    'wire:target' => 'save',
+                ]),
             ])
 
             @themeComponent('forms.button', [
@@ -130,7 +129,7 @@
             Render counter: {{ $numberOfRenders }}<br />
             Livewire data ({{ count($livewireData) }}):<br />
             @foreach($livewireData as $key => $value)
-                {{ $key }}: <b class="font-medium">{{ $value }}</b><br />
+                {{ $key }}: <b class="font-medium">{{ is_scalar($value) || $value === null ? $value : '['.gettype($value).']' }}</b><br />
             @endforeach
         </div>
     @endif
@@ -138,6 +137,116 @@
     {{-- Gap --}}
     <div class="block h-24"></div>
 </div>
+
+{{-- Sync all native (non-file) form inputs into this component's livewireData just
+     before the wire:submit handler runs, so save() receives them via the rebuilt
+     request. This covers composite fields (multi-image / multi-field) whose nested
+     livewire components write native inputs, as well as standard fields. File
+     inputs are handled separately as native livewire uploads. --}}
+@once
+@push('append-body')
+<script>
+    if (!window.wrlaSyncFormToLivewire) {
+        // Parse an input name (supporting bracket notation) into a path array.
+        // e.g. "field_groups[0][key]" -> ["field_groups", "0", "key"], "tags[]" -> ["tags", ""].
+        window.wrlaParseInputName = function (name) {
+            var path = [];
+            var match = name.match(/^[^\[\]]+/);
+            if (!match) return [name];
+            path.push(match[0]);
+            var rest = name.slice(match[0].length);
+            var re = /\[([^\[\]]*)\]/g;
+            var m;
+            while ((m = re.exec(rest)) !== null) {
+                path.push(m[1]);
+            }
+            return path;
+        };
+
+        // Assign a value into a nested object/array structure following the path.
+        window.wrlaAssignPath = function (root, path, value) {
+            var node = root;
+            for (var i = 0; i < path.length; i++) {
+                var key = path[i];
+                var last = i === path.length - 1;
+
+                if (key === '') {
+                    // Push semantics for "name[]" (defensive: only if node is an array).
+                    if (!Array.isArray(node)) {
+                        continue;
+                    }
+                    if (last) {
+                        node.push(value);
+                    } else {
+                        node.push({});
+                        node = node[node.length - 1];
+                    }
+                    continue;
+                }
+
+                if (last) {
+                    node[key] = value;
+                } else {
+                    if (node[key] === undefined || node[key] === null) {
+                        node[key] = {};
+                    }
+                    node = node[key];
+                }
+            }
+        };
+
+        // Serialize all native, non-file inputs of the form into livewireData.
+        window.wrlaSyncFormToLivewire = function (form, wire) {
+            if (!form || !wire) return;
+
+            var grouped = {};
+            var data = new FormData(form);
+
+            data.forEach(function (value, name) {
+                // Files are handled as native livewire uploads, not serialized here.
+                if (value instanceof File) return;
+
+                var path = window.wrlaParseInputName(name);
+
+                // Initialise the top-level container based on whether it is nested.
+                if (grouped[path[0]] === undefined) {
+                    grouped[path[0]] = path.length > 1 ? {} : value;
+                }
+
+                if (path.length > 1) {
+                    window.wrlaAssignPath(grouped, path, value);
+                } else {
+                    grouped[path[0]] = value;
+                }
+            });
+
+            Object.keys(grouped).forEach(function (topKey) {
+                wire.set('livewireData.' + topKey, grouped[topKey], false);
+            });
+        };
+    }
+
+    if (!window.wrlaUpsertSubmitSyncBound) {
+        window.wrlaUpsertSubmitSyncBound = true;
+
+        // Capture-phase: sync native inputs before livewire's wire:submit handler
+        // runs. Does not preventDefault, so livewire still performs the save.
+        document.addEventListener('submit', function (e) {
+            var form = e.target;
+            if (!form || form.id !== 'upsert-form') return;
+
+            var root = form.closest('[wire\\:id]');
+            if (!root || !window.Livewire) return;
+
+            var wire = window.Livewire.find(root.getAttribute('wire:id'));
+            if (!wire) return;
+
+            window.wrlaSyncFormToLivewire(form, wire);
+        }, true);
+    }
+</script>
+@endpush
+@endonce
 
 @if($usesWysiwyg === true)
     @push('append-body')

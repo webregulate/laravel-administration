@@ -18,7 +18,7 @@
         : '<span class="float-right text-red-500">Image not found</span>';
 @endphp
 
-<div wire:ignore class="wrla_image_field {{ $options['containerClass'] ?? 'w-full flex-1 md:flex-auto' }}">
+<div wire:ignore data-wrla-field-name="{{ $attributes->get('name') }}" class="wrla_image_field {{ $options['containerClass'] ?? 'w-full flex-1 md:flex-auto' }}">
 
 @if(!empty($label))
     @themeComponent('forms.label', [
@@ -117,6 +117,44 @@
         return el.closest('.wrla_image_field');
     }
 
+    // Resolve the livewire ($wire) component instance that owns the given element.
+    function wrla_getWire(el) {
+        var root = el.closest('[wire\\:id]');
+        return (root && window.Livewire) ? window.Livewire.find(root.getAttribute('wire:id')) : null;
+    }
+
+    // Field name (livewireData key) for the given image field element.
+    function wrla_getFieldName(el) {
+        var root = wrla_getImageFieldRoot(el);
+        return root ? root.getAttribute('data-wrla-field-name') : null;
+    }
+
+    // Push the selected file into livewire as a native upload.
+    function wrla_syncImageUpload(el, file) {
+        var wire = wrla_getWire(el);
+        var name = wrla_getFieldName(el);
+        if (!wire || !name) return;
+        wire.upload('livewireData.' + name, file, function () {}, function () {}, function () {});
+        wire.set('livewireData.wrla_remove_' + name, 'false', false);
+    }
+
+    // Mirror the remove flag into livewire state (deferred until submit).
+    function wrla_syncImageRemove(el, removed) {
+        var wire = wrla_getWire(el);
+        var name = wrla_getFieldName(el);
+        if (!wire || !name) return;
+        wire.set('livewireData.' + name, null, false);
+        wire.set('livewireData.wrla_remove_' + name, removed ? 'true' : 'false', false);
+    }
+
+    // Mirror the rotation degrees into livewire state (deferred until submit).
+    function wrla_syncImageRotation(el, degrees) {
+        var wire = wrla_getWire(el);
+        var name = wrla_getFieldName(el);
+        if (!wire || !name) return;
+        wire.set('livewireData.wrla_rotation_' + name, degrees, false);
+    }
+
     function wrla_applyRotationPreview(root) {
         var previewImageElement = root.querySelector('.wrla_image_preview');
         var rotationInput = root.querySelector('.wrla_rotation_input');
@@ -164,6 +202,7 @@
         rotationInput.value = degrees;
 
         wrla_applyRotationPreview(root);
+        wrla_syncImageRotation(button, degrees);
     }
 
     function wrla_setPreviewImage(input) {
@@ -190,6 +229,9 @@
             // Reset any previous rotation and reveal the rotation controls
             wrla_resetRotation(root);
             wrla_showRotationControls(root, true);
+
+            // Push the selected file into livewire
+            wrla_syncImageUpload(input, input.files[0]);
         }
     }
 
@@ -215,6 +257,9 @@
         if(imageExists) {
             removeInput.value = 'true';
         }
+
+        // Mirror the removal into livewire state (clears any pending upload too)
+        wrla_syncImageRemove(button, imageExists);
     }
 </script>
 @endonce

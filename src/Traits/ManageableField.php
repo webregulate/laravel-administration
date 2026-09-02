@@ -1086,6 +1086,25 @@ trait ManageableField
     }
 
     /**
+     * Normalise this field's value ready for livewire seeding, applying any
+     * adjustments a field would otherwise make during render(). Called from the
+     * upsert component's first-render seeding loop instead of render() so the
+     * value can be prepared WITHOUT rendering the field's view. This matters for
+     * fields that embed a nested livewire component (e.g. SearchSelect): rendering
+     * such a field during the parent page component's render() would mount the
+     * child component first and corrupt Livewire's full-page layout detection.
+     *
+     * The default falls back to render() to preserve the previous behaviour for
+     * fields that rely on render()-time value adjustments and do not embed a
+     * nested livewire component. Fields that DO embed one must override this to
+     * perform only the value adjustment.
+     */
+    public function prepareLivewireValue(): void
+    {
+        $this->render();
+    }
+
+    /**
      * Render the input field.
      */
     public function render(): mixed

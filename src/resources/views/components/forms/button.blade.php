@@ -26,12 +26,15 @@
     else if($color == 'muted') $colorClasses = 'bg-slate-500 dark:bg-slate-600 text-white dark:text-slate-200 hover:brightness-110 border-slate-700 dark:border-slate-500 shadow-lg shadow-slate-400 dark:shadow-slate-700';
     else if($color == 'danger') $colorClasses = 'bg-rose-500 dark:bg-rose-700 text-white dark:text-rose-100 hover:brightness-110 border-rose-500 shadow-lg shadow-slate-400 dark:shadow-slate-700';
 
+    // Loading state can target a wire:click action or an explicit wire:target
+    // (e.g. a form submit button targeting its wire:submit="save" action).
     $wireClick = $attributes->get('wire:click');
-    if($wireClick) {
+    $wireTarget = $attributes->get('wire:target') ?? $wireClick;
+    if($wireTarget) {
         $attributes = $attributes->merge([
             'wire:loading.attr' => 'disabled',
             'wire:loading.class' => 'opacity-80 cursor-not-allowed',
-            'wire:target' => $wireClick
+            'wire:target' => $wireTarget
         ]);
     }
 @endphp
@@ -45,10 +48,10 @@
         'class' => "flex justify-center items-center gap-1 whitespace-nowrap $sizeClasses font-semibold border $colorClasses rounded-md shadow-sm whitespace-nowrap"
     ]) }}>
     @if(!empty($icon))
-        <i class="{{ $icon }} text-[13px] mr-1" @if(!empty($wireClick)) wire:loading.remove wire:target="{{ $wireClick }}" @endif></i>
+        <i class="{{ $icon }} text-[13px] mr-1" @if(!empty($wireTarget)) wire:loading.remove wire:target="{{ $wireTarget }}" @endif></i>
     @endif
-    @if(!empty($wireClick))
-        <i class="fa fa-spinner animate-spin text-[13px] mr-1" wire:loading.flex wire:target="{{ $wireClick }}"></i>
+    @if(!empty($wireTarget))
+        <i class="fa fa-spinner animate-spin text-[13px] mr-1" wire:loading.flex wire:target="{{ $wireTarget }}"></i>
     @endif
     <div class="inline">{!! $text !!}</div>
 @if(empty($href))

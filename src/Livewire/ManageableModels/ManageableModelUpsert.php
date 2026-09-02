@@ -2,6 +2,10 @@
 
 namespace WebRegulate\LaravelAdministration\Livewire\ManageableModels;
 
+use Throwable;
+use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Features\SupportRedirects\HandlesRedirects;
 use Livewire\WithFileUploads;
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
@@ -64,6 +68,19 @@ class ManageableModelUpsert extends WRLAPageComponent
      * Override title
      */
     public ?string $overrideTitle = null;
+
+    /**
+     * Optional route name to redirect to after a successful save instead of the
+     * default edit page. Captured from the `wrla_override_redirect_route` query
+     * parameter on the create/edit page.
+     */
+    public ?string $overrideRedirectRoute = null;
+
+    /**
+     * Optional success message used with the override redirect route. Captured
+     * from the `wrla_override_success_message` query parameter.
+     */
+    public ?string $overrideSuccessMessage = null;
 
     /* Livewire Methods / Hooks
     --------------------------------------------------------------------------*/
@@ -131,6 +148,19 @@ class ManageableModelUpsert extends WRLAPageComponent
             }
         }
 
+        // Capture optional post-save redirect overrides (previously read from the
+        // POST request in the controller). Stored as public props so they persist
+        // across livewire renders and are available in save().
+        $overrideRedirectRoute = request()->query('wrla_override_redirect_route');
+        if (is_string($overrideRedirectRoute) && $overrideRedirectRoute !== '') {
+            $this->overrideRedirectRoute = $overrideRedirectRoute;
+
+            $overrideSuccessMessage = request()->query('wrla_override_success_message');
+            if (is_string($overrideSuccessMessage) && $overrideSuccessMessage !== '') {
+                $this->overrideSuccessMessage = $overrideSuccessMessage;
+            }
+        }
+
         // Set page type
         WRLAHelper::setCurrentPageType($this->upsertType);
         WRLAHelper::setCurrentActiveManageableModelClass($this->manageableModelClass);
@@ -189,33 +219,41 @@ class ManageableModelUpsert extends WRLAPageComponent
 
             $manageableFields = $manageableModel->getManageableFieldsFinal();
 
+            // Auto-bind every eligible field to livewire (wire:model) so the whole
+            // form submits through the save() action. Fields that already declare
+            // their own wire:model binding are left untouched.
+            $this->applyLivewireModels($manageableFields);
+
             // Set page type
             WRLAHelper::setCurrentPageType($this->upsertType);
             WRLAHelper::setCurrentActiveManageableModelClass($this->manageableModelClass);
             WRLAHelper::setCurrentActiveManageableModelInstance($manageableModel);
 
-            // If first render,set default livewire field values
-            $usesLivewireFields = false;
+            // If first render, seed the livewire field values from the model.
             if ($this->numberOfRenders === 0) {
                 foreach ($manageableFields as $manageableField) {
-                    if ($manageableField->isModeledWithLivewire()) {
-                        $manageableField->render(); // This allows for fields like JSON that modify the rendered value
+                    // File uploads are handled as native livewire uploads; never seed
+                    // a value for them (their bound property holds an UploadedFile).
+                    if ($manageableField->isModeledWithLivewire() && !$manageableField->isFileUploadField()) {
+                        // Prepare (normalise) the value without rendering the field. Rendering
+                        // here would mount any nested livewire component (e.g. SearchSelect)
+                        // before this page component's own render, which corrupts Livewire's
+                        // full-page layout detection and throws a MissingLayoutException.
+                        $manageableField->prepareLivewireValue();
                         $this->livewireData[$manageableField->getAttribute('name')] = $manageableField->getValue();
-                        $usesLivewireFields = true;
                     }
                 }
-            }
 
-            if ($usesLivewireFields) {
                 ManageableModel::$livewireFields = $this->livewireData;
                 $manageableFields = $manageableModel->getManageableFieldsFinal();
+                $this->applyLivewireModels($manageableFields);
             }
 
             // If force refresh manageable fields, set field values
             if ($this->refreshManageableFields) {
                 foreach ($manageableFields as $manageableField) {
-                    if ($manageableField->isModeledWithLivewire()) {
-                        $manageableField->setAttribute('value', $this->livewireData[$manageableField->getAttribute('name')]);
+                    if ($manageableField->isModeledWithLivewire() && !$manageableField->isFileUploadField()) {
+                        $manageableField->setAttribute('value', $this->livewireData[$manageableField->getAttribute('name')] ?? null);
                     }
                 }
             }
@@ -247,6 +285,221 @@ class ManageableModelUpsert extends WRLAPageComponent
     {
         return $this->overrideTitle
             ?? str($this->upsertType->value)->lower()->title()->toString().' '.$this->manageableModelClass::getDisplayName();
+    }
+
+    /**
+     * Auto-bind eligible manageable fields to livewire via wire:model so the whole
+     * form is submitted through {@see save()}. Fields that already declare their
+     * own wire:model binding (eg. searchable / select fields with custom
+     * .live.debounce bindings) and fields excluded from submission via
+     * shouldSubmit(false) are left untouched.
+     *
+     * @param  array  $manageableFields  The manageable fields to bind.
+     */
+    protected function applyLivewireModels(array $manageableFields): void
+    {
+        foreach ($manageableFields as $manageableField) {
+            // Preserve fields that already declare their own wire:model binding.
+            if ($manageableField->isModeledWithLivewire()) {
+                continue;
+            }
+
+            // Respect shouldSubmit(false) — such fields must not sync or submit.
+            if ($manageableField->getAttribute('form') === 'none') {
+                continue;
+            }
+
+            $fieldName = $manageableField->getAttribute('name');
+
+            if ($manageableField->isFileUploadField()) {
+                // Only the plain File field (non wire:ignore blade) binds via wire:model
+                // for native livewire uploads. Image / croppable / multi-image fields
+                // manage their own uploads via their blade JS (or a nested component),
+                // so they must not receive a wire:model binding here.
+                if ($manageableField->getType() === 'File') {
+                    $manageableField->setAttribute('wire:model.live', 'livewireData.'.$fieldName);
+                }
+            } else {
+                // Deferred binding: values sync to the component when save() runs.
+                $manageableField->setLivewireModel('');
+            }
+        }
+    }
+
+    /**
+     * Save the upserted model (create or edit). Replaces the previous controller
+     * based POST submit: rebuilds a request from the livewire form state and runs
+     * it through the existing validation + persistence pipeline.
+     *
+     * @return \Illuminate\Http\RedirectResponse|null
+     */
+    public function save()
+    {
+        $manageableModelClass = $this->manageableModelClass;
+
+        // Set page type and manageable model class
+        WRLAHelper::setCurrentPageType($this->upsertType);
+        WRLAHelper::setCurrentActiveManageableModelClass($manageableModelClass);
+
+        // Resolve the model instance being created or edited
+        if ($this->modelId === null) {
+            $manageableModel = $manageableModelClass::make();
+        } else {
+            $manageableModel = $manageableModelClass::make($this->modelId, true);
+
+            if ($manageableModel === null) {
+                $this->addError('error', 'Model '.$manageableModelClass." with ID `{$this->modelId}` not found.");
+                return null;
+            }
+        }
+
+        // Catch if configured to do so in config -> catch_errors.upsert
+        return WRLAHelper::catchIfConfiguredTo('upsert', function () use (&$manageableModel) {
+            // Set currently active manageable model instance
+            WRLAHelper::setCurrentActiveManageableModelInstance($manageableModel);
+
+            // Get manageable fields and build a request from the livewire form state
+            // so the existing upsert pipeline can run unchanged.
+            $manageableFields = $manageableModel->getManageableFieldsFinal();
+            $request = $this->buildRequestFromLivewireData($manageableFields);
+
+            // Run pre validation hook on all manageable fields and merge into request
+            $requestMerge = [];
+            foreach ($manageableFields as $manageableField) {
+                $forceMergeIntoRequest = $manageableField->preValidation($request->input($manageableField->getAttribute('name')));
+
+                if ($forceMergeIntoRequest) {
+                    $requestMerge[$manageableField->getAttribute('name')] = $manageableField->getAttribute('value');
+                }
+            }
+
+            $request->merge($requestMerge);
+
+            // Validate against the model's rules and any inline validation
+            $rules = $manageableModel->getValidationRules()->toArray();
+            $validator = Validator::make($request->all(), $rules);
+            $inlineValidationResult = $manageableModel->runInlineValidation($request);
+
+            // If either validator or inline validation fails, show the errors
+            if ($validator->fails() || $inlineValidationResult !== true) {
+                $validationErrors = $validator->errors();
+
+                if ($inlineValidationResult !== true) {
+                    foreach ($inlineValidationResult as $key => $value) {
+                        $validationErrors->add($key, $value);
+                    }
+                }
+
+                $this->setErrorBag($validationErrors);
+                return null;
+            }
+
+            // Update only changed values on the model instance
+            $result = $manageableModel->updateModelInstanceProperties($request, $manageableFields, $request->all());
+
+            // If the result is not true, show the errors
+            if ($result !== true) {
+                $this->setErrorBag($result);
+                return null;
+            }
+
+            // Log event
+            $created = $this->modelId === null;
+            WRLAHelper::logEvent(($created ? 'Created' : 'Updated')." `{$manageableModel->getUrlAlias()}` ".($created ? '' : "with ID `{$manageableModel->model()->id}`"), [
+                'model_class' => $manageableModel::getBaseModelClass(),
+                'instance_id' => $manageableModel->model()->id,
+                'changes' => $created
+                    ? $manageableModel->model()->getAttributes()
+                    : WRLAHelper::getModelChangeLogInfo($manageableModel->model()),
+            ]);
+
+            // Save the model
+            $manageableModel->model()->save();
+
+            // Perform any necessary actions after updating the model instance
+            $manageableModel->postUpdateModelInstance($request, $manageableModel->model());
+
+            // Default success message
+            $defaultSuccessMessage = 'Saved '.$manageableModel->getDisplayName().' #'.$manageableModel->model()->id.' successfully.';
+            $defaultSuccessMessage .= $this->modelId === null
+                ? ' <a href="'.route('wrla.manageable-models.create', ['modelUrlAlias' => $manageableModel->getUrlAlias()]).'" class="font-bold underline">Click here</a> to create another '.$manageableModel->getDisplayName(false).' record.'
+                : '';
+
+            // If an override redirect route was provided, redirect there instead
+            if ($this->overrideRedirectRoute !== null) {
+                $message = $this->overrideSuccessMessage ?? $defaultSuccessMessage;
+
+                return redirect()->route($this->overrideRedirectRoute)->with('success', $message);
+            }
+
+            // Redirect to the edit page with success
+            return redirect()->route('wrla.manageable-models.edit', [
+                'modelUrlAlias' => $manageableModel->getUrlAlias(),
+                'id' => $manageableModel->model()->id,
+            ])->with('success', $defaultSuccessMessage);
+
+        // Catch
+        }, function (Throwable $e) {
+            $this->addError('error', $e->getMessage());
+        });
+    }
+
+    /**
+     * Rebuild an HTTP request from the current livewire form state so the existing
+     * request-based upsert pipeline (validation + updateModelInstanceProperties)
+     * can run unchanged.
+     *
+     * Livewire's TemporaryUploadedFile extends Illuminate\Http\UploadedFile, so
+     * uploaded files are placed straight into the request's file bag. File fields
+     * without a fresh upload are intentionally omitted so their stored value is
+     * retained. Special control keys (image remove / rotation flags) are carried
+     * over as normal input.
+     *
+     * @param  array  $manageableFields  The manageable fields for the model.
+     */
+    protected function buildRequestFromLivewireData(array $manageableFields): Request
+    {
+        $inputs = [];
+        $files = [];
+
+        // Field names that represent file uploads. Their bound value is an
+        // UploadedFile when a fresh file was selected; otherwise the key must be
+        // omitted so the existing stored value is retained by the pipeline.
+        $fileFieldNames = [];
+        foreach ($manageableFields as $manageableField) {
+            if ($manageableField->isFileUploadField()) {
+                $fileFieldNames[$manageableField->getAttribute('name')] = true;
+            }
+        }
+
+        foreach ($this->livewireData as $key => $value) {
+            // Uploaded file(s) go straight into the request's file bag.
+            if ($value instanceof UploadedFile) {
+                $files[$key] = $value;
+                continue;
+            }
+
+            if (is_array($value)) {
+                $uploaded = array_values(array_filter($value, fn ($v) => $v instanceof UploadedFile));
+
+                if (!empty($uploaded)) {
+                    $files[$key] = $uploaded;
+                    continue;
+                }
+            }
+
+            // A file field without a fresh upload is omitted so its stored value is retained.
+            if (isset($fileFieldNames[$key])) {
+                continue;
+            }
+
+            // Everything else (standard field values plus control keys the pipeline
+            // understands, eg. image remove/rotation flags and multi-image state) is
+            // carried over as normal request input.
+            $inputs[$key] = $value;
+        }
+
+        return Request::create('', 'POST', $inputs, [], $files);
     }
 
     /**

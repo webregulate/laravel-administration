@@ -262,29 +262,30 @@ class SearchSelect
     }
 
     /**
-     * Render the field — embeds the search-select Livewire component within a
-     * labelled wrapper.
-     *
-     * When a ManageableModel is present the component receives only serializable
-     * identifiers and re-derives this field (and its closures) on each request.
-     * When no ManageableModel is present (standalone usage), the search/label
-     * closures are signed and serialized so the component can rebuild them on
-     * its own requests without a factory.
+     * Detect a parent wire:model binding (set via setLivewireModel), so the
+     * embedded Livewire component can be bound two-way to the parent's property.
+     * Without this the isolated child component's value never reaches the parent.
      */
-    public function render(): mixed
+    protected function detectWireModelTarget(): ?string
     {
-        $usesManageableModel = $this->manageableModel !== null;
-
-        // Detect a parent wire:model binding (set via setLivewireModel), so the embedded
-        // Livewire component can be bound two-way to the parent's property. Without this the
-        // isolated child component's value never reaches the parent component.
-        $wireModelTarget = null;
         foreach ($this->htmlAttributes as $key => $attributeValue) {
             if (str_starts_with((string) $key, 'wire:model')) {
-                $wireModelTarget = $attributeValue;
-                break;
+                return $attributeValue;
             }
         }
+
+        return null;
+    }
+
+    /**
+     * Apply the field's value fallbacks (browse filter / empty value) without
+     * rendering the nested Livewire component. Called from render() and from the
+     * upsert seeding loop; the latter must NOT render the child component, as
+     * doing so first would corrupt Livewire's full-page layout detection.
+     */
+    public function prepareLivewireValue(): void
+    {
+        $wireModelTarget = $this->detectWireModelTarget();
 
         // When acting as a browse filter, the parent's remembered/applied filter value lives
         // in the static browseFilterValues store — adopt it as the field value so the child
@@ -302,6 +303,29 @@ class SearchSelect
         if ($this->emptyValue !== null && empty($this->getValue())) {
             $this->setAttribute('value', $this->emptyValue);
         }
+    }
+
+    /**
+     * Render the field — embeds the search-select Livewire component within a
+     * labelled wrapper.
+     *
+     * When a ManageableModel is present the component receives only serializable
+     * identifiers and re-derives this field (and its closures) on each request.
+     * When no ManageableModel is present (standalone usage), the search/label
+     * closures are signed and serialized so the component can rebuild them on
+     * its own requests without a factory.
+     */
+    public function render(): mixed
+    {
+        $usesManageableModel = $this->manageableModel !== null;
+
+        // Normalise the field value (browse filter / empty value fallbacks) before
+        // building the view. Shared with prepareLivewireValue() so the upsert
+        // seeding loop can apply the same adjustments without rendering the nested
+        // livewire component.
+        $this->prepareLivewireValue();
+
+        $wireModelTarget = $this->detectWireModelTarget();
 
         $serializedSearchQuery = null;
         $serializedItemLabel = null;
