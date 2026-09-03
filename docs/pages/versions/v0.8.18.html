@@ -76,6 +76,19 @@
     </h2>
 
     <h3 class="text-base font-semibold text-gray-800 mt-2 mb-2">
+        Publish the new default logo asset
+        <span class="ml-2 align-middle inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">Required</span>
+    </h3>
+    <p class="docs-body">
+        If you don't already have your own logo set, run the following to publish the new default
+        logo image (<code class="docs-inline-code">vendor/wr-laravel-administration/images/logo.svg</code>)
+        into your <code class="docs-inline-code">public</code> directory:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>php artisan vendor:publish --tag=wrla-assets</code></pre>
+    </div>
+
+    <h3 class="text-base font-semibold text-gray-800 mt-6 mb-2">
         Update the <code class="docs-inline-code">logo</code> block
         <span class="ml-2 align-middle inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">Required</span>
     </h3>
@@ -113,6 +126,13 @@
         <code class="docs-inline-code">dark_classes</code> default will handle dark mode. If you have a
         purpose-made dark logo, set it on <code class="docs-inline-code">src_dark</code> and clear
         <code class="docs-inline-code">dark_classes</code>.
+    </p>
+    <p class="docs-body mt-4">
+        <strong>Note:</strong> if you already had custom <code class="docs-inline-code">light</code> /
+        <code class="docs-inline-code">dark</code> logo values set, make sure to carry those paths over
+        to the new <code class="docs-inline-code">src</code> / <code class="docs-inline-code">src_dark</code>
+        keys after copying in the new default config block &mdash; otherwise your custom logo will be
+        replaced by the default.
     </p>
 </div>
 
