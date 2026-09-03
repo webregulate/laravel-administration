@@ -156,6 +156,8 @@ class DocumentationApp {
             { version: '0.8.3', date: '2026-09-02' },
             { version: '0.8.13', date: '2026-09-03' },
             { version: '0.8.14', date: '2026-09-03' },
+            { version: '0.8.15', date: '2026-09-03' },
+            { version: '0.8.16', date: '2026-09-03' },
         ];
     }
 

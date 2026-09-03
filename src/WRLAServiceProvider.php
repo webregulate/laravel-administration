@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\View\ComponentAttributeBag;
 use WebRegulate\LaravelAdministration\Livewire\Logs;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
+use WebRegulate\LaravelAdministration\Livewire\Scheduler;
 use WebRegulate\LaravelAdministration\Livewire\FileManager;
 use WebRegulate\LaravelAdministration\Livewire\DatabaseSchema;
 use WebRegulate\LaravelAdministration\Commands\UpdateCommand;
@@ -277,6 +278,7 @@ class WRLAServiceProvider extends ServiceProvider
         Livewire::component('wrla.file-manager', FileManager::class);
         Livewire::component('wrla.logs', Logs::class);
         Livewire::component('wrla.database-schema', DatabaseSchema::class);
+        Livewire::component('wrla.scheduler', Scheduler::class);
         Livewire::component('wrla.multi-upload-fields.multi-image-uploads', MultiImageUploads::class);
         Livewire::component('wrla.multi-upload-fields.multi-form-groups', MultiFormGroups::class);
         Livewire::forceAssetInjection();

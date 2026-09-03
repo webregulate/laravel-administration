@@ -11,17 +11,32 @@
         <div wire:poll.1000ms="pollOutput"></div>
     @endif
 
-    {{-- Database schema viewer (albertoarena/laravel-truss) --}}
-    @if(\WebRegulate\LaravelAdministration\Classes\WRLAHelper::databaseSchemaViewerEnabled() && \Illuminate\Support\Facades\Route::has('wrla.database-schema'))
+    {{-- Dev pages: quick links to full-page dev tools (schema viewer, scheduler, ...) --}}
+    @php
+        $wrlaHelper = \WebRegulate\LaravelAdministration\Classes\WRLAHelper::class;
+        $showDatabaseSchema = $wrlaHelper::databaseSchemaViewerEnabled() && \Illuminate\Support\Facades\Route::has('wrla.database-schema');
+        $showScheduler = $wrlaHelper::schedulerEnabled() && \Illuminate\Support\Facades\Route::has('wrla.scheduler');
+    @endphp
+
+    @if($showDatabaseSchema || $showScheduler)
         <div class="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4">
-            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2 mb-1">
-                <i class="fa-solid fa-diagram-project text-sky-600"></i> Database Schema
+            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2 mb-3">
+                <i class="fa-solid fa-window-restore text-sky-600"></i> Dev Pages
             </h3>
-            <p class="text-sm text-slate-600 dark:text-slate-300 mb-3">View your live database structure as an interactive ER diagram.</p>
-            <a href="{{ route('wrla.database-schema') }}"
-                class="self-start inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold px-3 py-1.5 rounded transition-colors">
-                <i class="fa-solid fa-up-right-from-square text-xs"></i> Open Database Schema
-            </a>
+            <div class="flex flex-wrap gap-2">
+                @if($showDatabaseSchema)
+                    <a href="{{ route('wrla.database-schema') }}"
+                        class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold px-3 py-1.5 rounded transition-colors">
+                        <i class="fa-solid fa-diagram-project text-xs"></i> Database Schema
+                    </a>
+                @endif
+                @if($showScheduler)
+                    <a href="{{ route('wrla.scheduler') }}"
+                        class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold px-3 py-1.5 rounded transition-colors">
+                        <i class="fa-solid fa-clock-rotate-left text-xs"></i> Scheduler &amp; Jobs
+                    </a>
+                @endif
+            </div>
         </div>
     @endif
 

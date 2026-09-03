@@ -6,6 +6,7 @@ use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Livewire\Dashboard;
 use WebRegulate\LaravelAdministration\Livewire\FileManager;
 use WebRegulate\LaravelAdministration\Livewire\Logs;
+use WebRegulate\LaravelAdministration\Livewire\Scheduler;
 use WebRegulate\LaravelAdministration\Livewire\DatabaseSchema;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItem;
 
@@ -38,6 +39,11 @@ class WRLASettings
                 WRLAHelper::getCurrentUserData()?->isMaster() && config('wr-laravel-administration.file_manager.enabled', false)
             ),
 
+            // Scheduler & Jobs
+            NavigationItem::make(url: route('wrla.scheduler'), name: 'Scheduler & Jobs', icon: 'fa fa-clock-rotate-left')->showOnCondition(fn() =>
+                WRLAHelper::schedulerEnabled()
+            ),
+
             // View Logs
             NavigationItem::make(url: route('wrla.logs'), name: 'View Logs', icon: 'fa fa-file-alt')->showOnCondition(fn() =>
                 WRLAHelper::getCurrentUserData()?->isMaster() && !empty(config('wr-laravel-administration.logs.current'))
@@ -67,16 +73,16 @@ class WRLASettings
         Route::get('file-manager', FileManager::class)
             ->name('wrla.file-manager');
 
-        // View logs - Set via `wr-laravel-administration.logs.current` configuration
-        Route::get('logs', Logs::class)
-            ->name('wrla.logs');
-
-        // Database schema viewer - Access via `wr-laravel-administration.database_schema_viewer.enabled` configuration
+        // Database schema viewer - Enabled via `wr-laravel-administration.database_schema_viewer.enabled` configuration
         Route::get('database-schema', DatabaseSchema::class)
             ->name('wrla.database-schema');
 
-        // Custom route example
-        // Route::get('url-route', MyComponent::class)
-        //     ->name('wrla.my-component');
+        // Scheduler & Jobs - Access via `wr-laravel-administration.scheduler.enabled` configuration
+        Route::get('scheduler', Scheduler::class)
+            ->name('wrla.scheduler');
+
+        // View logs - Set via `wr-laravel-administration.logs.current` configuration
+        Route::get('logs', Logs::class)
+            ->name('wrla.logs');
     }
 }

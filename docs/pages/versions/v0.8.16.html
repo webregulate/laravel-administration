@@ -1,0 +1,155 @@
+<div class="flex items-center gap-2 mb-6">
+    <a href="versions/versions.html" class="text-sm text-primary-500 hover:text-primary-700 flex items-center gap-1">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Version History
+    </a>
+</div>
+
+<h1 class="docs-title">
+    <span data-version-number></span>
+    <span data-version-date class="text-lg font-normal text-gray-400 ml-3"></span>
+</h1>
+
+<p class="docs-lead">
+    Adds a new <strong>Scheduler &amp; Jobs</strong> page to the admin panel. It gives master/developer
+    users a single place to inspect the application's scheduled tasks, view and delete pending queue
+    jobs, and retry, delete or flush failed jobs — without touching the command line.
+</p>
+
+<!-- Breaking Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        Breaking Changes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>None</li>
+    </ul>
+</div>
+
+<!-- Features -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-primary-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        Features
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>
+            New <strong>Scheduler &amp; Jobs</strong> page (<code class="docs-inline-code">wrla.scheduler</code>)
+            served by the <code class="docs-inline-code">Scheduler</code> Livewire component and shown
+            in the navigation when enabled.
+        </li>
+        <li>
+            <strong>Scheduled Tasks</strong> section lists every registered task with its type/flags
+            (<code class="docs-inline-code">no overlap</code>, <code class="docs-inline-code">one server</code>),
+            cron expression (human-readable) and next run time.
+        </li>
+        <li>
+            <strong>Pending Jobs</strong> section lists queued jobs (for the
+            <code class="docs-inline-code">database</code> queue driver) with the ability to delete an
+            individual job.
+        </li>
+        <li>
+            <strong>Failed Jobs</strong> section lets you retry or delete a single job, or retry-all /
+            flush-all in one click.
+        </li>
+        <li>
+            Each section is collapsible, and the open/closed state is persisted per-user in the browser
+            via Alpine's <code class="docs-inline-code">$persist</code>.
+        </li>
+        <li>
+            Configurable via a new <code class="docs-inline-code">scheduler</code> config block: control who
+            can access it and the maximum number of pending/failed rows loaded at once.
+        </li>
+        <li>
+            Available as a Dev Tools shortcut, so developers can jump straight to the page.
+        </li>
+    </ul>
+</div>
+
+<!-- Upgrade Guide -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-primary-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+        </svg>
+        Upgrade Guide
+    </h2>
+
+    <!-- Step 1 -->
+    <h3 class="text-base font-semibold text-gray-800 mt-2 mb-2">
+        1. Add the <code class="docs-inline-code">scheduler</code> config default
+        <span class="ml-2 align-middle inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">Required</span>
+    </h3>
+    <p class="docs-body">
+        In your published <code class="docs-inline-code">config/wr-laravel-administration.php</code>, paste the
+        new block after the <code class="docs-inline-code">logs</code> section and before the
+        <code class="docs-inline-code">THEME / STYLING CONFIGURATION</code> divider:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>// Scheduler / Job manager page configuration
+'scheduler' => [
+    // Who may access the Scheduler & Jobs page. Accepts:
+    //   true / false                  - enable or disable for everyone
+    //   Closure($wrlaUserData): bool  - custom rule
+    //   null                          - fall back to the developer check (WRLAHelper::userIsDev())
+    'enabled' => null,
+
+    // Maximum number of pending / failed job rows to load into the table at once.
+    'max_rows' => 100,
+],</code></pre>
+    </div>
+
+    <!-- Step 2 -->
+    <h3 class="text-base font-semibold text-gray-800 mt-5 mb-2">
+        2. Register the route in <code class="docs-inline-code">WRLASettings.php</code>
+        <span class="ml-2 align-middle inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">Optional</span>
+    </h3>
+    <p class="docs-body">
+        In <code class="docs-inline-code">app/WRLA/WRLASettings.php</code>, import the component and add the
+        route inside <code class="docs-inline-code">buildRoutes()</code>:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>use WebRegulate\LaravelAdministration\Livewire\Scheduler;
+
+// ...inside buildRoutes()
+// Scheduler & Jobs - Access via `wr-laravel-administration.scheduler.enabled` configuration
+Route::get('scheduler', Scheduler::class)
+    -&gt;name('wrla.scheduler');</code></pre>
+    </div>
+
+    <!-- Step 3 -->
+    <h3 class="text-base font-semibold text-gray-800 mt-5 mb-2">
+        3. Add the navigation item in <code class="docs-inline-code">WRLASettings.php</code>
+        <span class="ml-2 align-middle inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">Optional</span>
+    </h3>
+    <p class="docs-body">
+        Add the navigation item inside <code class="docs-inline-code">buildNavigation()</code> so the page
+        appears in the sidebar when the user is allowed to access it:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>// Scheduler & Jobs
+NavigationItem::make(url: route('wrla.scheduler'), name: 'Scheduler & Jobs', icon: 'fa fa-clock-rotate-left')-&gt;showOnCondition(fn() =&gt;
+    WRLAHelper::schedulerEnabled()
+),</code></pre>
+    </div>
+</div>
+
+<!-- Bug Fixes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-green-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Bug Fixes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>None</li>
+    </ul>
+</div>

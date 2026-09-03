@@ -880,6 +880,25 @@ class WRLAHelper
     }
 
     /**
+     * Whether the current user may access the Scheduler & Jobs page.
+     *
+     * Resolves `scheduler.enabled` directly (bool or Closure($wrlaUserData)),
+     * falling back to the developer check (userIsDev()) only when it is null.
+     */
+    public static function schedulerEnabled(): bool
+    {
+        return once(function() {
+            $config = config('wr-laravel-administration.scheduler.enabled');
+
+            if ($config === null) {
+                return WRLAHelper::userIsDev();
+            }
+
+            return WRLAHelper::resolveDeveloperToolsFlag($config);
+        });
+    }
+
+    /**
      * Resolve a developer-tools config value to a boolean.
      *
      * Accepts a bool, null, or a Closure($wrlaUserData) returning bool. Closures are

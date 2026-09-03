@@ -381,6 +381,18 @@ return [
         ],
     ],
 
+    // Scheduler / Job manager page configuration
+    'scheduler' => [
+        // Who may access the Scheduler & Jobs page. Accepts:
+        //   true / false                  - enable or disable for everyone
+        //   Closure($wrlaUserData): bool  - custom rule
+        //   null                          - fall back to the developer check (WRLAHelper::userIsDev())
+        'enabled' => null,
+
+        // Maximum number of pending / failed job rows to load into the table at once.
+        'max_rows' => 60,
+    ],
+
 
     /*-------------------------------------------------------------------------
         THEME / STYLING CONFIGURATION
