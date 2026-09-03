@@ -6,6 +6,7 @@ use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Livewire\Dashboard;
 use WebRegulate\LaravelAdministration\Livewire\FileManager;
 use WebRegulate\LaravelAdministration\Livewire\Logs;
+use WebRegulate\LaravelAdministration\Livewire\DatabaseSchema;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItem;
 
 class WRLASettings
@@ -42,6 +43,11 @@ class WRLASettings
                 WRLAHelper::getCurrentUserData()?->isMaster() && !empty(config('wr-laravel-administration.logs.current'))
             ),
 
+            // Database Schema (albertoarena/laravel-truss)
+            NavigationItem::make(url: route('wrla.database-schema'), name: 'Database Schema', icon: 'fas fa-diagram-project')->showOnCondition(fn() =>
+                WRLAHelper::databaseSchemaViewerEnabled()
+            ),
+
             // Divider
             NavigationItem::makeDivider('My Account', 'fa fa-user mr-1'),
 
@@ -69,6 +75,10 @@ class WRLASettings
         // View logs - Set via `wr-laravel-administration.logs.current` configuration
         Route::get('logs', Logs::class)
             ->name('wrla.logs');
+
+        // Database schema viewer - Access via `wr-laravel-administration.database_schema_viewer.enabled` configuration
+        Route::get('database-schema', DatabaseSchema::class)
+            ->name('wrla.database-schema');
 
         // Custom route example
         // Route::get('url-route', MyComponent::class)

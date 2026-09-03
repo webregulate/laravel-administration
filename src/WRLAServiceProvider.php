@@ -17,6 +17,7 @@ use Illuminate\View\ComponentAttributeBag;
 use WebRegulate\LaravelAdministration\Livewire\Logs;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Livewire\FileManager;
+use WebRegulate\LaravelAdministration\Livewire\DatabaseSchema;
 use WebRegulate\LaravelAdministration\Commands\UpdateCommand;
 use WebRegulate\LaravelAdministration\Commands\InstallCommand;
 use WebRegulate\LaravelAdministration\Commands\EditUserCommand;
@@ -275,6 +276,7 @@ class WRLAServiceProvider extends ServiceProvider
         Livewire::component('wrla.manageable-fields.search-select', SearchSelect::class);
         Livewire::component('wrla.file-manager', FileManager::class);
         Livewire::component('wrla.logs', Logs::class);
+        Livewire::component('wrla.database-schema', DatabaseSchema::class);
         Livewire::component('wrla.multi-upload-fields.multi-image-uploads', MultiImageUploads::class);
         Livewire::component('wrla.multi-upload-fields.multi-form-groups', MultiFormGroups::class);
         Livewire::forceAssetInjection();
@@ -517,7 +519,89 @@ class WRLAServiceProvider extends ServiceProvider
      */
     protected function handleVendorBooting(): void
     {
-        // Currently does nothing
+        $this->configureTruss();
+    }
+
+    /**
+     * Wire albertoarena/laravel-truss into the WRLA backend when the Database Schema
+     * viewer is enabled and the package is installed. Runs on every request/command
+     * (config is per-request), so the embedded /truss route is configured and gated
+     * by the time its iframe request is handled.
+     */
+    protected function configureTruss(): void
+    {
+        // Skip only when the viewer is explicitly disabled for everyone. A bool,
+        // Closure or null (developer fallback) all leave it potentially accessible,
+        // gated per-request by the viewTruss gate below.
+        if (config('wr-laravel-administration.database_schema_viewer.enabled') === false) {
+            return;
+        }
+
+        if (! class_exists(\AlbertoArena\Truss\TrussServiceProvider::class)) {
+            return;
+        }
+
+        // Gate Truss behind WRLA's viewer access check. Defined unconditionally so it
+        // wins over Truss's shipped email allow-list gate regardless of boot order.
+        Gate::define('viewTruss', fn($user = null) => WRLAHelper::databaseSchemaViewerEnabled());
+
+        // Truss 404s its routes unless enabled; force it on so the embed works outside
+        // local. Access is still restricted by the viewTruss gate above.
+        config(['truss.enabled' => true]);
+
+        // Feed configured connections through (Truss shows a picker for two or more).
+        $connections = config('wr-laravel-administration.database_schema_viewer.connections', []);
+        if (! empty($connections)) {
+            config(['truss.connections' => $connections]);
+        }
+
+        // Skin the Truss dashboard with the WRLA palette.
+        $this->applyWrlaThemeToTruss();
+
+        // Deep-merge explicit passthrough config last so it wins over the above.
+        $passthrough = config('wr-laravel-administration.database_schema_viewer.truss', []);
+        if (! empty($passthrough)) {
+            config(['truss' => $this->deepMergeConfig(config('truss', []), $passthrough)]);
+        }
+    }
+
+    /**
+     * Map WRLA's global colour palette onto Truss's semantic theme knobs for both
+     * light and dark modes, so the embedded dashboard matches the admin theme.
+     */
+    protected function applyWrlaThemeToTruss(): void
+    {
+        $colors = config('wr-laravel-administration.colors', []);
+        $primary = $colors['primary'] ?? [];
+        $notes = $colors['notes'] ?? [];
+        $slate = $colors['slate'] ?? [];
+
+        $light = array_filter([
+            'accent' => $primary['600'] ?? null,
+            'accent-secondary' => $notes['600'] ?? null,
+            'background' => '#ffffff',
+            'surface' => $slate['100'] ?? null,
+            'surface-alt' => $slate['200'] ?? null,
+            'text' => $slate['800'] ?? null,
+            'muted' => $slate['500'] ?? null,
+            'border' => $slate['200'] ?? null,
+        ]);
+
+        $dark = array_filter([
+            'accent' => $primary['400'] ?? null,
+            'accent-secondary' => $notes['400'] ?? null,
+            'background' => $slate['900'] ?? null,
+            'surface' => $slate['800'] ?? null,
+            'surface-alt' => $slate['750'] ?? null,
+            'text' => $slate['100'] ?? null,
+            'muted' => $slate['400'] ?? null,
+            'border' => $slate['700'] ?? null,
+        ]);
+
+        config([
+            'truss.theme.colors.light' => array_merge((array) config('truss.theme.colors.light', []), $light),
+            'truss.theme.colors.dark' => array_merge((array) config('truss.theme.colors.dark', []), $dark),
+        ]);
     }
 
     /**

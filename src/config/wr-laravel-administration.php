@@ -109,7 +109,7 @@ return [
         // `enable_developer_tools` key below, which keeps the in-UI version/update button accessible
         // on applications that haven't migrated their published config yet (backwards compatibility).
         // EG. use: fn($wrlaUserData) => $wrlaUserData?->isMaster() to enable for master users only.
-        'enable' => null,
+        'enable' => fn($wrlaUserData) => $wrlaUserData?->isMaster(),
 
         // Composer behaviour for the wrla:update command
         'composer' => [
@@ -342,6 +342,42 @@ return [
         'opcodesio/log-viewer' => [
             // Configure in config/log-viewer.php
             'display_within_wrla' => true, // Display within WRLA instead of redirecting
+        ],
+    ],
+
+    // Database schema viewer (albertoarena/laravel-truss) configuration
+    'database_schema_viewer' => [
+        // Who may access the Database Schema viewer page. Accepts:
+        //   true / false                  - enable or disable for everyone
+        //   Closure($wrlaUserData): bool  - custom rule
+        //   null                          - fall back to the developer check (WRLAHelper::userIsDev())
+        'enabled' => true,
+
+        // How to present it: 'embed' (Truss dashboard inside the WRLA layout via an
+        // iframe) or 'redirect' (send the user to the standalone Truss page).
+        'display' => 'embed',
+
+        // Default colour mode the embedded dashboard opens in until the user toggles
+        // it themselves: 'light', 'dark', or 'auto' (follow the OS). Seeded once per browser.
+        'default_mode' => 'dark',
+
+        // Database connections (keys from config/database.php) that may be visualised.
+        // Values are per-connection Truss options, e.g. ['excluded_tables' => [...]].
+        // Leave empty to use the application's default connection. When two or more
+        // are listed, Truss shows a connection picker in its toolbar.
+        'connections' => [
+            // 'mysql' => [],
+            // 'reporting' => ['excluded_tables' => ['legacy_import']],
+        ],
+
+        // Extra configuration passed straight through to Truss (config/truss.php),
+        // deep-merged over its defaults and the WRLA theme mapping. Lets you tune
+        // Truss from here without publishing its config, e.g:
+        //   'excluded_tables' => ['telemetry'],
+        //   'diagram' => ['type_labels' => 'laravel'],
+        //   'doctor' => ['dashboard' => false],
+        'truss' => [
+            //
         ],
     ],
 
