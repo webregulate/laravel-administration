@@ -347,10 +347,7 @@ return [
 
     // Database schema viewer (albertoarena/laravel-truss) configuration
     'database_schema_viewer' => [
-        // Who may access the Database Schema viewer page. Accepts:
-        //   true / false                  - enable or disable for everyone
-        //   Closure($wrlaUserData): bool  - custom rule
-        //   null                          - fall back to the developer check (WRLAHelper::userIsDev())
+        // Enabled, use either: bool, fn($wrlaUserData): bool, null (fallback using WRLAHelper::userIsDev())
         'enabled' => null,
 
         // How to present it: 'embed' (Truss dashboard inside the WRLA layout via an
@@ -383,11 +380,11 @@ return [
 
     // Scheduler / Job manager page configuration
     'scheduler' => [
-        // Who may access the Scheduler & Jobs page. Accepts:
-        //   true / false                  - enable or disable for everyone
-        //   Closure($wrlaUserData): bool  - custom rule
-        //   null                          - fall back to the developer check (WRLAHelper::userIsDev())
+        // Enabled, use either: bool, fn($wrlaUserData): bool, null (fallback using WRLAHelper::userIsDev())
         'enabled' => null,
+
+        // Allow adhoc running, use either: bool, fn($wrlaUserData): bool, null (fallback using WRLAHelper::userIsDev())
+        'can_run_adhoc' => null,
 
         // Maximum number of pending / failed job rows to load into the table at once.
         'max_rows' => 60,

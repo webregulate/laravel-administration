@@ -899,6 +899,25 @@ class WRLAHelper
     }
 
     /**
+     * Whether the current user may run scheduled tasks on demand (the "play" button).
+     *
+     * Resolves `scheduler.can_run_adhoc` directly (bool or Closure($wrlaUserData)),
+     * falling back to whoever may access the page (schedulerEnabled()) when it is null.
+     */
+    public static function schedulerCanRunAdhoc(): bool
+    {
+        return once(function() {
+            $config = config('wr-laravel-administration.scheduler.can_run_adhoc');
+
+            if ($config === null) {
+                return WRLAHelper::schedulerEnabled();
+            }
+
+            return WRLAHelper::resolveDeveloperToolsFlag($config);
+        });
+    }
+
+    /**
      * Resolve a developer-tools config value to a boolean.
      *
      * Accepts a bool, null, or a Closure($wrlaUserData) returning bool. Closures are

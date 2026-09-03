@@ -60,6 +60,11 @@
             flush-all in one click.
         </li>
         <li>
+            <strong>Ad-hoc task runs</strong> &mdash; a “play” button on each scheduled task lets
+            authorised users run it on demand, gated by a new
+            <code class="docs-inline-code">scheduler.can_run_adhoc</code> config option.
+        </li>
+        <li>
             Each section is collapsible, and the open/closed state is persisted per-user in the browser
             via Alpine's <code class="docs-inline-code">$persist</code>.
         </li>
@@ -95,14 +100,14 @@
     <div class="docs-code-block">
         <pre><code>// Scheduler / Job manager page configuration
 'scheduler' => [
-    // Who may access the Scheduler & Jobs page. Accepts:
-    //   true / false                  - enable or disable for everyone
-    //   Closure($wrlaUserData): bool  - custom rule
-    //   null                          - fall back to the developer check (WRLAHelper::userIsDev())
+    // Enabled, use either: bool, fn($wrlaUserData): bool, null (fallback using WRLAHelper::userIsDev())
     'enabled' => null,
 
+    // Allow adhoc running, use either: bool, fn($wrlaUserData): bool, null (fallback using WRLAHelper::userIsDev())
+    'can_run_adhoc' => null,
+
     // Maximum number of pending / failed job rows to load into the table at once.
-    'max_rows' => 100,
+    'max_rows' => 60,
 ],</code></pre>
     </div>
 

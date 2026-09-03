@@ -53,17 +53,26 @@
                             <th class="px-4 py-2">Type / Flags</th>
                             <th class="px-4 py-2">Expression</th>
                             <th class="px-4 py-2">Next Run</th>
+                            @if($canRunAdhoc)
+                                <th class="px-4 py-2 text-right"></th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($scheduledTasks as $task)
                             <tr class="border-t border-slate-200 dark:border-slate-700 even:bg-slate-100/50 dark:even:bg-slate-800/40">
-                                <td class="px-4 py-2 align-top">
-                                    <div class="font-medium text-slate-800 dark:text-white">
-                                        {{ $task['command'] ?? $task['description'] ?? $task['summary'] }}
+                                <td class="px-4 py-2 align-middle">
+                                    @php
+                                        // Description wins; when both exist the machine name is exposed as a tooltip.
+                                        $primaryLabel = $task['description'] ?? $task['name'] ?? $task['summary'];
+                                        $tooltipName = ($task['description'] && $task['name']) ? $task['name'] : null;
+                                    @endphp
+                                    <div class="font-medium text-slate-800 dark:text-white {{ $tooltipName ? 'cursor-help' : '' }}"
+                                        @if($tooltipName) title="{{ $tooltipName }}" @endif>
+                                        {{ $primaryLabel }}
                                     </div>
                                 </td>
-                                <td class="px-4 py-2 align-top">
+                                <td class="px-4 py-2 align-middle">
                                     <div class="flex flex-nowrap gap-x-1">
                                         <div
                                             class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 cursor-help"
@@ -72,19 +81,37 @@
                                             <span class="inline-block px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 mr-1">{{ $task['type'] }}</span>
                                         </div>
                                         @if($task['withoutOverlapping'])
-                                            <span class="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">no overlap</span>
+                                            <span class="text-nowrap text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">no overlap</span>
                                         @endif
                                         @if($task['onOneServer'])
-                                            <span class="text-xs px-1.5 py-0.5 rounded bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300">one server</span>
+                                            <span class="text-nowrap text-xs px-1.5 py-0.5 rounded bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300">one server</span>
                                         @endif
                                     </div>
                                 </td>
-                                <td class="px-4 py-2 align-top">
+                                <td class="px-4 py-2 align-middle">
                                     <span class="text-xs text-slate-700 dark:text-slate-200 cursor-help" title="{{ $task['expression'] }}">{{ $task['humanExpression'] }}</span>
                                 </td>
-                                <td class="px-4 py-2 align-top whitespace-nowrap text-xs">
+                                <td class="px-4 py-2 align-middle whitespace-nowrap text-xs">
                                     {{ $task['nextRun'] ?? '—' }}
                                 </td>
+                                @if($canRunAdhoc)
+                                    <td class="px-4 py-2 align-middle text-right whitespace-nowrap">
+                                        <button type="button"
+                                            wire:click="runTask('{{ $task['id'] }}')"
+                                            wire:target="runTask('{{ $task['id'] }}')"
+                                            wire:loading.attr="disabled"
+                                            wire:loading.class="!pt-0"
+                                            class="inline-flex items-center gap-1 transition-colors disabled:opacity-60 disabled:cursor-wait"
+                                        >
+                                            <span wire:loading.remove wire:target="runTask('{{ $task['id'] }}')" class="inline-flex items-center gap-1">
+                                                <i class="fa-solid fa-play text-[12px] text-emerald-500"></i>
+                                            </span>
+                                            <span wire:loading wire:target="runTask('{{ $task['id'] }}')" class="inline-flex items-center gap-1">
+                                                <i class="inline-block fa-solid fa-spinner animate-spin text-[12px] text-slate-500"></i>
+                                            </span>
+                                        </button>
+                                    </td>
+                                @endif
                             </tr>
                         @endforeach
                     </tbody>

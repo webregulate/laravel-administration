@@ -9,7 +9,7 @@
     <div class="flex justify-end items-center gap-3 mb-4">
         {{-- Loading spinner --}}
         <div wire:loading.flex class="justify-end items-center gap-2 text-base" style="line-height: 0px;">
-            <i class="fas fa-spinner fa-spin"></i>
+            <i class="fas fa-spinner animate-spin inline-block"></i>
             <span>Loading...</span>
         </div>
 

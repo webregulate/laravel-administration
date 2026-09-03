@@ -44,6 +44,7 @@ class Scheduler extends WRLAPageComponent
             'failedJobs' => $this->getFailedJobs(),
             'queueDriver' => $this->getQueueDriver(),
             'pendingSupported' => $this->getQueueDriver() === 'database',
+            'canRunAdhoc' => WRLAHelper::schedulerCanRunAdhoc(),
         ]);
     }
 
@@ -73,10 +74,16 @@ class Scheduler extends WRLAPageComponent
                     ? $event->timezone->getName()
                     : (string) ($event->timezone ?: config('app.timezone'));
 
+                $command = $this->cleanCommand($event->command);
+
                 return [
+                    // Stable identifier used to run the task on demand.
+                    'id' => sha1($event->mutexName()),
                     'type' => $isCallback ? 'Callback' : 'Command',
+                    // For command events the machine "name" is the artisan command; closures have none.
+                    'name' => $isCallback ? null : $command,
                     'description' => $event->description ?: ($isCallback ? 'Closure' : null),
-                    'command' => $this->cleanCommand($event->command),
+                    'command' => $command,
                     'expression' => $event->expression,
                     'humanExpression' => CronExpressionService::toHuman($event->expression),
                     'summary' => $event->getSummaryForDisplay(),
@@ -178,6 +185,43 @@ class Scheduler extends WRLAPageComponent
     public function refresh(): void
     {
         $this->reset(['flashMessage', 'flashType']);
+    }
+
+    /**
+     * Run a single scheduled task on demand, identified by its stable id (sha1 of the
+     * event mutex name). Command events are dispatched through Artisan so their output
+     * can be captured; closures are invoked directly via the event itself.
+     */
+    public function runTask(string $id): void
+    {
+        if (! WRLAHelper::schedulerCanRunAdhoc()) {
+            abort(403);
+        }
+
+        try {
+            app(ConsoleKernel::class)->all();
+
+            $event = collect(app(Schedule::class)->events())
+                ->first(fn ($event) => sha1($event->mutexName()) === $id);
+
+            if ($event === null) {
+                $this->flash('Task could not be found. Try refreshing the page.', 'error');
+
+                return;
+            }
+
+            $label = $event->description ?: $this->cleanCommand($event->command) ?: 'Task';
+
+            if (! ($event instanceof CallbackEvent) && $event->command) {
+                Artisan::call($this->cleanCommand($event->command));
+            } else {
+                $event->run(app());
+            }
+
+            $this->flash('"'.$label.'" ran successfully.');
+        } catch (Throwable $e) {
+            $this->flash('Task failed: '.$e->getMessage(), 'error');
+        }
     }
 
     public function retryFailed(string $uuid): void
