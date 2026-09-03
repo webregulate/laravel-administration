@@ -822,24 +822,7 @@ class WRLAHelper
     public static function userIsDev(): bool
     {
         return once(function() {
-            // Prefer the new `developer.enable` config location, but fall back to the
-            // legacy `enable_developer_tools` key for applications that have NOT yet
-            // migrated their published config. This is critical: the in-UI version /
-            // update button is gated behind this check, so without the legacy fallback
-            // a not-yet-migrated install could never reach the UI required to update
-            // itself (chicken-and-egg). We must therefore honour either key.
-            //
-            // Note: config() cannot be used with a fallback here because the package's
-            // default `developer.enable` is always merged into config (so the key always
-            // "exists"), which would shadow the legacy key. We resolve both explicitly.
-            $newConfig = config('wr-laravel-administration.developer.enable');
-            $legacyConfig = config('wr-laravel-administration.enable_developer_tools');
-
-            // When the new key has been explicitly configured (non-null), it takes
-            // precedence; otherwise fall back to the legacy key.
-            $config = $newConfig ?? $legacyConfig;
-
-            return WRLAHelper::resolveDeveloperToolsFlag($config);
+            return WRLAHelper::resolveDeveloperToolsFlag(config('wr-laravel-administration.developer.enable'));
         });
     }
 
