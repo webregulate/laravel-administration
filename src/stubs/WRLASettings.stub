@@ -43,11 +43,6 @@ class WRLASettings
                 WRLAHelper::getCurrentUserData()?->isMaster() && !empty(config('wr-laravel-administration.logs.current'))
             ),
 
-            // Database Schema (albertoarena/laravel-truss)
-            NavigationItem::make(url: route('wrla.database-schema'), name: 'Database Schema', icon: 'fas fa-diagram-project')->showOnCondition(fn() =>
-                WRLAHelper::databaseSchemaViewerEnabled()
-            ),
-
             // Divider
             NavigationItem::makeDivider('My Account', 'fa fa-user mr-1'),
 

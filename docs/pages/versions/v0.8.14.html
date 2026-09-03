@@ -114,12 +114,12 @@
         <pre><code>use WebRegulate\LaravelAdministration\Livewire\DatabaseSchema;
 
 // ...inside buildRoutes()
-// Database schema viewer - Access via `wr-laravel-administration.database_schema_viewer.enabled`
+// Database schema viewer - Enabled via `wr-laravel-administration.database_schema_viewer.enabled`
 Route::get('database-schema', DatabaseSchema::class)
     -&gt;name('wrla.database-schema');</code></pre>
     </div>
-    <p class="docs-body">
-        Then add the navigation item inside <code class="docs-inline-code">buildNavigation()</code>:
+    <p class="docs-body mt-2">
+        Optional: Add the navigation item inside <code class="docs-inline-code">buildNavigation()</code>:
     </p>
     <div class="docs-code-block">
         <pre><code>// Database Schema (albertoarena/laravel-truss)
