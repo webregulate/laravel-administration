@@ -351,7 +351,7 @@ return [
         //   true / false                  - enable or disable for everyone
         //   Closure($wrlaUserData): bool  - custom rule
         //   null                          - fall back to the developer check (WRLAHelper::userIsDev())
-        'enabled' => true,
+        'enabled' => null,
 
         // How to present it: 'embed' (Truss dashboard inside the WRLA layout via an
         // iframe) or 'redirect' (send the user to the standalone Truss page).
