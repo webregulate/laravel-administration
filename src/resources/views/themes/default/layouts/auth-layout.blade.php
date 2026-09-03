@@ -25,8 +25,8 @@
         </div>
 
         {{-- Logo --}}
-        <div class="w-full md:w-7/12 lg:w-3/12 rounded-lg px-8 mx-6">
-            <a href="{{ route('wrla.dashboard') }}">
+        <div class="flex justify-center w-full md:w-7/12 lg:w-3/12 rounded-lg px-8 mx-6">
+            <a href="{{ route('wrla.dashboard') }}" class="inline-flex justify-center">
                 {!! $WRLAHelper::renderLogo() !!}
             </a>
         </div>
