@@ -1,0 +1,142 @@
+<div class="flex items-center gap-2 mb-6">
+    <a href="versions/versions.html" class="text-sm text-primary-500 hover:text-primary-700 flex items-center gap-1">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Version History
+    </a>
+</div>
+
+<h1 class="docs-title">
+    <span data-version-number></span>
+    <span data-version-date class="text-lg font-normal text-gray-400 ml-3"></span>
+</h1>
+
+<p class="docs-lead">
+    Adds a new <strong>Database Schema viewer</strong> to the admin panel, powered by
+    <code class="docs-inline-code">albertoarena/laravel-truss</code>. It gives master/developer users a
+    visual diagram of the application's database tables and relationships, either embedded inside the
+    WRLA layout or opened as the standalone Truss dashboard.
+</p>
+
+<!-- Breaking Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        Breaking Changes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>None</li>
+    </ul>
+</div>
+
+<!-- Features -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-primary-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        Features
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>
+            New <strong>Database Schema</strong> page (<code class="docs-inline-code">wrla.database-schema</code>)
+            served by the <code class="docs-inline-code">DatabaseSchema</code> Livewire component and shown
+            in the navigation when enabled.
+        </li>
+        <li>
+            Configurable via a new <code class="docs-inline-code">database_schema_viewer</code> config block:
+            control who can access it, whether it renders <code class="docs-inline-code">embed</code>ded or
+            via <code class="docs-inline-code">redirect</code>, the default colour mode, which database
+            connections are shown, and any extra Truss options.
+        </li>
+        <li>
+            Available as a Dev Tools shortcut, so developers can jump straight to the schema diagram.
+        </li>
+    </ul>
+</div>
+
+<!-- Upgrade Guide -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-primary-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+        </svg>
+        Upgrade Guide
+    </h2>
+
+    <!-- Step 1 -->
+    <h3 class="text-base font-semibold text-gray-800 mt-2 mb-2">
+        1. Add the <code class="docs-inline-code">database_schema_viewer</code> config default
+    </h3>
+    <p class="docs-body">
+        In your published <code class="docs-inline-code">config/wr-laravel-administration.php</code>, paste the
+        new block after the <code class="docs-inline-code">logs</code> section and before the
+        <code class="docs-inline-code">THEME / STYLING CONFIGURATION</code> divider:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>// Database schema viewer (albertoarena/laravel-truss) configuration
+'database_schema_viewer' => [
+    // Who may access the page: true / false, a Closure($wrlaUserData): bool,
+    // or null to fall back to the developer check (WRLAHelper::userIsDev()).
+    'enabled' => true,
+
+    // 'embed' (Truss dashboard inside the WRLA layout) or 'redirect' (standalone Truss page).
+    'display' => 'embed',
+
+    // Default colour mode until the user toggles it: 'light', 'dark', or 'auto'.
+    'default_mode' => 'dark',
+
+    // Connections (keys from config/database.php) to visualise, with per-connection
+    // Truss options. Leave empty to use the default connection.
+    'connections' => [
+        // 'mysql' => [],
+    ],
+
+    // Extra config passed straight through to Truss (config/truss.php).
+    'truss' => [
+        //
+    ],
+],</code></pre>
+    </div>
+
+    <!-- Step 2 -->
+    <h3 class="text-base font-semibold text-gray-800 mt-5 mb-2">
+        2. Register the route and nav item in <code class="docs-inline-code">WRLASettings.php</code>
+    </h3>
+    <p class="docs-body">
+        In <code class="docs-inline-code">app/WRLA/WRLASettings.php</code>, import the component and add the
+        route inside <code class="docs-inline-code">buildRoutes()</code>:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>use WebRegulate\LaravelAdministration\Livewire\DatabaseSchema;
+
+// ...inside buildRoutes()
+// Database schema viewer - Access via `wr-laravel-administration.database_schema_viewer.enabled`
+Route::get('database-schema', DatabaseSchema::class)
+    -&gt;name('wrla.database-schema');</code></pre>
+    </div>
+    <p class="docs-body">
+        Then add the navigation item inside <code class="docs-inline-code">buildNavigation()</code>:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>// Database Schema (albertoarena/laravel-truss)
+NavigationItem::make('wrla.database-schema', [], 'Database Schema', 'fas fa-diagram-project')
+    -&gt;showOnCondition(fn() =&gt; WRLAHelper::databaseSchemaViewerEnabled()),</code></pre>
+    </div>
+</div>
+
+<!-- Bug Fixes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-green-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Bug Fixes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>None</li>
+    </ul>
+</div>
