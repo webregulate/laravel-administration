@@ -27,8 +27,7 @@
         {{-- Logo --}}
         <div class="w-full md:w-7/12 lg:w-3/12 rounded-lg px-8 mx-6">
             <a href="{{ route('wrla.dashboard') }}">
-                <img src="{{ asset(config('wr-laravel-administration.logo.light')) }}" title="Light Logo" alt="Light Logo" class="dark:hidden" />
-                <img src="{{ asset(config('wr-laravel-administration.logo.dark')) }}" title="Dark Logo" alt="Dark Logo" class="hidden dark:block" />
+                {!! $WRLAHelper::renderLogo() !!}
             </a>
         </div>
 

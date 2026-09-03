@@ -57,8 +57,7 @@
         {{-- Logo --}}
         <div class="w-full">
             <div class="wrla-sidebar-logo">
-                {{-- <img src="{{ asset(config('wr-laravel-administration.logo.light')) }}" title="Light Logo" alt="Light Logo" class="dark:hidden w-full" /> --}}
-                <img src="{{ asset(config('wr-laravel-administration.logo.dark')) }}" title="Dark Logo" alt="Dark Logo" class="w-full" />
+                {!! $WRLAHelper::renderLogo('w-full', 'dark') !!}
             </div>
         </div>
 

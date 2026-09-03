@@ -170,8 +170,7 @@ class WRLAServiceProvider extends ServiceProvider
 
         // Publish assets
         $this->publishes([
-            __DIR__ . '/resources/images/logo-light.svg' => public_path('vendor/wr-laravel-administration/images/logo-light.svg'),
-            __DIR__ . '/resources/images/logo-dark.svg' => public_path('vendor/wr-laravel-administration/images/logo-dark.svg'),
+            __DIR__ . '/resources/images/logo.svg' => public_path('vendor/wr-laravel-administration/images/logo.svg'),
             __DIR__ . '/resources/images/no-image-transparent.svg' => public_path('vendor/wr-laravel-administration/images/no-image-transparent.svg'),
         ], 'wrla-assets');
     }

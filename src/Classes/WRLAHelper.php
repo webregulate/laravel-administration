@@ -1160,6 +1160,47 @@ class WRLAHelper
     }
 
     /**
+     * Render the company logo <img> markup for the current theme.
+     *
+     * @param  string|null  $extraClasses  Extra classes applied to the variant(s) (e.g. 'w-full').
+     * @param  string|null  $mode  null = swap on dark mode, 'light' or 'dark' = always render that variant
+     *                             (use 'dark' for permanently dark surfaces such as the sidebar).
+     */
+    public static function renderLogo(?string $extraClasses = null, ?string $mode = null): string
+    {
+        $logo = config('wr-laravel-administration.logo', []);
+
+        // Resolve sources, falling back to the legacy 'light'/'dark' keys.
+        $lightSrc = $logo['src'] ?? $logo['light'] ?? null;
+        $darkSrc = $logo['src_dark'] ?? $logo['dark'] ?? $lightSrc;
+
+        if (empty($lightSrc)) {
+            return '';
+        }
+
+        $extra = trim((string) $extraClasses);
+        $lightBase = trim(($logo['light_classes'] ?? '').' '.$extra);
+        $darkBase = trim(($logo['dark_classes'] ?? '').' '.$extra);
+
+        $img = fn(string $src, string $classes): string => sprintf(
+            '<img src="%s" title="Logo" alt="Logo" class="%s" />',
+            e(asset($src)),
+            e(trim($classes))
+        );
+
+        // Force a single variant when a mode is given (e.g. permanently dark surfaces).
+        if ($mode === 'light') {
+            return $img($lightSrc, $lightBase);
+        }
+        if ($mode === 'dark') {
+            return $img($darkSrc, $darkBase);
+        }
+
+        // Responsive: swap between the two variants based on the active colour mode.
+        return $img($lightSrc, $lightBase.' dark:hidden').$img($darkSrc, $darkBase.' hidden dark:block');
+    }
+
+    /**
      * Allow inserting config strings into the given string, eg: "Hello {app.name} - {app.env}" would return "Hello MyApp - production" if the config is set as ['app.name' => 'MyApp', 'app.env' => 'production'].
      */
     public static function insertConfigStrings(string $string): string

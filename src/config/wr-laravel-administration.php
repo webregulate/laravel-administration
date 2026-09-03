@@ -184,10 +184,17 @@ return [
         ],
     ],
 
-    // Company logo
+    // Logo
     'logo' => [
-        'light' => 'vendor/wr-laravel-administration/images/logo-light.svg',
-        'dark' => 'vendor/wr-laravel-administration/images/logo-dark.svg',
+        // Logo src
+        'src' => 'vendor/wr-laravel-administration/images/logo.svg',
+
+        // Optional separate dark-mode logo. Leave null to reuse 'src'.
+        'src_dark' => null,
+
+        // Optional extra classes per mode. The dark default renders the logo white.
+        'light_classes' => '',
+        'dark_classes' => 'brightness-0 invert',
     ],
 
     // Wysiwyg editors

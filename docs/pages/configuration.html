@@ -307,12 +307,20 @@
                 <td>Browser tab title format. Use <code class="docs-inline-code">{page_title}</code> as the dynamic placeholder. Default: <code class="docs-inline-code">'{page_title} - WebRegulate Admin'</code></td>
             </tr>
             <tr>
-                <td><code class="docs-inline-code">logo.light</code></td>
-                <td>Public asset path to the logo shown in light mode.</td>
+                <td><code class="docs-inline-code">logo.src</code></td>
+                <td>Public asset path to the single logo used in both light and dark mode.</td>
             </tr>
             <tr>
-                <td><code class="docs-inline-code">logo.dark</code></td>
-                <td>Public asset path to the logo shown in dark mode.</td>
+                <td><code class="docs-inline-code">logo.src_dark</code></td>
+                <td>Optional public asset path for a dedicated dark-mode logo. Leave <code class="docs-inline-code">null</code> to reuse <code class="docs-inline-code">logo.src</code>.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">logo.light_classes</code></td>
+                <td>Optional extra CSS classes applied to the logo in light mode.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">logo.dark_classes</code></td>
+                <td>Optional extra CSS classes applied to the logo in dark mode. Defaults to <code class="docs-inline-code">brightness-0 invert</code>, which recolours the logo white.</td>
             </tr>
         </tbody>
     </table>
