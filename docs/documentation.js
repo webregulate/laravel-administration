@@ -189,16 +189,30 @@ class DocumentationApp {
         el.textContent = latest ? `v${latest.version}` : 'No versions published yet';
     }
 
-    // Populate [data-version-number] and [data-version-date] on a version detail page
+    // Prepend the shared header (back link + version number/date) to a version detail page
     loadVersionDetail() {
         const match = this.currentPage.match(/^versions\/v([\d.]+)\.html$/);
         if (!match) return;
         const version = match[1];
         const entry = this.getVersionManifest().find(v => v.version === version);
-        const numEl = document.querySelector('[data-version-number]');
-        const dateEl = document.querySelector('[data-version-date]');
-        if (numEl) numEl.textContent = `v${version}`;
-        if (dateEl && entry) dateEl.textContent = entry.date;
+        const contentArea = document.getElementById('content-area');
+        if (!contentArea) return;
+        const header = document.createElement('div');
+        header.innerHTML = `
+            <div class="flex items-center gap-2 mb-6">
+                <a href="versions/versions.html" class="text-sm text-primary-500 hover:text-primary-700 flex items-center gap-1">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    Version History
+                </a>
+            </div>
+            <h1 class="docs-title">
+                <span>v${version}</span>
+                <span class="text-lg font-normal text-gray-400 ml-3">${entry ? entry.date : ''}</span>
+            </h1>
+        `;
+        contentArea.prepend(header);
     }
 
     // Render the manifest into #versions-list and wire up the search filter
