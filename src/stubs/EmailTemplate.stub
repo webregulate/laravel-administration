@@ -245,9 +245,16 @@ class EmailTemplate extends ManageableModel
                             <i class="fas fa-spinner animate-spin inline-block"></i>
                             <span style="padding-left: 4px;">Loading...</span>
                         </div>
-                        <b class="font-medium mb-1">Preview:</b><br />
+                        <div class="font-semibold mb-1">
+                            <i class="fa-regular fa-envelope mr-1"></i>
+                            Preview Subject:
+                        </div>
                         <div style="background: white; margin-bottom: 10px; width:100%; font-weight: 600; border: 1px solid #cccccc; border-radius: 6px; padding: 15px 10px; background:#ffffff; display:block;">
                             $subject
+                        </div>
+                        <div class="font-semibold mt-3 mb-1">
+                            <i class="fa fa-align-left mr-1"></i>
+                            Preview Body:
                         </div>
                         <div style="border: 1px solid #cccccc; border-radius: 6px; padding: 15px; background:#ffffff;">
                             @verbatim
@@ -256,7 +263,7 @@ class EmailTemplate extends ManageableModel
                                 title="Email preview"
                                 scrolling="no"
                                 style="box-sizing:content-box; width:100%; min-height:150px; border:0; background:#ffffff; display:block;"
-                                onload="this.style.height=(this.contentWindow.document.documentElement.scrollHeight + 2)+'px';"
+                                onload="(function(f){function size(){try{var d=f.contentWindow.document;var de=d.documentElement,b=d.body;de.style.height='auto';if(b){b.style.height='auto';}var h=Math.max(de.scrollHeight,de.offsetHeight,b?b.scrollHeight:0,b?b.offsetHeight:0);f.style.height=(h+4)+'px';}catch(e){}}size();var w=f.contentWindow,d=f.contentWindow.document;if(w&&w.requestAnimationFrame){w.requestAnimationFrame(size);}[50,150,300,600,1000].forEach(function(t){setTimeout(size,t);});try{var imgs=d.images||[];for(var i=0;i<imgs.length;i++){imgs[i].addEventListener('load',size);imgs[i].addEventListener('error',size);}if(w.ResizeObserver&&d.body){new w.ResizeObserver(size).observe(d.body);}}catch(e){}})(this);"
                             ></iframe>
                             @endverbatim
                         </div>

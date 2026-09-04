@@ -351,8 +351,12 @@ class EmailTemplate extends Model
                 }
             }
 
-            // Render mode escaping
-            if ($renderMode == self::RENDER_MODE_BLADE) {
+            // Render mode escaping. HTML templates are authored as raw HTML and must
+            // render verbatim (including inline <style> blocks and tags such as <p>),
+            // so we skip the entity-escaping applied to markdown/text templates.
+            if ($this->getRenderMode() === 'html') {
+                // No escaping - output the HTML as written.
+            } elseif ($renderMode == self::RENDER_MODE_BLADE) {
                 $buildString = str_replace(['{', '}'], ['(', ')'], $buildString);
                 $buildString = str_replace('@', "{{ '@' }}", $buildString);
                 $buildString = str_replace('$', "{{ '$' }}", $buildString);
