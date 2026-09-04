@@ -5,15 +5,17 @@ namespace WebRegulate\LaravelAdministration\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
-use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
+use Throwable;
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
+use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Services\ManageableModelService;
+
+use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\info;
 use function Laravel\Prompts\note;
-use function Laravel\Prompts\text;
 use function Laravel\Prompts\pause;
 use function Laravel\Prompts\select;
-use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\text;
 use function Laravel\Prompts\warning;
 
 class CreateManageableModelCommand extends Command
@@ -490,17 +492,41 @@ class CreateManageableModelCommand extends Command
     {
         $defaultConnection = config('database.default');
 
-        $input = text(
-            'Which existing table should we build from? (Format: connection_name:table_name)',
-            default: $defaultConnection.':'.ManageableModelService::getTableName($model),
-            required: true,
-            hint: "Optionally prefix with a connection, eg. {$defaultConnection}:table_name"
+        // Let the user pick a configured connection rather than typing it out
+        $connectionNames = array_keys(config('database.connections', []));
+        $connection = select(
+            'Which database connection should we build from?',
+            array_combine($connectionNames, $connectionNames),
+            in_array($defaultConnection, $connectionNames, true) ? $defaultConnection : ($connectionNames[0] ?? null)
         );
 
-        // Split an optional "connection:table" prefix (defaults to the app's default connection)
-        [$connection, $table] = str_contains($input, ':')
-            ? array_map('trim', explode(':', $input, 2))
-            : [$defaultConnection, trim($input)];
+        // Fetch the available tables for the chosen connection so the user can pick one
+        try {
+            $tables = Schema::connection($connection)->getTableListing(schemaQualified: false);
+        } catch (Throwable $e) {
+            warning("Could not read the tables for connection '$connection': ".$e->getMessage());
+            $this->createModelIfWanted($model, false);
+
+            return [];
+        }
+
+        if (empty($tables)) {
+            warning("No tables were found on connection '$connection'. No fields will be auto-generated.");
+            $this->createModelIfWanted($model, false);
+
+            return [];
+        }
+
+        sort($tables);
+
+        // Default to the table that matches the model name when it exists in the list
+        $suggestedTable = ManageableModelService::getTableName($model);
+        $table = select(
+            'Which existing table should we build from?',
+            array_combine($tables, $tables),
+            in_array($suggestedTable, $tables, true) ? $suggestedTable : null,
+            scroll: 15
+        );
 
         if (! Schema::connection($connection)->hasTable($table)) {
             warning("Table '$table' does not exist on connection '$connection'. No fields will be auto-generated.");
