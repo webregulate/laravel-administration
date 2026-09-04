@@ -22,7 +22,7 @@ class ModelDocblockCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'wrla:model-docblock {model?}';
+    protected $signature = 'wrla:model-docblock {model?} {--force : Apply the docblock without asking for confirmation}';
 
     /**
      * The console command description.
@@ -93,10 +93,9 @@ class ModelDocblockCommand extends Command
         $this->line($docblock);
         $this->newLine();
 
-        // Offer to write it directly above the class definition
-        if (! confirm('Automatically apply this docblock above the '.class_basename($modelClass).' class?', true)) {
+        // Offer to write it directly above the class definition, unless --force skips the prompt
+        if (!$this->option('force') && !confirm('Automatically apply this docblock above the '.class_basename($modelClass).' class?', true)) {
             info('Docblock not applied. You can copy it from above.');
-
             return 0;
         }
 
