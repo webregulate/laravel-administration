@@ -3,8 +3,6 @@
 namespace App\WRLA;
 
 use Exception;
-use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Builder;
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionRestore;
@@ -20,6 +18,7 @@ use WebRegulate\LaravelAdministration\Classes\ManageableFields\Select;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionCreate;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionImport;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionExportCSV;
+use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSelect;
 use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSearch;
 use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSoftDeleted;
 
