@@ -301,7 +301,7 @@ return [
 
     // Upsert (create/edit) view configuration
     'upsert' => [
-        // Default upsert mode for models that don't call setUpsertOptions(): 'page' | 'modal'
+        // Default upsert mode: 'page' | 'modal'
         'mode' => 'page',
 
         // Full page upsert defaults

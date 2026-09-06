@@ -63,7 +63,7 @@ class User extends ManageableModel
         ]);
 
         // Upsert options
-        static::setUpsertOptions(UpsertOptions::page());
+        static::setUpsertOptions(UpsertOptions::default());
     }
 
     /**

@@ -8,7 +8,8 @@ namespace WebRegulate\LaravelAdministration\Classes;
  *
  * Use the directly callable static constructors as entry points:
  *
- *     UpsertOptions::page();                 // full page upsert (default)
+ *     UpsertOptions::default();              // mode and options from config
+ *     UpsertOptions::page();                 // full page upsert
  *     UpsertOptions::modal();                // modal upsert (default size from config)
  *     UpsertOptions::modal('4xl');           // modal upsert with an explicit size
  *     UpsertOptions::modal()->returnToBrowseAfterSave(false); // override the after-save behaviour
@@ -59,6 +60,14 @@ class UpsertOptions
         $mode = config('wr-laravel-administration.upsert.mode', self::MODE_PAGE);
 
         return $mode === self::MODE_MODAL ? static::modal() : static::page();
+    }
+
+    /**
+     * Use the default mode and options from configuration.
+     */
+    public static function default(): static
+    {
+        return static::fromConfig();
     }
 
     /**

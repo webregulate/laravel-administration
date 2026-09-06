@@ -45,7 +45,7 @@ class {{ $MODEL }} extends ManageableModel
         ]);
 
         // Upsert options
-        static::setUpsertOptions(UpsertOptions::page());
+        static::setUpsertOptions(UpsertOptions::default());
     }
 
     /** Setup browse properties of this manageable model. */

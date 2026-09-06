@@ -46,11 +46,12 @@ public final static function mainSetup(): void
 {
     // ...
 
-    static::setUpsertOptions(UpsertOptions::modal('4xl'));
+    static::setUpsertOptions(UpsertOptions::modal('6xl'));
 }</code></pre>
     </div>
     <p class="docs-body">
-        Use <code class="docs-inline-code">UpsertOptions::page()</code> for the standard page,
+        Use <code class="docs-inline-code">UpsertOptions::default()</code> for the globally configured
+        mode, <code class="docs-inline-code">UpsertOptions::page()</code> for the standard page,
         <code class="docs-inline-code">UpsertOptions::modal()</code> for the configured modal width,
         or pass a Wire Elements Modal width key explicitly:
         <code class="docs-inline-code">sm</code>, <code class="docs-inline-code">md</code>,
@@ -82,7 +83,7 @@ static::setUpsertOptions(
     </p>
     <div class="docs-code-block">
         <pre><code>'upsert' => [
-    // Used when a model does not call setUpsertOptions(): 'page' or 'modal'
+    // Default upsert mode: 'page' or 'modal'
     'mode' => 'page',
 
     'page' => [
