@@ -802,9 +802,9 @@ class ManageableModelBrowse extends WRLAPageComponent
             return redirect($result->getTargetUrl());
         }
 
-        // If a string message is returned, show it as a success message.
-        if (is_string($result)) {
-            WRLAHelper::pushAlert('success', $result);
+        // Strings are backwards-compatible info alerts; arrays can configure the alert.
+        if (is_string($result) || is_array($result)) {
+            WRLAHelper::pushActionAlert($result);
         }
 
         $this->resetPage();

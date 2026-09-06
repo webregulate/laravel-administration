@@ -62,6 +62,38 @@ class WRLAHelper
     }
 
     /**
+     * Push an alert returned by an instance action.
+     *
+     * @param  string|array{message: string, type?: string, url?: string|null, ttl?: int|null}  $result
+     */
+    public static function pushActionAlert(string|array $result): void
+    {
+        if (is_string($result)) {
+            static::pushAlert('info', $result);
+            return;
+        }
+
+        if (! isset($result['message']) || ! is_string($result['message'])) {
+            throw new \InvalidArgumentException('Instance action alert arrays must contain a string message.');
+        }
+
+        $type = $result['type'] ?? 'info';
+        $url = $result['url'] ?? null;
+        $ttl = $result['ttl'] ?? null;
+
+        if (! is_string($type) || (! is_null($url) && ! is_string($url)) || (! is_null($ttl) && ! is_int($ttl))) {
+            throw new \InvalidArgumentException('Instance action alert type and message must be strings, url a string or null, and ttl an integer or null.');
+        }
+
+        static::pushAlert(
+            $type,
+            $result['message'],
+            $url,
+            $ttl,
+        );
+    }
+
+    /**
      * Key remove constant
      *
      * @var string
@@ -1435,9 +1467,9 @@ class WRLAHelper
         $manageableModelInstance->getInstanceActions();
         $returnedValue = $manageableModelInstance->callInstanceAction($actionKey, $parameters);
 
-        // If returned value is a string, show it as a success alert.
-        if (is_string($returnedValue)) {
-            static::pushAlert('success', $returnedValue);
+        // Strings are backwards-compatible info alerts; arrays can configure the alert.
+        if (is_string($returnedValue) || is_array($returnedValue)) {
+            static::pushActionAlert($returnedValue);
         }
         // If is RedirectResponse, redirect to the given route
         elseif ($returnedValue instanceof RedirectResponse) {
@@ -1449,7 +1481,7 @@ class WRLAHelper
         }
         // Otherwise, throw exception that given type is not supported as returned value from an instance action
         elseif (! is_null($returnedValue)) {
-            throw new \Exception('Returned value type "'.gettype($returnedValue).'" is not supported from manageable model instance action. Expected string, RedirectResponse, or file download response.');
+            throw new \Exception('Returned value type "'.gettype($returnedValue).'" is not supported from manageable model instance action. Expected string, alert array, RedirectResponse, or file download response.');
         }
     }
 

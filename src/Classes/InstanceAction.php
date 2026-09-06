@@ -61,7 +61,7 @@ class InstanceAction
      * @param string $text
      * @param mixed $icon
      * @param mixed $color
-     * @param null|callable|string $action Takes model instance, returns string message or RedirectResponse
+        * @param null|callable|string $action URL string or callable using the setAction return contract
      * @param null|bool|callable $enableCondition An initial enable condition (bool or callable returning bool)
      * @param null|array $additonalAttributes
      * @return InstanceAction
@@ -95,7 +95,16 @@ class InstanceAction
 
     /**
      * Set action
-     * @param callable|string $action If string then will be href link, if callable should take the model instance and return a string message for the user
+        *
+      * A string action is an href. A callable receives the model and may return:
+      * - A message string, shown as an info alert.
+      * - An alert array, e.g. ['type' => 'danger', 'message' => 'Failed', 'ttl' => 10000, 'url' => '/details'].
+      *   Only message is required; type defaults to info, ttl to config, and url to no link.
+      * - A redirect, file response, or null.
+      *
+      * Alert types: success, danger, warning, info.
+      *
+      * @param callable|string $action
      * @return InstanceAction
      */
     public function setAction(callable|string $action): static
@@ -136,8 +145,8 @@ class InstanceAction
 
     /**
      * Define how this action should handle a multi selection. The given callable receives an array of
-     * the selected primary keys (and an optional parameters array). It may return a string message,
-     * a RedirectResponse, or a file download response - the same as a normal callable action.
+      * the selected primary keys (and an optional parameters array). It supports the same return values
+      * as a normal callable action.
      *
      * This action will then be rendered in the browse multi action toolbar when the manageable model
      * has multi selection enabled (see ManageableModel::setMultiSelect).

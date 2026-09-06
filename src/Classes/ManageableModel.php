@@ -1163,7 +1163,7 @@ abstract class ManageableModel
     /**
      * Call a registered instance action by it's key
      * 
-     * @return string|RedirectResponse String shows message in browser alert message, RedirectResponse redirects to the specified URL
+        * @return mixed String or alert array shows a popout, RedirectResponse redirects to the specified URL
      */
     public function callInstanceAction(string $actionKey, array $parameters): mixed
     {
@@ -1192,7 +1192,7 @@ abstract class ManageableModel
      * @param array $ids List of selected primary keys
      * @param array $parameters
      * @throws \Exception
-     * @return mixed String shows message, RedirectResponse redirects, file response downloads
+    * @return mixed String or alert array shows a popout, RedirectResponse redirects, file response downloads
      */
     public function callMultiInstanceAction(string $actionKey, array $ids, array $parameters = []): mixed
     {
@@ -1206,7 +1206,7 @@ abstract class ManageableModel
     /**
      * Create instance action button
      * 
-     * @param null|callable|string $action Takes model instance, returns string message or RedirectResponse
+        * @param null|callable|string $action URL string or callable using the InstanceAction::setAction return contract
      */
     public function instanceAction(string $text, ?string $icon = null, ?string $color = null, null|callable|string $action = null, null|bool|callable $enableCondition = null, ?array $additonalAttributes = null): InstanceAction
     {
