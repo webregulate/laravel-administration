@@ -14,14 +14,28 @@ class InstanceActionEdit
         $modelUrlAlias ??= $manageableModel::getUrlAlias();
         $modelId ??= $manageableModel->model()->id ?? null;
 
-        return InstanceAction::make($manageableModel, 'Edit', 'fa fa-edit', 'primary')
+        $action = InstanceAction::make($manageableModel, 'Edit', 'fa fa-edit', 'primary')
             ->requireCondition(
                 $manageableModel::getPermission(ManageableModelPermissions::EDIT)
                 && WRLAHelper::isBrowsePage()
-            )
-            ->setAction(route('wrla.manageable-models.edit', [
-                'modelUrlAlias' => $modelUrlAlias,
-                'id' => $modelId,
-            ]));
+            );
+
+        $upsertOptions = $manageableModel::getUpsertOptions();
+
+        if ($upsertOptions->isModal()) {
+            return $action->setAdditionalAttributes([
+                'onclick' => "window.wrlaOpenUpsertModal(this, {
+                    modelUrlAlias: '".$modelUrlAlias."',
+                    id: ".($modelId ?? 'null').",
+                    maxWidth: '".$upsertOptions->getModalSize()."',
+                    maxWidthClass: '".$upsertOptions->getModalSizeClass()."'
+                });",
+            ]);
+        }
+
+        return $action->setAction(route('wrla.manageable-models.edit', [
+            'modelUrlAlias' => $modelUrlAlias,
+            'id' => $modelId,
+        ]));
     }
 }

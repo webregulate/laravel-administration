@@ -299,6 +299,27 @@ return [
         ],
     ],
 
+    // Upsert (create/edit) view configuration
+    'upsert' => [
+        // Default upsert mode for models that don't call setUpsertOptions(): 'page' | 'modal'
+        'mode' => 'page',
+
+        // Full page upsert defaults
+        'page' => [
+            // Whether a successful save returns to the browse page (redirect + flash success)
+            'return_to_browse_after_save' => false,
+        ],
+
+        // Modal upsert defaults
+        'modal' => [
+            // Modal size (wire-elements/modal max width key: sm..7xl)
+            'size' => '6xl',
+
+            // Whether a successful save returns to the browse page (closes the modal + browse flash success)
+            'return_to_browse_after_save' => true,
+        ],
+    ],
+
     // CSV import configuration (used by the ImportDataModal)
     'csv_imports' => [
         'chunk_size' => 500,

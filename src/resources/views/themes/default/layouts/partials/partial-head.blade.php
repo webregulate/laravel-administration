@@ -117,6 +117,32 @@
     };
 
     /**
+     * Open the manageable model upsert (create/edit) view inside a modal.
+     * The modal size is applied per-open via modalAttributes so it can vary per model.
+     *
+     * @param {element} buttonElement
+     * @param {object} data { modelUrlAlias, id?, duplicateFrom?, maxWidth, maxWidthClass }
+     */
+    window.wrlaOpenUpsertModal = function(buttonElement, data) {
+        window.buttonSignifyLoading(buttonElement, () => new Promise((resolve) => {
+            Livewire.dispatch('openModal', {
+                component: 'wrla.manageable-models.upsert-modal',
+                arguments: {
+                    modelUrlAlias: data.modelUrlAlias,
+                    id: data.id ?? null,
+                    duplicateFrom: data.duplicateFrom ?? null,
+                },
+                modalAttributes: {
+                    maxWidth: data.maxWidth,
+                    maxWidthClass: data.maxWidthClass,
+                },
+            });
+
+            Livewire.on('manageable-models.upsert-modal.opened', () => resolve());
+        }));
+    };
+
+    /**
      * The below is for the wrlaInsertTextAtCursor function which is used to insert text at the cursor position in an input or textarea element.
      * 
      * @param {string} text

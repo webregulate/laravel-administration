@@ -9,10 +9,23 @@ class BrowseActionCreate
 {
     public static function make(string $manageableModelClass): BrowseAction
     {
-        return BrowseAction::make('Create '.$manageableModelClass::getDisplayName(), 'fa fa-plus', 'primary', 'left')
-            ->requireCondition($manageableModelClass::getPermission(ManageableModelPermissions::CREATE))
-            ->setHref(route('wrla.manageable-models.create', [
-                'modelUrlAlias' => $manageableModelClass::getUrlAlias(),
-            ]));
+        $action = BrowseAction::make('Create '.$manageableModelClass::getDisplayName(), 'fa fa-plus', 'primary', 'left')
+            ->requireCondition($manageableModelClass::getPermission(ManageableModelPermissions::CREATE));
+
+        $upsertOptions = $manageableModelClass::getUpsertOptions();
+
+        if ($upsertOptions->isModal()) {
+            return $action->setAttributes([
+                'onclick' => "window.wrlaOpenUpsertModal(this, {
+                    modelUrlAlias: '".$manageableModelClass::getUrlAlias()."',
+                    maxWidth: '".$upsertOptions->getModalSize()."',
+                    maxWidthClass: '".$upsertOptions->getModalSizeClass()."'
+                });",
+            ]);
+        }
+
+        return $action->setHref(route('wrla.manageable-models.create', [
+            'modelUrlAlias' => $manageableModelClass::getUrlAlias(),
+        ]));
     }
 }

@@ -79,4 +79,7 @@
             @yield('content')
         </div>
     </div>
+
+    {{-- Gap --}}
+    <div class="block h-24"></div>
 </div>

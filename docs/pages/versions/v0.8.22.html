@@ -1,0 +1,121 @@
+<p class="docs-lead">
+    Adds configurable <strong>modal create and edit forms</strong> for manageable models, while
+    retaining the existing full-page workflow as the default.
+</p>
+
+<!-- Breaking Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        Breaking Changes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>None. Existing manageable models continue to use full-page upsert forms by default.</li>
+    </ul>
+</div>
+
+<!-- Features -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-primary-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        Features
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>Create, edit, and duplicate actions can now open the existing upsert form in a modal.</li>
+        <li>Presentation can be configured globally or overridden per manageable model.</li>
+        <li>Modal width and post-save behaviour are configurable without creating a custom modal component.</li>
+    </ul>
+</div>
+
+<!-- Usage -->
+<div class="docs-section">
+    <h2 class="docs-heading">Model-level usage</h2>
+    <p class="docs-body">
+        Import <code class="docs-inline-code">UpsertOptions</code> and call
+        <code class="docs-inline-code">static::setUpsertOptions()</code> from the manageable model's
+        <code class="docs-inline-code">mainSetup()</code> method.
+    </p>
+    <div class="docs-code-block mb-4">
+        <pre><code>use WebRegulate\LaravelAdministration\Classes\UpsertOptions;
+
+public final static function mainSetup(): void
+{
+    // ...
+
+    static::setUpsertOptions(UpsertOptions::modal('4xl'));
+}</code></pre>
+    </div>
+    <p class="docs-body">
+        Use <code class="docs-inline-code">UpsertOptions::page()</code> for the standard page,
+        <code class="docs-inline-code">UpsertOptions::modal()</code> for the configured modal width,
+        or pass a Wire Elements Modal width key explicitly:
+        <code class="docs-inline-code">sm</code>, <code class="docs-inline-code">md</code>,
+        <code class="docs-inline-code">lg</code>, <code class="docs-inline-code">xl</code>,
+        <code class="docs-inline-code">2xl</code>, <code class="docs-inline-code">3xl</code>,
+        <code class="docs-inline-code">4xl</code>, <code class="docs-inline-code">5xl</code>,
+        <code class="docs-inline-code">6xl</code>, or <code class="docs-inline-code">7xl</code>.
+    </p>
+    <div class="docs-code-block">
+        <pre><code>// Keep either page or modal form open after a successful save
+static::setUpsertOptions(
+    UpsertOptions::modal('6xl')->returnToBrowseAfterSave(false)
+);</code></pre>
+    </div>
+</div>
+
+<!-- Upgrade Guide -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-primary-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+        </svg>
+        Configuration
+    </h2>
+    <p class="docs-body">
+        Add the following block to your published
+        <code class="docs-inline-code">config/wr-laravel-administration.php</code>. These defaults
+        preserve the previous full-page workflow unless a model opts into modal mode.
+    </p>
+    <div class="docs-code-block">
+        <pre><code>'upsert' => [
+    // Used when a model does not call setUpsertOptions(): 'page' or 'modal'
+    'mode' => 'page',
+
+    'page' => [
+        // Redirect to browse after save when true; otherwise keep the form open
+        'return_to_browse_after_save' => false,
+    ],
+
+    'modal' => [
+        // Wire Elements Modal width: sm, md, lg, xl, or 2xl through 7xl
+        'size' => '6xl',
+
+        // Close the modal and return to browse after save when true
+        'return_to_browse_after_save' => true,
+    ],
+],</code></pre>
+    </div>
+    <p class="docs-body mt-4">
+        Per-model options take precedence over these values. Calling
+        <code class="docs-inline-code">UpsertOptions::page()</code> or
+        <code class="docs-inline-code">UpsertOptions::modal()</code> still reads the corresponding
+        post-save default from this configuration.
+    </p>
+</div>
+
+<!-- Bug Fixes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-green-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Bug Fixes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>None</li>
+    </ul>
+</div>

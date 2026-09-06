@@ -18,6 +18,9 @@ public final static function mainSetup(): void
     static::setUrlAlias('blog-post');
     static::setIcon('fa fa-file-alt');
 
+    // Upsert presentation
+    static::setUpsertOptions(UpsertOptions::page());
+
     // Permissions
     static::setPermission(ManageableModelPermissions::ENABLED, true);
     static::setPermission(ManageableModelPermissions::BROWSE, true);
@@ -96,6 +99,79 @@ static::setDisplayName('Article', 'All Articles'); // fully explicit</code></pre
     </p>
     <div class="docs-code-block">
         <pre><code>static::setIcon('fa fa-file-alt');</code></pre>
+    </div>
+</div>
+
+<!-- setUpsertOptions -->
+<div class="docs-section">
+    <h2 class="docs-heading font-mono text-primary-600">setUpsertOptions()</h2>
+    <p class="docs-body">
+        Controls whether create, edit, and duplicate forms open as a full page or in a modal, and
+        whether the form returns to the browse view after a successful save. Pass an
+        <code class="docs-inline-code">UpsertOptions</code> instance from inside
+        <code class="docs-inline-code">mainSetup()</code>.
+    </p>
+    <div class="docs-code-block mb-4">
+        <pre><code>use WebRegulate\LaravelAdministration\Classes\UpsertOptions;
+
+// Full page (the default)
+static::setUpsertOptions(UpsertOptions::page());
+
+// Modal using the configured default width
+static::setUpsertOptions(UpsertOptions::modal());
+
+// Modal with an explicit Wire Elements Modal width
+static::setUpsertOptions(UpsertOptions::modal('4xl'));
+
+// Keep the form open after saving instead of returning to browse
+static::setUpsertOptions(
+    UpsertOptions::modal('4xl')->returnToBrowseAfterSave(false)
+);</code></pre>
+    </div>
+
+    <h3 class="docs-subheading mb-3">Available options</h3>
+    <table class="docs-table mb-4">
+        <thead>
+            <tr>
+                <th>Option</th>
+                <th>Behaviour</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code class="docs-inline-code">UpsertOptions::page()</code></td>
+                <td>Uses the standard full-page create/edit view.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">UpsertOptions::modal($size)</code></td>
+                <td>Opens create, edit, and duplicate forms in a Wire Elements Modal.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">->returnToBrowseAfterSave($return)</code></td>
+                <td>When true, redirects a page or closes a modal after save; when false, keeps the form open.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p class="docs-body">
+        Modal mode accepts the Wire Elements Modal width keys
+        <code class="docs-inline-code">sm</code>, <code class="docs-inline-code">md</code>,
+        <code class="docs-inline-code">lg</code>, <code class="docs-inline-code">xl</code>,
+        <code class="docs-inline-code">2xl</code>, <code class="docs-inline-code">3xl</code>,
+        <code class="docs-inline-code">4xl</code>, <code class="docs-inline-code">5xl</code>,
+        <code class="docs-inline-code">6xl</code>, and <code class="docs-inline-code">7xl</code>.
+    </p>
+    <div class="docs-callout docs-callout-info">
+        <div class="docs-callout-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+        </div>
+        <div class="docs-callout-body">
+            Without this call, WRLA uses the global <code>upsert</code> configuration. The shipped
+            defaults use page mode, keep full-page forms open after save, use <code>6xl</code> modals,
+            and close modal forms after save.
+        </div>
     </div>
 </div>
 

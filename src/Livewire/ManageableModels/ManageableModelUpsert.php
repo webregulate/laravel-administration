@@ -96,6 +96,13 @@ class ManageableModelUpsert extends WRLAPageComponent
      */
     public ?string $successMessage = null;
 
+    /**
+     * Whether this upsert component is hosted inside a modal. When true it renders
+     * standalone (no admin layout) and, if configured to return to browse, closes
+     * the modal instead of performing a full-page redirect.
+     */
+    public bool $inModal = false;
+
     /* Livewire Methods / Hooks
     --------------------------------------------------------------------------*/
 
@@ -109,9 +116,11 @@ class ManageableModelUpsert extends WRLAPageComponent
      *
      * @param  string  $modelUrlAlias  The URL alias of the manageable model.
      * @param  ?int  $id  The id of the model to edit, null when creating.
+     * @param  ?int  $duplicateFrom  Optional source record id to prefill from (create only).
+     * @param  bool  $inModal  Whether the component is hosted inside a modal.
      * @return \Illuminate\Http\RedirectResponse|null
      */
-    public function mount(string $modelUrlAlias, ?int $id = null)
+    public function mount(string $modelUrlAlias, ?int $id = null, ?int $duplicateFrom = null, bool $inModal = false)
     {
         // Resolve the manageable model class from its URL alias.
         $manageableModelClass = ManageableModel::getByUrlAlias($modelUrlAlias);
@@ -121,7 +130,7 @@ class ManageableModelUpsert extends WRLAPageComponent
             return redirect()->route('wrla.dashboard')->with('error', "Manageable model with url alias `$modelUrlAlias` not found.");
         }
 
-        return $this->initialise($manageableModelClass, $id === null ? PageType::CREATE : PageType::EDIT, $id);
+        return $this->initialise($manageableModelClass, $id === null ? PageType::CREATE : PageType::EDIT, $id, null, $duplicateFrom, $inModal);
     }
 
     /**
@@ -132,12 +141,15 @@ class ManageableModelUpsert extends WRLAPageComponent
      * @param  PageType  $upsertType  The type of upsert page.
      * @param  ?int  $modelId  The id of the model to upsert, null if creating a new model.
      * @param  ?string  $overrideTitle  Optional title override.
+     * @param  ?int  $duplicateFrom  Optional source record id to prefill from (create only).
+     * @param  bool  $inModal  Whether the component is hosted inside a modal.
      * @return \Illuminate\Http\RedirectResponse|null
      */
-    protected function initialise(string $manageableModelClass, PageType $upsertType, ?int $modelId = null, ?string $overrideTitle = null)
+    protected function initialise(string $manageableModelClass, PageType $upsertType, ?int $modelId = null, ?string $overrideTitle = null, ?int $duplicateFrom = null, bool $inModal = false)
     {
         // Get the manageable model and base model class
         $this->manageableModelClass = $manageableModelClass;
+        $this->inModal = $inModal;
         $manageableModelInstance = $this->manageableModelClass::make($this->modelId, true);
         $modelClass = $manageableModelInstance::getBaseModelClass();
 
@@ -151,14 +163,18 @@ class ManageableModelUpsert extends WRLAPageComponent
         $this->upsertType = $upsertType;
         $this->overrideTitle = $overrideTitle;
 
-        // If creating, capture an optional source record to duplicate from (passed
-        // as a query parameter by the duplicate instance action). Stored as a public
-        // property so it persists across subsequent livewire renders.
+        // If creating, capture an optional source record to duplicate from. Passed
+        // directly (modal) or as a query parameter (full page) by the duplicate
+        // instance action. Stored as a public property so it persists across renders.
         if ($this->upsertType === PageType::CREATE) {
-            $duplicateFrom = request()->query('wrlaDuplicateFrom');
-
             if (is_numeric($duplicateFrom)) {
                 $this->duplicateFromId = (int) $duplicateFrom;
+            } else {
+                $queryDuplicateFrom = request()->query('wrlaDuplicateFrom');
+
+                if (is_numeric($queryDuplicateFrom)) {
+                    $this->duplicateFromId = (int) $queryDuplicateFrom;
+                }
             }
         }
 
@@ -290,6 +306,14 @@ class ManageableModelUpsert extends WRLAPageComponent
 
             return '<div></div>';
         }
+    }
+
+    /**
+     * Render standalone (no admin layout) when hosted inside a modal.
+     */
+    protected function rendersWithinAdminLayout(): bool
+    {
+        return !$this->inModal;
     }
 
     /**
@@ -453,6 +477,27 @@ class ManageableModelUpsert extends WRLAPageComponent
                 $message = $this->overrideSuccessMessage ?? $defaultSuccessMessage;
 
                 return redirect()->route($this->overrideRedirectRoute)->with('success', $message);
+            }
+
+            // Return to the browse page after save when configured for this model
+            // (page mode redirects, modal mode closes). Either way the browse page
+            // surfaces the success message.
+            if ($manageableModel::getUpsertOptions()->shouldReturnToBrowseAfterSave()) {
+                foreach ($manageableFields as $manageableField) {
+                    $manageableField->resetLivewireAfterSave($this->livewireData);
+                }
+                $this->dispatch('wrla-upsert-saved');
+
+                if ($this->inModal) {
+                    $this->dispatch('wrla-browse-flash-success', message: $defaultSuccessMessage);
+                    $this->dispatch('closeModal');
+
+                    return null;
+                }
+
+                return redirect()->route('wrla.manageable-models.browse', [
+                    'modelUrlAlias' => $manageableModel->getUrlAlias(),
+                ])->with('success', $defaultSuccessMessage);
             }
 
             // Stay on the page (no full-page refresh) and surface the result inline.

@@ -15,6 +15,7 @@ use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionDele
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionDuplicate;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItemBrowse;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItemCreate;
+use WebRegulate\LaravelAdministration\Classes\UpsertOptions;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 {{ $USE_STATEMENTS }}
 
@@ -42,6 +43,9 @@ class {{ $MODEL }} extends ManageableModel
             NavigationItemBrowse::make(static::class),
             NavigationItemCreate::make(static::class),
         ]);
+
+        // Upsert options
+        static::setUpsertOptions(UpsertOptions::page());
     }
 
     /** Setup browse properties of this manageable model. */

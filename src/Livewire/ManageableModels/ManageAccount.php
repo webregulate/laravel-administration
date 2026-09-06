@@ -18,7 +18,7 @@ class ManageAccount extends ManageableModelUpsert
      *
      * @return \Illuminate\Http\RedirectResponse|null
      */
-    public function mount(string $modelUrlAlias = '', ?int $id = null)
+    public function mount(string $modelUrlAlias = '', ?int $id = null, ?int $duplicateFrom = null, bool $inModal = false)
     {
         WRLAHelper::setCurrentPageType(PageType::EDIT);
 

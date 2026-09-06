@@ -129,6 +129,7 @@ class ManageableModelBrowse extends WRLAPageComponent
     protected $listeners = [
         'filtersUpdatedOutside' => 'filtersUpdatedOutside',
         'deleteModel' => 'deleteModel',
+        'wrla-browse-flash-success' => 'onBrowseFlashSuccess',
     ];
 
     /* Livewire Methods / Hooks
@@ -146,6 +147,16 @@ class ManageableModelBrowse extends WRLAPageComponent
         // foreach($dynamicFilterInputs as $item) {
         //     $this->filters[$item['field']] = $item['value'];
         // }
+    }
+
+    /**
+     * Surface a success message on the browse page after a modal upsert save that
+     * returned to browse (the modal closes and re-renders this list).
+     */
+    public function onBrowseFlashSuccess(string $message): void
+    {
+        $this->successMessage = $message;
+        $this->errorMessage = null;
     }
 
     /**

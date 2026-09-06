@@ -27,6 +27,12 @@ abstract class WRLAPageComponent extends Component
      */
     public function rendering($view): void
     {
+        // When embedded (e.g. hosted inside a modal) the component renders standalone
+        // and must not wrap itself in the full-page admin layout.
+        if (!$this->rendersWithinAdminLayout()) {
+            return;
+        }
+
         $view->extends(WRLAHelper::getViewPath('layouts.admin-layout'))
              ->section('content');
 
@@ -35,6 +41,15 @@ abstract class WRLAPageComponent extends Component
         if ($title !== null) {
             $view->title($title);
         }
+    }
+
+    /**
+     * Whether this component wraps itself in the WRLA admin layout. Override and
+     * return false to render the component standalone (e.g. inside a modal).
+     */
+    protected function rendersWithinAdminLayout(): bool
+    {
+        return true;
     }
 
     /**

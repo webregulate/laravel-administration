@@ -141,9 +141,6 @@
             @endforeach
         </div>
     @endif
-
-    {{-- Gap --}}
-    <div class="block h-24"></div>
 </div>
 
 {{-- Sync all native (non-file) form inputs into this component's livewireData just

@@ -13,11 +13,25 @@ class InstanceActionDuplicate
         $modelUrlAlias ??= $manageableModel::getUrlAlias();
         $modelId ??= $manageableModel->model()->id ?? null;
 
-        return InstanceAction::make($manageableModel, 'Duplicate', 'fa fa-copy', 'secondary')
-            ->requireCondition($manageableModel::getPermission(ManageableModelPermissions::CREATE))
-            ->setAction(route('wrla.manageable-models.create', [
-                'modelUrlAlias' => $modelUrlAlias,
-                'wrlaDuplicateFrom' => $modelId,
-            ]));
+        $action = InstanceAction::make($manageableModel, 'Duplicate', 'fa fa-copy', 'secondary')
+            ->requireCondition($manageableModel::getPermission(ManageableModelPermissions::CREATE));
+
+        $upsertOptions = $manageableModel::getUpsertOptions();
+
+        if ($upsertOptions->isModal()) {
+            return $action->setAdditionalAttributes([
+                'onclick' => "window.wrlaOpenUpsertModal(this, {
+                    modelUrlAlias: '".$modelUrlAlias."',
+                    duplicateFrom: ".($modelId ?? 'null').",
+                    maxWidth: '".$upsertOptions->getModalSize()."',
+                    maxWidthClass: '".$upsertOptions->getModalSizeClass()."'
+                });",
+            ]);
+        }
+
+        return $action->setAction(route('wrla.manageable-models.create', [
+            'modelUrlAlias' => $modelUrlAlias,
+            'wrlaDuplicateFrom' => $modelId,
+        ]));
     }
 }

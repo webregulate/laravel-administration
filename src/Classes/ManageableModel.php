@@ -8,6 +8,7 @@ use Illuminate\Support\MessageBag;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use WebRegulate\LaravelAdministration\Classes\UpsertOptions;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Enums\AdditionalRenderPosition;
 use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
@@ -500,6 +501,26 @@ abstract class ManageableModel
         static::setStaticOption('icon', $icon);
 
         return static::class;
+    }
+
+    /**
+     * Set the upsert (create/edit) view options, e.g. whether the upsert view is
+     * a full page or a modal, and how it behaves after save.
+     */
+    public static function setUpsertOptions(UpsertOptions $upsertOptions): string
+    {
+        static::setStaticOption('upsert', $upsertOptions);
+
+        return static::class;
+    }
+
+    /**
+     * Get the upsert view options. Falls back to the config driven default when
+     * setUpsertOptions() was never called (backward compatibility).
+     */
+    public static function getUpsertOptions(): UpsertOptions
+    {
+        return static::getStaticOption(static::class, 'upsert') ?? UpsertOptions::fromConfig();
     }
 
     /**

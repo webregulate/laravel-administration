@@ -38,6 +38,7 @@ use WebRegulate\LaravelAdministration\Commands\CreateManageableModelCommand;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItem;
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelBrowse;
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelUpsert;
+use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelUpsertModal;
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageAccount;
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelDynamicBrowseFilters;
 use WebRegulate\LaravelAdministration\Livewire\MultiUploadFields\MultiImageUploads;
@@ -267,6 +268,7 @@ class WRLAServiceProvider extends ServiceProvider
         Livewire::component('wrla.manageable-models.dynamic-browse-filters', ManageableModelDynamicBrowseFilters::class);
         Livewire::component('wrla.manageable-models.browse', ManageableModelBrowse::class);
         Livewire::component('wrla.manageable-models.upsert', ManageableModelUpsert::class);
+        Livewire::component('wrla.manageable-models.upsert-modal', ManageableModelUpsertModal::class);
         Livewire::component('wrla.manageable-models.manage-account', ManageAccount::class);
         Livewire::component('wrla.notifications-widget', NotificationsWidget::class);
         Livewire::component('wrla.import-data-modal', ImportDataModal::class);

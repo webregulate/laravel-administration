@@ -3,6 +3,8 @@
 namespace App\WRLA;
 
 use Exception;
+use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
+use WebRegulate\LaravelAdministration\Classes\UpsertOptions;
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionRestore;
@@ -34,11 +36,22 @@ class EmailTemplate extends ManageableModel
         static::setUrlAlias('email-template');
         static::setIcon('fas fa-palette');
 
+        // Permissions
+        static::setPermission(ManageableModelPermissions::ENABLED, true);
+        static::setPermission(ManageableModelPermissions::BROWSE, true);
+        static::setPermission(ManageableModelPermissions::CREATE, true);
+        static::setPermission(ManageableModelPermissions::EDIT, true);
+        static::setPermission(ManageableModelPermissions::DELETE, true);
+        static::setPermission(ManageableModelPermissions::RESTORE, true);
+
         // Navigation
         static::setNavigationItems(fn () => [
             NavigationItemBrowse::make(static::class),
             NavigationItemCreate::make(static::class),
         ]);
+
+        // Upsert options
+        static::setUpsertOptions(UpsertOptions::page());
     }
 
     /**
