@@ -12,6 +12,8 @@
     {{-- Heading --}}
     <div class="flex justify-between">
         <div class="text-xl font-semibold">
+            <i class="{{ $manageableModelClass::getIcon() }} mr-2"></i>
+            
             @if(!empty($overrideTitle))
                 {{ $overrideTitle }}
             @else
