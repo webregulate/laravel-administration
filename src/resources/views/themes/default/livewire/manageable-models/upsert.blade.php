@@ -1,37 +1,35 @@
 <div>
-    @themeComponent('forms.button', [
-        'href' => $manageableModelClass::urlBrowse(),
-        'text' => $manageableModelClass::getDisplayName(true),
-        'size' => 'small',
-        'color' => 'primary',
-        'icon' => 'fa fa-arrow-left',
-    ])
+    @if(!$inModal)
+        @themeComponent('forms.button', [
+            'href' => $manageableModelClass::urlBrowse(),
+            'text' => $manageableModelClass::getDisplayName(true),
+            'size' => 'small',
+            'color' => 'primary',
+            'icon' => 'fa fa-arrow-left',
+        ])
 
-    <br />
+        <br />
 
-    {{-- Heading --}}
-    <div class="flex justify-between">
-        <div class="text-xl font-semibold">
-            <i class="{{ $manageableModelClass::getIcon() }} mr-2"></i>
-            
-            @if(!empty($overrideTitle))
-                {{ $overrideTitle }}
-            @else
-                @if($manageableModel->model()->id == null)
-                    Creating new {{ $manageableModel->getDisplayName() }}
+        {{-- Heading --}}
+        <div class="flex justify-between">
+            <div class="text-xl font-semibold">
+                <i class="{{ $manageableModelClass::getIcon() }} mr-2"></i>
+                
+                @if(!empty($overrideTitle))
+                    {{ $overrideTitle }}
                 @else
-                    Editing {{ $manageableModel->getDisplayName() }} #{{ $manageableModel->model()->id }}
+                    {{ $manageableModel->getUpsertTitle($upsertType === \WebRegulate\LaravelAdministration\Enums\PageType::CREATE) }}
                 @endif
-            @endif
-        </div>
+            </div>
 
-        <div class="flex justify-end gap-2 !text-sm">
-            @foreach($manageableModel->getInstanceActionsFinal() as $key => $instanceAction)
-                @continue($key == 'edit')
-                {!! $instanceAction?->render() ?? '' !!}
-            @endforeach
+            <div class="flex justify-end gap-2 !text-sm">
+                @foreach($manageableModel->getInstanceActionsFinal() as $key => $instanceAction)
+                    @continue($key == 'edit')
+                    {!! $instanceAction?->render() ?? '' !!}
+                @endforeach
+            </div>
         </div>
-    </div>
+    @endif
 
     {{-- Form --}}
     <form
@@ -40,7 +38,7 @@
         wire:submit="save"
         class="w-full"
     >
-        <div class="flex flex-wrap gap-6 mt-4 p-4 bg-slate-100 dark:bg-slate-800 dark:border-slate-700 border shadow-slate-300 dark:shadow-slate-850 rounded-lg shadow-lg">
+        <div class="flex flex-wrap gap-6 mt-4 p-4 bg-white dark:bg-slate-800 dark:border-slate-700 border shadow-slate-300 dark:shadow-slate-850 rounded-lg shadow-lg">
             @if(!empty($manageableFields))
                 @foreach($manageableFields as $manageableField)
                     {!! $manageableField->renderParent($upsertType, $livewireData, $loop->index) !!}

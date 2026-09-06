@@ -3,6 +3,7 @@
 namespace WebRegulate\LaravelAdministration\Livewire\ManageableModels;
 
 use LivewireUI\Modal\ModalComponent;
+use WebRegulate\LaravelAdministration\Classes\ManageableModel;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 
 /**
@@ -16,7 +17,6 @@ use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 class ManageableModelUpsertModal extends ModalComponent
 {
     public string $modelUrlAlias;
-
     public ?int $modelId = null;
 
     public ?int $duplicateFrom = null;
@@ -33,6 +33,18 @@ class ManageableModelUpsertModal extends ModalComponent
 
     public function render()
     {
-        return view(WRLAHelper::getViewPath('livewire.manageable-models.upsert-modal'));
+        $manageableModelClass = ManageableModel::getByUrlAlias($this->modelUrlAlias);
+        $manageableModel = $manageableModelClass::make($this->modelId, true);
+        $title = $manageableModel->getUpsertTitle($this->modelId === null);
+        $icon = $manageableModelClass::getIcon();
+
+        $manageableModelClass = ManageableModel::getByUrlAlias($this->modelUrlAlias);
+        $manageableModel = $manageableModelClass::make($this->modelId, true);
+
+        return view(WRLAHelper::getViewPath('livewire.manageable-models.upsert-modal'), [
+            'manageableModel' => $manageableModel,
+            'title' => $title,
+            'icon' => $icon,
+        ]);
     }
 }

@@ -315,7 +315,8 @@ class ManageableModelUpsert extends WRLAPageComponent
     protected function getPageTitle(): ?string
     {
         return $this->overrideTitle
-            ?? str($this->upsertType->value)->lower()->title()->toString().' '.$this->manageableModelClass::getDisplayName();
+            ?? $this->manageableModelClass::make($this->modelId, true)
+                ->getUpsertTitle($this->upsertType === PageType::CREATE);
     }
 
     /**

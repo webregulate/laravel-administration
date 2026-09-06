@@ -667,6 +667,18 @@ abstract class ManageableModel
     }
 
     /**
+     * Get the title for a create or edit form.
+     */
+    public function getUpsertTitle(bool $isCreate): string
+    {
+        if ($isCreate) {
+            return 'Creating new '.static::getDisplayName();
+        }
+
+        return 'Editing '.static::getDisplayName().' #'.$this->model()->id;
+    }
+
+    /**
      * Get the icon for the manageable model.
      */
     public static function getIcon(): string
