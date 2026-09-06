@@ -3,6 +3,8 @@
 namespace WebRegulate\LaravelAdministration\Classes\NavigationItems;
 
 use App\Models\UserData;
+use Illuminate\Support\Arr;
+use Illuminate\View\ComponentAttributeBag;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 
 class NavigationItem
@@ -28,6 +30,9 @@ class NavigationItem
 
     // Open in new tab
     public bool $openInNewTab = false;
+
+    // Additional HTML attributes applied to the navigation link
+    public array $attributes = [];
 
     /**
      * Constructor
@@ -190,6 +195,24 @@ class NavigationItem
         $this->openInNewTab = $openInNewTab;
 
         return $this;
+    }
+
+    /**
+     * Set additional HTML attributes on the navigation link.
+     */
+    public function setAttributes(array $attributes): static
+    {
+        $this->attributes = $attributes;
+
+        return $this;
+    }
+
+    /**
+     * Get the navigation link attributes as an escaped Blade attribute bag.
+     */
+    public function getAttributes(): ComponentAttributeBag
+    {
+        return Arr::toAttributeBag($this->attributes);
     }
 
     /**
