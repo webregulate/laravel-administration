@@ -5,6 +5,7 @@ namespace WebRegulate\LaravelAdministration\Livewire\ManageableModels;
 use LivewireUI\Modal\ModalComponent;
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
+use WebRegulate\LaravelAdministration\Enums\PageType;
 
 /**
  * Thin wire-elements modal wrapper that hosts the existing ManageableModelUpsert
@@ -31,15 +32,45 @@ class ManageableModelUpsertModal extends ModalComponent
         $this->dispatch('manageable-models.upsert-modal.opened');
     }
 
+    /**
+     * Call an instance action rendered in the modal header.
+     */
+    public function callManageableModelAction(int $instanceId, string $actionKey, array $parameters = [])
+    {
+        $manageableModelClass = ManageableModel::getByUrlAlias($this->modelUrlAlias);
+
+        WRLAHelper::setCurrentPageType(PageType::EDIT);
+        WRLAHelper::setCurrentActiveManageableModelClass($manageableModelClass);
+
+        $result = WRLAHelper::callManageableModelAction(
+            $this,
+            $manageableModelClass,
+            $instanceId,
+            $actionKey,
+            $parameters
+        );
+
+        if (! ($result instanceof \Symfony\Component\HttpFoundation\BinaryFileResponse)
+            && ! ($result instanceof \Symfony\Component\HttpFoundation\StreamedResponse)) {
+            $this->dispatch('instanceActionCompleted');
+        }
+
+        return $result;
+    }
+
     public function render()
     {
         $manageableModelClass = ManageableModel::getByUrlAlias($this->modelUrlAlias);
+        $pageType = $this->modelId === null ? PageType::CREATE : PageType::EDIT;
+
+        WRLAHelper::setCurrentPageType($pageType);
+        WRLAHelper::setCurrentActiveManageableModelClass($manageableModelClass);
+
         $manageableModel = $manageableModelClass::make($this->modelId, true);
+        WRLAHelper::setCurrentActiveManageableModelInstance($manageableModel);
+
         $title = $manageableModel->getUpsertTitle($this->modelId === null);
         $icon = $manageableModelClass::getIcon();
-
-        $manageableModelClass = ManageableModel::getByUrlAlias($this->modelUrlAlias);
-        $manageableModel = $manageableModelClass::make($this->modelId, true);
 
         return view(WRLAHelper::getViewPath('livewire.manageable-models.upsert-modal'), [
             'manageableModel' => $manageableModel,
