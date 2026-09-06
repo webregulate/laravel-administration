@@ -481,6 +481,7 @@ class ManageableModelUpsert extends WRLAPageComponent
 
                 if ($this->inModal) {
                     WRLAHelper::pushAlert('success', $defaultSuccessMessage);
+                    $this->dispatch('wrla-browse-refresh')->to(ManageableModelBrowse::class);
                     $this->dispatch('closeModal');
 
                     return null;

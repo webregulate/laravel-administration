@@ -115,6 +115,7 @@ class ManageableModelBrowse extends WRLAPageComponent
     protected $listeners = [
         'filtersUpdatedOutside' => 'filtersUpdatedOutside',
         'deleteModel' => 'deleteModel',
+        'wrla-browse-refresh' => '$refresh',
     ];
 
     /* Livewire Methods / Hooks
