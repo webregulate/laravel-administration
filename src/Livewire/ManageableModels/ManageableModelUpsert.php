@@ -681,11 +681,22 @@ class ManageableModelUpsert extends WRLAPageComponent
         // Otherwise the model was deleted successfully
         WRLAHelper::pushAlert('success', $message);
 
-        // If the user is currently on the edit page, take them back to the browse page for
-        // the manageable model as the instance they were editing no longer exists.
-        if (WRLAHelper::isEditPage()) {
+        if ($this->inModal) {
+            $this->dispatch('wrla-browse-refresh')->to(ManageableModelBrowse::class);
+            $this->dispatch('closeModal');
+            $this->skipRender();
+
+            return null;
+        }
+
+        // In full-page mode the deleted instance can no longer be displayed. Return to
+        // browse when it is accessible, otherwise fall back to the dashboard.
+        if ($this->manageableModelClass::getPermission(ManageableModelPermissions::ENABLED)
+            && $this->manageableModelClass::getPermission(ManageableModelPermissions::BROWSE)) {
             return redirect($this->manageableModelClass::urlBrowse());
         }
+
+        return redirect()->route('wrla.dashboard');
     }
 
     /* Methods
