@@ -19,25 +19,55 @@
             alerts: [],
             timers: {},
             maxVisible,
+            storageKey: 'wrla-active-alerts',
             init() {
+                this.readStoredAlerts().forEach(alert => this.push(alert, false));
+                this.persist();
                 initialAlerts.forEach(alert => this.push(alert));
             },
-            push(alert) {
+            readStoredAlerts() {
+                try {
+                    return JSON.parse(sessionStorage.getItem(this.storageKey) || '[]');
+                } catch (error) {
+                    sessionStorage.removeItem(this.storageKey);
+                    return [];
+                }
+            },
+            persist() {
+                sessionStorage.setItem(this.storageKey, JSON.stringify(this.alerts.map(alert => ({
+                    id: alert.id,
+                    type: alert.type,
+                    message: alert.message,
+                    url: alert.url,
+                    ttl: alert.ttl,
+                    expiresAt: alert.expiresAt,
+                }))));
+            },
+            push(alert, persist = true) {
                 const id = alert.id || `${Date.now()}-${Math.random()}`;
-                const seenIds = JSON.parse(sessionStorage.getItem('wrla-seen-alerts') || '[]');
 
-                if (seenIds.includes(id)) {
+                if (this.alerts.some(activeAlert => activeAlert.id === id)) {
                     return;
                 }
 
-                sessionStorage.setItem('wrla-seen-alerts', JSON.stringify([...seenIds, id].slice(-100)));
+                const ttl = Math.max(0, Number(alert.ttl ?? defaultTTL));
+                const expiresAt = alert.expiresAt ?? (ttl > 0 ? Date.now() + ttl : null);
+                const remaining = expiresAt === null ? 0 : Math.max(0, expiresAt - Date.now());
+
+                if (expiresAt !== null && remaining === 0) {
+                    if (persist) this.persist();
+                    return;
+                }
 
                 alert = {
                     id,
                     type: alert.type === 'error' ? 'danger' : alert.type,
                     message: alert.message,
                     url: alert.url || null,
-                    ttl: Number(alert.ttl ?? defaultTTL),
+                    ttl,
+                    expiresAt,
+                    remaining,
+                    progress: ttl > 0 ? Math.min(1, remaining / ttl) : 1,
                 };
 
                 this.alerts.push(alert);
@@ -46,14 +76,17 @@
                     this.dismiss(this.alerts[0].id);
                 }
 
-                if (alert.ttl > 0) {
-                    this.timers[alert.id] = setTimeout(() => this.dismiss(alert.id), alert.ttl);
+                if (alert.expiresAt !== null) {
+                    this.timers[alert.id] = setTimeout(() => this.dismiss(alert.id), alert.remaining);
                 }
+
+                if (persist) this.persist();
             },
             dismiss(id) {
                 clearTimeout(this.timers[id]);
                 delete this.timers[id];
                 this.alerts = this.alerts.filter(alert => alert.id !== id);
+                this.persist();
             },
             borderColor(type) {
                 return {
@@ -123,10 +156,10 @@
                 </button>
             </div>
 
-            <div x-show="alert.ttl > 0" class="h-1 bg-slate-200 dark:bg-slate-700" :class="accentColor(alert.type)">
+            <div x-show="alert.expiresAt !== null" class="h-1 bg-slate-200 dark:bg-slate-700" :class="accentColor(alert.type)">
                 <div
                     class="h-full origin-left animate-[wrla-alert-countdown_linear_forwards] bg-current"
-                    :style="`animation-duration: ${alert.ttl}ms`"
+                    :style="`animation-duration: ${alert.remaining}ms; --wrla-alert-progress-start: ${alert.progress}`"
                 ></div>
             </div>
         </section>
@@ -134,7 +167,7 @@
 
     <style>
         @keyframes wrla-alert-countdown {
-            from { transform: scaleX(1); }
+            from { transform: scaleX(var(--wrla-alert-progress-start, 1)); }
             to { transform: scaleX(0); }
         }
     </style>

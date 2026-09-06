@@ -27,13 +27,6 @@ return [
         'commands' => [],
     ],
 
-    // Generic alert popouts. TTL is measured in milliseconds; use 0 to keep alerts open.
-    'alerts' => [
-        'ttl' => 5000,
-        'max_visible' => 5,
-        'top_offset' => '52px',
-    ],
-
 
     /*-------------------------------------------------------------------------
         SECURITY CONFIGURATION
@@ -159,6 +152,14 @@ return [
 
     // Favicon URL
     'favicon_url' => '/favicon.ico',
+
+    // Alert/notification popouts
+    'alerts' => [
+        // TTL measured in milliseconds; use 0 to keep alerts open
+        'ttl' => 5000,
+        'max_visible' => 5,
+        'top_offset' => '32px',
+    ],
 
     // Logging
     'logging' => [
@@ -314,7 +315,7 @@ return [
         // Full page upsert defaults
         'page' => [
             // Whether a successful save returns to the browse page (redirect + flash success)
-            'return_to_browse_after_save' => false,
+            'return_to_browse_after_save' => true,
         ],
 
         // Modal upsert defaults
