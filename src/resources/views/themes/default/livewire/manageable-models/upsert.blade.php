@@ -94,20 +94,6 @@
             @endif
         </div>
 
-        {{-- Generic error message --}}
-        @error('error')
-            <div wire:key="upsert-alert-error-{{ $saveCounter }}">
-                @themeComponent('alert', ['type' => 'error', 'message' => $message])
-            </div>
-        @enderror
-
-        {{-- Inline success message (shown after a successful livewire save, no page refresh) --}}
-        @if(!empty($successMessage))
-            <div wire:key="upsert-alert-success-{{ $saveCounter }}" class="mt-10">
-                @themeComponent('alert', ['type' => 'success', 'message' => $successMessage])
-            </div>
-        @endif
-
         <div class="flex justify-center gap-4 mt-10">
             @themeComponent('forms.button', [
                 'type' => 'submit',

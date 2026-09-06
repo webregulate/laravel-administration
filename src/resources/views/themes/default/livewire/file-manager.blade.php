@@ -19,15 +19,6 @@
         ])
     </div>
 
-    {{-- Loop through any errors and display --}}
-    @if($errors->any())
-        <div class="mb-4">
-            @foreach($errors->all() as $error)
-                @themeComponent('alert', ['type' => 'error', 'message' => $error])
-            @endforeach
-        </div>
-    @endif
-
     <div class="flex justify-between items-center gap-3 mb-4">
         <div class="flex-1">
             <p class="w-full text-lg px-2 font-normal text-slate-600 dark:!text-slate-400 border-b border-slate-400">

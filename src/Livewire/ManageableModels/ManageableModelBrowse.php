@@ -90,20 +90,6 @@ class ManageableModelBrowse extends WRLAPageComponent
     public array $livewireData = [];
 
     /**
-     * Success message.
-     *
-     * @var ?string
-     */
-    public $successMessage = null;
-
-    /**
-     * Error message.
-     *
-     * @var ?string
-     */
-    public $errorMessage = null;
-
-    /**
      * Debug message
      */
     public ?string $debugMessage = null;
@@ -129,7 +115,6 @@ class ManageableModelBrowse extends WRLAPageComponent
     protected $listeners = [
         'filtersUpdatedOutside' => 'filtersUpdatedOutside',
         'deleteModel' => 'deleteModel',
-        'wrla-browse-flash-success' => 'onBrowseFlashSuccess',
     ];
 
     /* Livewire Methods / Hooks
@@ -147,16 +132,6 @@ class ManageableModelBrowse extends WRLAPageComponent
         // foreach($dynamicFilterInputs as $item) {
         //     $this->filters[$item['field']] = $item['value'];
         // }
-    }
-
-    /**
-     * Surface a success message on the browse page after a modal upsert save that
-     * returned to browse (the modal closes and re-renders this list).
-     */
-    public function onBrowseFlashSuccess(string $message): void
-    {
-        $this->successMessage = $message;
-        $this->errorMessage = null;
     }
 
     /**
@@ -194,7 +169,8 @@ class ManageableModelBrowse extends WRLAPageComponent
 
         // If the manageable model reference is null, redirect to the dashboard
         if (is_null($manageableModelClass)) {
-            return redirect()->route('wrla.dashboard')->with('error', "Manageable model with url alias `$modelUrlAlias` not found.");
+            WRLAHelper::pushAlert('danger', "Manageable model with url alias `$modelUrlAlias` not found.");
+            return redirect()->route('wrla.dashboard');
         }
 
         // Set current active manageable model class
@@ -202,7 +178,8 @@ class ManageableModelBrowse extends WRLAPageComponent
 
         // Check the user has permission to browse this manageable model.
         if (! $manageableModelClass::getPermission(ManageableModelPermissions::BROWSE)) {
-            return redirect()->route('wrla.dashboard')->with('error', 'You do not have permission to browse '.$manageableModelClass::getDisplayName().'.');
+            WRLAHelper::pushAlert('danger', 'You do not have permission to browse '.$manageableModelClass::getDisplayName().'.');
+            return redirect()->route('wrla.dashboard');
         }
 
         // Pre filters may be supplied directly or as a query parameter (?preFilters[...]=...).
@@ -215,7 +192,8 @@ class ManageableModelBrowse extends WRLAPageComponent
 
         // If the model class does not exist, redirect to the dashboard
         if (! class_exists($modelClass)) {
-            return redirect()->route('wrla.dashboard')->with('error', "Model `$modelClass` not found while loading manageable model `$manageableModelClass`.");
+            WRLAHelper::pushAlert('danger', "Model `$modelClass` not found while loading manageable model `$manageableModelClass`.");
+            return redirect()->route('wrla.dashboard');
         }
 
         // Run browse setup method
@@ -320,7 +298,7 @@ class ManageableModelBrowse extends WRLAPageComponent
                 $manageableModelStaticExportMethod
             );
         } catch (Throwable $e) {
-            $this->addError('error', 'CSV export failed: '.$e->getMessage());
+            WRLAHelper::pushAlert('danger', 'CSV export failed: '.$e->getMessage());
 
             return null;
         }
@@ -417,7 +395,7 @@ class ManageableModelBrowse extends WRLAPageComponent
 
         // If table does not exist in database, redirect to dashboard with error
         if (! WRLAHelper::tableExists($baseModelInstance, $tableName)) {
-            session()->flash('error', 'Table `'.$tableName.'` does not exist in the database.');
+            WRLAHelper::pushAlert('danger', 'Table `'.$tableName.'` does not exist in the database.');
             $this->redirectRoute('wrla.dashboard');
 
             // Now we just return builder
@@ -637,26 +615,20 @@ class ManageableModelBrowse extends WRLAPageComponent
 
         // Check has permission to delete
         if(!$this->manageableModelClass::getPermission(ManageableModelPermissions::DELETE)) {
-            $this->errorMessage = 'You do not have permission to delete this model.';
+            WRLAHelper::pushAlert('danger', 'You do not have permission to delete this model.');
             return;
         }
 
         // Check that model URL alias matches the manageable model class URL alias
         if ($modelUrlAlias != $this->manageableModelClass::getUrlAlias()) {
-            $this->errorMessage = 'Model URL alias does not match the manageable model class URL alias.';
+            WRLAHelper::pushAlert('danger', 'Model URL alias does not match the manageable model class URL alias.');
             return;
         }
 
         // Delete the model and deconstruct the response
         [$success, $message] = WRLAHelper::deleteModel($manageableModel, $id);
 
-        if ($success) {
-            $this->successMessage = $message;
-            $this->errorMessage = null;
-        } else {
-            $this->errorMessage = $message;
-            $this->successMessage = null;
-        }
+        WRLAHelper::pushAlert($success ? 'success' : 'danger', $message);
     }
 
     /**
@@ -801,8 +773,7 @@ class ManageableModelBrowse extends WRLAPageComponent
         $ids = array_values($this->wrlaSelectedIds);
 
         if (empty($ids)) {
-            $this->errorMessage = 'No rows selected.';
-            $this->successMessage = null;
+            WRLAHelper::pushAlert('warning', 'No rows selected.');
             return;
         }
 
@@ -833,8 +804,7 @@ class ManageableModelBrowse extends WRLAPageComponent
 
         // If a string message is returned, show it as a success message.
         if (is_string($result)) {
-            $this->successMessage = $result;
-            $this->errorMessage = null;
+            WRLAHelper::pushAlert('success', $result);
         }
 
         $this->resetPage();

@@ -136,7 +136,7 @@ class FileManager extends WRLAPageComponent
     {
         // Redirect if file manager is not enabled in config
         if (config('wr-laravel-administration.file_manager.enabled', false) !== true) {
-            session()->flash('error', 'Access to file manager permission denied.');
+            WRLAHelper::pushAlert('danger', 'Access to file manager permission denied.');
             $this->redirect(route('wrla.dashboard'));
         }
 
@@ -384,7 +384,7 @@ class FileManager extends WRLAPageComponent
 
         // If the file system name is not in the available file systems, return
         if ($fileSystemName !== '' && ! in_array($fileSystemName, $availableFileSystemNames)) {
-            $this->addError('error', "File system '$fileSystemName' not available or enabled in wr-laravel-administration.file_manager config.");
+            WRLAHelper::pushAlert('danger', "File system '$fileSystemName' not available or enabled in wr-laravel-administration.file_manager config.");
 
             return;
         }

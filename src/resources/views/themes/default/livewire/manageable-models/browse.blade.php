@@ -42,12 +42,6 @@
         </div>
     </div>
 
-    @if ($successMessage)
-        @themeComponent('alert', ['type' => 'success', 'message' => $successMessage])
-    @elseif($errorMessage)
-        @themeComponent('alert', ['type' => 'error', 'message' => $errorMessage])
-    @endif
-
     {{-- Browse additional rendering --}}
     {!! $manageableModelClass::renderAdditionalRender(AdditionalRenderPosition::BROWSE_BELOW_HEADING) !!}
 

@@ -46,6 +46,8 @@
 
     </div>
 
+    @themeComponent('alert-popouts', [])
+
     {{-- Script stack --}}
     @stack('scripts')
 

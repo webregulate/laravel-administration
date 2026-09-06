@@ -27,6 +27,13 @@ return [
         'commands' => [],
     ],
 
+    // Generic alert popouts. TTL is measured in milliseconds; use 0 to keep alerts open.
+    'alerts' => [
+        'ttl' => 5000,
+        'max_visible' => 5,
+        'top_offset' => '52px',
+    ],
+
 
     /*-------------------------------------------------------------------------
         SECURITY CONFIGURATION

@@ -26,13 +26,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Livewire browserAlert event
-        Livewire.on('browserAlert', (event) => {
-            setTimeout(() => {
-                alert(event.message);
-            }, 1);
-        });
-
         // Livewire redirect event
         Livewire.on('redirect', (event) => {
             setTimeout(() => {

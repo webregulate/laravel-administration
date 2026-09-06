@@ -16,13 +16,9 @@ use WebRegulate\LaravelAdministration\Livewire\WRLAPageComponent;
 
 /**
  * Class ManageableModelUpsert
- *
- * This class represents a Livewire component for upserting a manageable model.
- */
+    --------------------------------------------------------------------------*/
 class ManageableModelUpsert extends WRLAPageComponent
 {
-    /* Traits
-    --------------------------------------------------------------------------*/
     use HandlesRedirects, WithFileUploads;
 
     /* Properties
@@ -90,13 +86,6 @@ class ManageableModelUpsert extends WRLAPageComponent
     public ?string $overrideSuccessMessage = null;
 
     /**
-     * Success message shown inline (above the form buttons) after a successful
-     * save. Kept as a livewire property so the component stays on the page instead
-     * of performing a full-page redirect/refresh.
-     */
-    public ?string $successMessage = null;
-
-    /**
      * Whether this upsert component is hosted inside a modal. When true it renders
      * standalone (no admin layout) and, if configured to return to browse, closes
      * the modal instead of performing a full-page redirect.
@@ -127,7 +116,8 @@ class ManageableModelUpsert extends WRLAPageComponent
 
         // If the manageable model reference is null, redirect to the dashboard
         if (is_null($manageableModelClass)) {
-            return redirect()->route('wrla.dashboard')->with('error', "Manageable model with url alias `$modelUrlAlias` not found.");
+            WRLAHelper::pushAlert('danger', "Manageable model with url alias `$modelUrlAlias` not found.");
+            return redirect()->route('wrla.dashboard');
         }
 
         return $this->initialise($manageableModelClass, $id === null ? PageType::CREATE : PageType::EDIT, $id, null, $duplicateFrom, $inModal);
@@ -155,7 +145,8 @@ class ManageableModelUpsert extends WRLAPageComponent
 
         // If the model class does not exist, redirect to the dashboard
         if (!class_exists($modelClass)) {
-            return redirect()->route('wrla.dashboard')->with('error', "Model `$modelClass` not found while loading manageable model `$manageableModelClass`.");
+            WRLAHelper::pushAlert('danger', "Model `$modelClass` not found while loading manageable model `$manageableModelClass`.");
+            return redirect()->route('wrla.dashboard');
         }
 
         // Set other properties
@@ -199,7 +190,8 @@ class ManageableModelUpsert extends WRLAPageComponent
         // If the user does not have permission to edit the manageable model, redirect to the dashboard
         if(!$this->manageableModelClass::getPermission(ManageableModelPermissions::ENABLED) || !$this->manageableModelClass::getPermission($this->upsertType)) {
             $formattedUpsertType = str($this->upsertType->value)->lower()->toString();
-            return redirect()->route('wrla.dashboard')->with('error', "You do not have permission to {$formattedUpsertType} this manageable model.");
+            WRLAHelper::pushAlert('danger', "You do not have permission to {$formattedUpsertType} this manageable model.");
+            return redirect()->route('wrla.dashboard');
         }
     }
 
@@ -302,7 +294,8 @@ class ManageableModelUpsert extends WRLAPageComponent
             ]);
         } catch (\Exception $e) {
             // If an error occurs, redirect to the dashboard with an error message
-            redirect()->route('wrla.dashboard')->with('error', "Error loading manageable model `$this->manageableModelClass`: ".$e->getMessage());
+            WRLAHelper::pushAlert('danger', "Error loading manageable model `$this->manageableModelClass`: ".$e->getMessage());
+            redirect()->route('wrla.dashboard');
 
             return '<div></div>';
         }
@@ -375,9 +368,6 @@ class ManageableModelUpsert extends WRLAPageComponent
     {
         $manageableModelClass = $this->manageableModelClass;
 
-        // Clear any previous inline success message
-        $this->successMessage = null;
-
         // Bump the save counter so the inline alerts get a fresh wire:key, forcing
         // livewire to replace any previously dismissed alert element (Alpine keeps
         // its show=false state across a morph otherwise).
@@ -394,7 +384,7 @@ class ManageableModelUpsert extends WRLAPageComponent
             $manageableModel = $manageableModelClass::make($this->modelId, true);
 
             if ($manageableModel === null) {
-                $this->addError('error', 'Model '.$manageableModelClass." with ID `{$this->modelId}` not found.");
+                WRLAHelper::pushAlert('danger', 'Model '.$manageableModelClass." with ID `{$this->modelId}` not found.");
                 return null;
             }
         }
@@ -476,7 +466,8 @@ class ManageableModelUpsert extends WRLAPageComponent
             if ($this->overrideRedirectRoute !== null) {
                 $message = $this->overrideSuccessMessage ?? $defaultSuccessMessage;
 
-                return redirect()->route($this->overrideRedirectRoute)->with('success', $message);
+                WRLAHelper::pushAlert('success', $message);
+                return redirect()->route($this->overrideRedirectRoute);
             }
 
             // Return to the browse page after save when configured for this model
@@ -489,15 +480,16 @@ class ManageableModelUpsert extends WRLAPageComponent
                 $this->dispatch('wrla-upsert-saved');
 
                 if ($this->inModal) {
-                    $this->dispatch('wrla-browse-flash-success', message: $defaultSuccessMessage);
+                    WRLAHelper::pushAlert('success', $defaultSuccessMessage);
                     $this->dispatch('closeModal');
 
                     return null;
                 }
 
+                WRLAHelper::pushAlert('success', $defaultSuccessMessage);
                 return redirect()->route('wrla.manageable-models.browse', [
                     'modelUrlAlias' => $manageableModel->getUrlAlias(),
-                ])->with('success', $defaultSuccessMessage);
+                ]);
             }
 
             // Stay on the page (no full-page refresh) and surface the result inline.
@@ -517,13 +509,13 @@ class ManageableModelUpsert extends WRLAPageComponent
             }
             $this->dispatch('wrla-upsert-saved');
 
-            $this->successMessage = $defaultSuccessMessage;
+            WRLAHelper::pushAlert('success', $defaultSuccessMessage);
 
             return null;
 
         // Catch
         }, function (Throwable $e) {
-            $this->addError('error', $e->getMessage());
+            WRLAHelper::pushAlert('danger', $e->getMessage());
         });
     }
 
@@ -672,7 +664,7 @@ class ManageableModelUpsert extends WRLAPageComponent
 
         // Check that model URL alias matches the manageable model class URL alias
         if ($modelUrlAlias != $this->manageableModelClass::getUrlAlias()) {
-            $this->addError('error', 'Model URL alias does not match manageable model class URL alias.');
+            WRLAHelper::pushAlert('danger', 'Model URL alias does not match manageable model class URL alias.');
             return;
         }
 
@@ -681,12 +673,12 @@ class ManageableModelUpsert extends WRLAPageComponent
 
         // If model failed to delete, add an error
         if (! $success) {
-            $this->addError('error', $message);
+            WRLAHelper::pushAlert('danger', $message);
             return;
         }
 
         // Otherwise the model was deleted successfully
-        session()->flash('success', $message);
+        WRLAHelper::pushAlert('success', $message);
 
         // If the user is currently on the edit page, take them back to the browse page for
         // the manageable model as the instance they were editing no longer exists.

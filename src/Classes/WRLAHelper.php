@@ -31,6 +31,37 @@ use WebRegulate\LaravelAdministration\Classes\ConfiguredModeBasedHandlers\Wysiwy
 class WRLAHelper
 {
     /**
+     * Push a generic alert to the current Livewire request or the next HTTP response.
+     */
+    public static function pushAlert(string $type, string $message, ?string $url = null, ?int $forceTTL = null): void
+    {
+        $type = $type === 'error' ? 'danger' : $type;
+
+        if (! in_array($type, ['success', 'danger', 'warning', 'info'], true)) {
+            throw new \InvalidArgumentException("Unsupported alert type: {$type}");
+        }
+
+        $alert = [
+            'id' => bin2hex(random_bytes(8)),
+            'type' => $type,
+            'message' => $message,
+            'url' => $url,
+            'ttl' => max(0, $forceTTL ?? (int) config('wr-laravel-administration.alerts.ttl', 5000)),
+        ];
+
+        $livewireComponent = Livewire::current();
+
+        if ($livewireComponent) {
+            $livewireComponent->dispatch('wrla-alert', ...$alert);
+        }
+
+        $queuedAlerts = request()->attributes->get('wrla_queued_alerts', []);
+        $queuedAlerts[] = $alert;
+        request()->attributes->set('wrla_queued_alerts', $queuedAlerts);
+        session()->flash('wrla_alerts', $queuedAlerts);
+    }
+
+    /**
      * Key remove constant
      *
      * @var string
@@ -518,7 +549,11 @@ class WRLAHelper
         $rateLimitMessage = str_replace(':decay_minutes', $rateLimitDecayMinutes, $rateLimitConfigItem['message']);
 
         // Build the rate limiter
-        RateLimiter::for($throttleAlias, fn (Request $request) => Limit::perMinutes($rateLimitDecayMinutes, $rateLimitMaxAttempts)->by($rateLimitBy)->response(fn () => redirect()->route('wrla.login')->with('error', $rateLimitMessage)));
+        RateLimiter::for($throttleAlias, fn (Request $request) => Limit::perMinutes($rateLimitDecayMinutes, $rateLimitMaxAttempts)->by($rateLimitBy)->response(function () use ($rateLimitMessage) {
+            static::pushAlert('danger', $rateLimitMessage);
+
+            return redirect()->route('wrla.login');
+        }));
     }
 
     /**
@@ -1400,9 +1435,9 @@ class WRLAHelper
         $manageableModelInstance->getInstanceActions();
         $returnedValue = $manageableModelInstance->callInstanceAction($actionKey, $parameters);
 
-        // If returned value is a string, dispatch browserAlert
+        // If returned value is a string, show it as a success alert.
         if (is_string($returnedValue)) {
-            $livewireComponent->dispatch('browserAlert', message: $returnedValue);
+            static::pushAlert('success', $returnedValue);
         }
         // If is RedirectResponse, redirect to the given route
         elseif ($returnedValue instanceof RedirectResponse) {

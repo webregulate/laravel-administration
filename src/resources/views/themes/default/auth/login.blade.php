@@ -11,12 +11,6 @@
             <hr class="w-full md:w-1/3 h-2 my-4 m-auto border-t-2 border-slate-500 dark:border-slate-200" />
         </div>
 
-        @if(session('success'))
-            @themeComponent('alert', ['type' => 'success', 'message' => session('success')])
-        @elseif(session('error'))
-            @themeComponent('alert', ['type' => 'error', 'message' => session('error')])
-        @endif
-
         <form action="{{ route('wrla.login.post') }}" method="post" class="flex flex-col gap-6">
             @csrf
 

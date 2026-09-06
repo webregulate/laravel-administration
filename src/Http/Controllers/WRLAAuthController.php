@@ -68,7 +68,8 @@ class WRLAAuthController extends Controller
             return redirect()->route('wrla.dashboard');
         }
 
-        return redirect()->back()->withInput()->with('error', 'Invalid credentials, please try again');
+        WRLAHelper::pushAlert('danger', 'Invalid credentials, please try again');
+        return redirect()->back()->withInput();
     }
 
     /**
@@ -90,12 +91,14 @@ class WRLAAuthController extends Controller
 
         // Check has impersonate permission
         if (! \App\WRLA\User::getPermission(\App\WRLA\User::IMPERSONATE)) {
-            return redirect()->route('wrla.dashboard')->with('error', 'You do not have permission to login as another user.');
+            WRLAHelper::pushAlert('danger', 'You do not have permission to login as another user.');
+            return redirect()->route('wrla.dashboard');
         }
 
         // Check user exists
         if ($user == null) {
-            return redirect()->route('wrla.dashboard')->with('error', "User with ID `$userId` not found.");
+            WRLAHelper::pushAlert('danger', "User with ID `$userId` not found.");
+            return redirect()->route('wrla.dashboard');
         }
 
         // Login as user
@@ -140,9 +143,10 @@ class WRLAAuthController extends Controller
         $request->session()->forget('wrla_impersonating_user');
 
         // Redirect to wrla_impersonating_previous_url or back if not set
+        WRLAHelper::pushAlert('success', 'Switched back to your original account.');
         return redirect()->to(
             $request->session()->get('wrla_impersonating_previous_url', route('wrla.dashboard'))
-        )->with('success', 'Switched back to your original account.');
+        );
     }
 
     /**
@@ -190,7 +194,8 @@ class WRLAAuthController extends Controller
 
         // Check user
         if (! $user) {
-            return redirect()->back()->withInput()->with('error', 'We could not find a user with that email address');
+            WRLAHelper::pushAlert('danger', 'We could not find a user with that email address');
+            return redirect()->back()->withInput();
         }
 
         // Create token and send the reset link to the user
@@ -198,7 +203,8 @@ class WRLAAuthController extends Controller
         $user->sendPasswordResetNotification($token);
 
         // Return user with success
-        return redirect()->route('wrla.login')->with('success', 'Password reset link has been sent to: <br />'.$user->email);
+        WRLAHelper::pushAlert('success', 'Password reset link has been sent to: <br />'.$user->email);
+        return redirect()->route('wrla.login');
     }
 
     /**
@@ -214,7 +220,8 @@ class WRLAAuthController extends Controller
 
         // Check if token is valid
         if (! Password::tokenExists($user, $token)) {
-            return redirect()->route('wrla.login')->with('error', 'Invalid token');
+            WRLAHelper::pushAlert('danger', 'Invalid token');
+            return redirect()->route('wrla.login');
         }
 
         return view(WRLAHelper::getViewPath('auth.reset-password', true), [
@@ -250,7 +257,8 @@ class WRLAAuthController extends Controller
 
         // Check user
         if (! $user) {
-            return redirect()->back()->withInput()->with('error', 'We could not find a user with that email address');
+            WRLAHelper::pushAlert('danger', 'We could not find a user with that email address');
+            return redirect()->back()->withInput();
         }
 
         // Reset password
@@ -258,7 +266,8 @@ class WRLAAuthController extends Controller
         $user->save();
 
         // Return user with success
-        return redirect()->route('wrla.login')->withInput()->with('success', 'Password has been reset successfully');
+        WRLAHelper::pushAlert('success', 'Password has been reset successfully');
+        return redirect()->route('wrla.login')->withInput();
     }
 
     /**

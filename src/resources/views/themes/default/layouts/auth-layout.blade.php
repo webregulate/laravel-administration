@@ -35,6 +35,8 @@
         @yield('content')
     </div>
 
+    @themeComponent('alert-popouts', [])
+
     @stack('scripts')
 </body>
 </html>

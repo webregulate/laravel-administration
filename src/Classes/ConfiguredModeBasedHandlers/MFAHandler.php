@@ -33,12 +33,14 @@ class MFAHandler extends ConfiguredModeBasedHandler
 
         // If user doesn't exist, redirect back with error
         if ($user === null) {
-            return redirect()->route($useRoute)->withInput()->with('error', 'Invalid credentials, please try again');
+            WRLAHelper::pushAlert('danger', 'Invalid credentials, please try again');
+            return redirect()->route($useRoute)->withInput();
         }
 
         // If password is incorrect, redirect back with error
         if (!WRLAHelper::getUserDataModelClass()::checkPassword($email, $password)) {
-            return redirect()->route($useRoute)->withInput()->with('error', 'Invalid credentials, please try again');
+            WRLAHelper::pushAlert('danger', 'Invalid credentials, please try again');
+            return redirect()->route($useRoute)->withInput();
         }
 
         // Get wrla user data
@@ -82,9 +84,9 @@ class MFAHandler extends ConfiguredModeBasedHandler
             if (!$mfaHandler->validateMFACode($mfaCode, $secretKey)) {
                 // Generate a new secret key and QR image
                 $secretAndQrImage = $mfaHandler->generateSecretAndQRImage($email);
+                WRLAHelper::pushAlert('danger', 'Invalid MFA code, please try again');
 
                 return redirect()->route($useRoute)->withInput()->with([
-                    'error' => 'Invalid MFA code, please try again',
                     'mfa' => $mfaHandler->render2FAFormInitialSetup($email, $password, $secretAndQrImage['qrImage'], $secretAndQrImage['secretKey']),
                 ]);
             }
@@ -115,8 +117,8 @@ class MFAHandler extends ConfiguredModeBasedHandler
 
             // If invalid, redirect back with error
             if (!$mfaHandler->validateMFACode($mfaCode, $secretKey)) {
+                WRLAHelper::pushAlert('danger', 'Invalid MFA code, please try again');
                 return redirect()->route($useRoute)->withInput()->with([
-                    'error' => 'Invalid MFA code, please try again',
                     'mfa' => $mfaHandler->render2FAValidationForm($email, $password),
                 ]);
             }
@@ -130,7 +132,8 @@ class MFAHandler extends ConfiguredModeBasedHandler
         }
 
         // Invalid request, redirect back with error
-        return redirect()->route($useRoute)->withInput()->with('error', 'Invalid MFA request, something went wrong');
+    WRLAHelper::pushAlert('danger', 'Invalid MFA request, something went wrong');
+    return redirect()->route($useRoute)->withInput();
     }
 
     /**
