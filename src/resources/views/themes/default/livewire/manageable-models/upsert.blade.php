@@ -104,13 +104,28 @@
                 ]),
             ])
 
-            @themeComponent('forms.button', [
-                'href' => $manageableModelClass::urlBrowse(),
-                'text' => $manageableModelClass::getDisplayName(true),
-                'size' => 'medium',
-                'color' => 'secondary',
-                'icon' => 'fa fa-arrow-left',
-            ])
+            {{-- Modal mode, closes modal rather than redirect --}}
+            @if($inModal)
+                @themeComponent('forms.button', [
+                    'type' => 'button',
+                    'text' => 'Cancel',
+                    'size' => 'medium',
+                    'color' => 'secondary',
+                    'icon' => 'fa fa-xmark',
+                    'attributes' => Arr::toAttributeBag([
+                        'wire:click' => '$dispatch(\'closeModal\')',
+                    ]),
+                ])
+            {{-- Page mode --}}
+            @else
+                @themeComponent('forms.button', [
+                    'href' => $manageableModelClass::urlBrowse(),
+                    'text' => $manageableModelClass::getDisplayName(true),
+                    'size' => 'medium',
+                    'color' => 'secondary',
+                    'icon' => 'fa fa-arrow-left',
+                ])
+            @endif
         </div>
 
     </form>
@@ -383,7 +398,17 @@
 @endonce
 
 @if($usesWysiwyg === true)
-    @push('append-body')
+    @assets
         {!! $WRLAHelper::getWysiwygEditorSetupJS() !!}
-    @endpush
+    @endassets
+
+    @script
+    <script>
+        requestAnimationFrame(function () {
+            if (typeof window.wrlaInitWysiwyg === 'function') {
+                window.wrlaInitWysiwyg($wire.$el);
+            }
+        });
+    </script>
+    @endscript
 @endif

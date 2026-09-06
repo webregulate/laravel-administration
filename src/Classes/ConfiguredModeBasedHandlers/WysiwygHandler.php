@@ -70,58 +70,66 @@ class WysiwygHandler extends ConfiguredModeBasedHandler
         return Blade::render(<<<'HTML'
             <script src="https://cdn.tiny.cloud/1/{{ $currentWysiwygEditorSettings['apikey'] }}/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
             <script>
-                // Register a form-sync flush so the upsert page's capture-phase
-                // FormData read gets the latest editor content. TinyMCE keeps its
-                // content in an iframe and only writes it back to the underlying
-                // <textarea> when asked, so triggerSave() must run just before sync.
-                (window.wrlaBeforeFormSync = window.wrlaBeforeFormSync || []).push(function () {
-                    if (window.tinymce && typeof window.tinymce.triggerSave === 'function') {
-                        window.tinymce.triggerSave();
+                window.wrlaInitWysiwyg = function (root) {
+                    root = root || document;
+
+                    if (!window.wrlaTinyMceSyncRegistered) {
+                        window.wrlaTinyMceSyncRegistered = true;
+                        (window.wrlaBeforeFormSync = window.wrlaBeforeFormSync || []).push(function () {
+                            if (window.tinymce && typeof window.tinymce.triggerSave === 'function') {
+                                window.tinymce.triggerSave();
+                            }
+                        });
                     }
-                });
 
-                tinymce.init({
-                    selector: '.wrla_wysiwyg',
-                    plugins: '{{ $currentWysiwygEditorSettings["plugins"] }}',
-                    menubar: '{{ $currentWysiwygEditorSettings["menubar"] }}',
-                    toolbar: '{{ $currentWysiwygEditorSettings["toolbar"] }}',
-                    paste_data_images: true,
-                    // images_upload_url: '{{ route("wrla.upload-wysiwyg-image") }}',
-                    images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
-                        var xhr, formData;
-                        xhr = new XMLHttpRequest();
-                        xhr.withCredentials = false;
+                    root.querySelectorAll('.wrla_wysiwyg').forEach(function (element) {
+                        var existingEditor = element.id ? window.tinymce.get(element.id) : null;
+                        if (existingEditor && existingEditor.getElement() === element) return;
+                        if (existingEditor) existingEditor.remove();
 
-                        xhr.open('POST', '{{ route("wrla.upload-wysiwyg-image") }}');
-                        var token = document.head.querySelector("[name=csrf-token]").content;
-                        xhr.setRequestHeader("X-CSRF-Token", token);
+                        window.tinymce.init({
+                            target: element,
+                            plugins: '{{ $currentWysiwygEditorSettings["plugins"] }}',
+                            menubar: '{{ $currentWysiwygEditorSettings["menubar"] }}',
+                            toolbar: '{{ $currentWysiwygEditorSettings["toolbar"] }}',
+                            paste_data_images: true,
+                            images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
+                                var xhr, formData;
+                                xhr = new XMLHttpRequest();
+                                xhr.withCredentials = false;
 
-                        xhr.onload = function() {
-                            var json;
+                                xhr.open('POST', '{{ route("wrla.upload-wysiwyg-image") }}');
+                                var token = document.head.querySelector("[name=csrf-token]").content;
+                                xhr.setRequestHeader("X-CSRF-Token", token);
 
-                            if (xhr.status != 200) {
-                                reject('HTTP Error: ' + xhr.status + '. ' + xhr.statusText);
-                                return;
-                            }
+                                xhr.onload = function() {
+                                    var json;
 
-                            json = JSON.parse(xhr.responseText);
+                                    if (xhr.status != 200) {
+                                        reject('HTTP Error: ' + xhr.status + '. ' + xhr.statusText);
+                                        return;
+                                    }
 
-                            if (!json || typeof json.location != 'string') {
-                                reject('Invalid JSON: ' + xhr.responseText);
-                                return;
-                            }
+                                    json = JSON.parse(xhr.responseText);
 
-                            resolve(json.location);
-                        };
+                                    if (!json || typeof json.location != 'string') {
+                                        reject('Invalid JSON: ' + xhr.responseText);
+                                        return;
+                                    }
 
-                        formData = new FormData();
-                        formData.append('image', blobInfo.blob(), blobInfo.filename());
+                                    resolve(json.location);
+                                };
 
-                        xhr.send(formData);
-                    }),
-                    relative_urls : false,
-                    content_style: `{{ config('wr-laravel-administration.wysiwyg_css') }}`,
-                });
+                                formData = new FormData();
+                                formData.append('image', blobInfo.blob(), blobInfo.filename());
+
+                                xhr.send(formData);
+                            }),
+                            relative_urls: false,
+                            content_style: `{{ config('wr-laravel-administration.wysiwyg_css') }}`,
+                        });
+                    });
+                };
             </script>
         HTML, [
             'currentWysiwygEditorSettings' => $this->currentConfiguration,
@@ -187,13 +195,16 @@ class WysiwygHandler extends ConfiguredModeBasedHandler
             <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 
             <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    const quillElements = document.querySelectorAll('.wrla_wysiwyg');
+                window.wrlaInitWysiwyg = function (root) {
+                    root = root || document;
 
-                    quillElements.forEach((el) => {
+                    root.querySelectorAll('.wrla_wysiwyg').forEach((el) => {
+                        if (el.__wrlaQuill) return;
+
                         const quill = new Quill(el, {
                             {!! $currentWysiwygEditorSettings["initialise"] !!}
                         });
+                        el.__wrlaQuill = quill;
 
                         // Find the parent form
                         const form = el.closest('form');
@@ -219,7 +230,7 @@ class WysiwygHandler extends ConfiguredModeBasedHandler
                             hidden.value = quill.root.innerHTML;
                         });
                     });
-                });
+                };
             </script>
         HTML, [
             'currentWysiwygEditorSettings' => $this->currentConfiguration,
