@@ -1,0 +1,109 @@
+<p class="docs-lead">
+    Introduces a unified <strong>alert notification system</strong> for Livewire actions and standard
+    requests, alongside improvements to modal upserts, instance actions, and navigation items.
+</p>
+
+<!-- Breaking Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        Breaking Changes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>None. Existing published configuration remains valid, but the new alerts block below should be added.</li>
+    </ul>
+</div>
+
+<!-- Features -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-primary-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        Features
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>
+            New alert popouts provide consistent <code class="docs-inline-code">success</code>,
+            <code class="docs-inline-code">danger</code>, <code class="docs-inline-code">warning</code>,
+            and <code class="docs-inline-code">info</code> notifications across admin and authentication pages.
+        </li>
+        <li>
+            Alerts support configurable expiry, a maximum visible count, optional links, manual dismissal,
+            and session-storage persistence while navigating between pages.
+        </li>
+        <li>
+            Use <code class="docs-inline-code">WRLAHelper::pushAlert($type, $message, $url, $ttl)</code>
+            to send an alert from either a Livewire action or a standard request/redirect flow.
+        </li>
+        <li>
+            Manageable-model instance and multi-instance actions may now return an alert array containing
+            <code class="docs-inline-code">message</code>, <code class="docs-inline-code">type</code>,
+            <code class="docs-inline-code">url</code>, and <code class="docs-inline-code">ttl</code>.
+            Existing string results remain supported as info alerts.
+        </li>
+        <li>
+            Navigation items now accept additional HTML attributes through
+            <code class="docs-inline-code">setAttributes()</code>, including modal-aware create links.
+        </li>
+    </ul>
+</div>
+
+<!-- Improvements -->
+<div class="docs-section">
+    <h2 class="docs-heading">Improvements</h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>Successful modal saves and deletes now refresh the underlying browse table automatically.</li>
+        <li>Deleting from an upsert form now closes modal forms correctly and preserves full-page navigation behaviour.</li>
+        <li>
+            Create and edit forms now have contextual titles through
+            <code class="docs-inline-code">ManageableModel::getUpsertTitle()</code>, which can be overridden per model.
+        </li>
+        <li>Modal actions use a dedicated footer slot, with improved form spacing and action alignment.</li>
+        <li>
+            The package default for full-page upserts now returns to browse after a successful save.
+            Existing published <code class="docs-inline-code">upsert.page.return_to_browse_after_save</code>
+            values continue to take precedence.
+        </li>
+        <li>Authentication, MFA, file manager, browse, and upsert feedback now use the shared alert system.</li>
+    </ul>
+</div>
+
+<!-- Configuration -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-primary-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+        </svg>
+        Required Configuration
+    </h2>
+    <p class="docs-body">
+        Add the following block to the general configuration section of your published
+        <code class="docs-inline-code">config/wr-laravel-administration.php</code> file:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>// Alert/notification popouts
+'alerts' => [
+    // TTL measured in milliseconds; use 0 to keep alerts open
+    'ttl' => 5000,
+    'max_visible' => 5,
+    'top_offset' => '32px',
+],</code></pre>
+    </div>
+</div>
+
+<!-- Bug Fixes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-green-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Bug Fixes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>Browse views no longer remain stale after records are saved or deleted from an upsert modal.</li>
+        <li>Delete actions no longer attempt full-page redirects while running inside a modal.</li>
+    </ul>
+</div>
