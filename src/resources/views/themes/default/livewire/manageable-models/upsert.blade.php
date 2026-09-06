@@ -107,13 +107,13 @@
             {{-- Modal mode, closes modal rather than redirect --}}
             @if($inModal)
                 @themeComponent('forms.button', [
-                    'type' => 'button',
                     'text' => 'Cancel',
                     'size' => 'medium',
                     'color' => 'secondary',
                     'icon' => 'fa fa-xmark',
                     'attributes' => Arr::toAttributeBag([
-                        'wire:click' => '$dispatch(\'closeModal\')',
+                        'type' => 'button',
+                        'wire:click.prevent.stop' => '$dispatch(\'closeModal\')',
                     ]),
                 ])
             {{-- Page mode --}}
