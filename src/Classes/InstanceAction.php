@@ -221,7 +221,6 @@ class InstanceAction
     /**
      * Render the multi action button for the browse multi action toolbar. The button calls the
      * Livewire callMultiInstanceAction method which runs the handler against the currently selected ids.
-     * @return string|View
      */
     public function renderMultiActionButton(): View|string
     {
@@ -267,8 +266,6 @@ class InstanceAction
 
     /**
      * Applies x-on:click additional attribute to confirm action from user before executing
-     * @param string $message
-     * @return InstanceAction
      */
     public function confirm(string $message): static
     {

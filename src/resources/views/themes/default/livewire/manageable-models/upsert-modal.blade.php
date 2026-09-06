@@ -1,11 +1,12 @@
-<x-wrla-modal-layout :title="$title" :icon="$icon . ' mr-2'">
-    {{-- Instance actions --}}
-    <div class="flex justify-end gap-2 !text-sm">
-        @foreach($manageableModel->getInstanceActionsFinal() as $key => $instanceAction)
-            @continue($key == 'edit')
-            {!! $instanceAction?->render() ?? '' !!}
-        @endforeach
-    </div>
+<x-wrla-modal-layout :title="$title" :icon="$icon">
+    <x-slot:actions>
+        <div class="relative top-[-2px]">
+            @foreach($manageableModel->getInstanceActionsFinal() as $key => $instanceAction)
+                @continue($key == 'edit')
+                {!! $instanceAction?->render() ?? '' !!}
+            @endforeach
+        </div>
+    </x-slot:actions>
 
     {{-- Upsert form / handler --}}
     @livewire('wrla.manageable-models.upsert', [
