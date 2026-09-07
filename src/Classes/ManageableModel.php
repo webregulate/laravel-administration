@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use WebRegulate\LaravelAdministration\Classes\UpsertOptions;
+use WebRegulate\LaravelAdministration\Classes\UpsertModal;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Enums\AdditionalRenderPosition;
 use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
@@ -521,6 +522,14 @@ abstract class ManageableModel
     public static function getUpsertOptions(): UpsertOptions
     {
         return static::getStaticOption(static::class, 'upsert') ?? UpsertOptions::fromConfig();
+    }
+
+    /**
+     * Build a helper for opening this model's create, edit, or duplicate form in a modal.
+     */
+    public static function upsertModal(?int $modelId = null, ?int $duplicateFrom = null): UpsertModal
+    {
+        return UpsertModal::make(static::class, $modelId, $duplicateFrom);
     }
 
     /**

@@ -18,13 +18,7 @@ class NavigationItemCreate
         $upsertOptions = $manageableModelClass::getUpsertOptions();
 
         if ($upsertOptions->isModal()) {
-            $navigationItem->setAttributes([
-                'onclick' => "if (!this.hasAttribute('href')) return; event.preventDefault(); window.wrlaOpenUpsertModal(this, {
-                    modelUrlAlias: '".$manageableModelClass::getUrlAlias()."',
-                    maxWidth: '".$upsertOptions->getModalSize()."',
-                    maxWidthClass: '".$upsertOptions->getModalSizeClass()."'
-                });",
-            ]);
+            $navigationItem->openUpsertModal($manageableModelClass);
         }
 
         return $navigationItem;

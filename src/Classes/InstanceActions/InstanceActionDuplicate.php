@@ -19,14 +19,11 @@ class InstanceActionDuplicate
         $upsertOptions = $manageableModel::getUpsertOptions();
 
         if ($upsertOptions->isModal()) {
-            return $action->setAdditionalAttributes([
-                'onclick' => "window.wrlaOpenUpsertModal(this, {
-                    modelUrlAlias: '".$modelUrlAlias."',
-                    duplicateFrom: ".($modelId ?? 'null').",
-                    maxWidth: '".$upsertOptions->getModalSize()."',
-                    maxWidthClass: '".$upsertOptions->getModalSizeClass()."'
-                });",
-            ]);
+            return $action->setAdditionalAttributes(
+                $manageableModel::upsertModal(duplicateFrom: $modelId)
+                    ->withModelUrlAlias($modelUrlAlias)
+                    ->attributes()
+            );
         }
 
         return $action->setAction(route('wrla.manageable-models.create', [

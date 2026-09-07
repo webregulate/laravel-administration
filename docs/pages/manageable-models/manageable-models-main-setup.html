@@ -38,6 +38,53 @@ public final static function mainSetup(): void
     </div>
 </div>
 
+<!-- Upsert modal helpers -->
+<div class="docs-section">
+    <h2 class="docs-heading font-mono text-primary-600">upsertModal()</h2>
+    <p class="docs-body">
+        Builds the JavaScript and modal sizing attributes needed to open a manageable model's create,
+        edit, or duplicate form from custom UI. Modal dimensions are read from the target model's
+        <code class="docs-inline-code">UpsertOptions</code> automatically.
+    </p>
+    <div class="docs-code-block mb-4">
+        <pre><code>// Custom button that edits record 76.
+$modalAttributes = ApplicationConfig::upsertModal(76)-&gt;buttonAttributes();
+
+&lt;button type="button" {{ $modalAttributes }}&gt;
+    Edit application configuration
+&lt;/button&gt;
+
+// Create and duplicate forms.
+$createAttributes = ApplicationConfig::upsertModal()-&gt;buttonAttributes();
+$duplicateAttributes = ApplicationConfig::upsertModal(duplicateFrom: 76)-&gt;buttonAttributes();
+
+// For an anchor with a normal URL fallback, use linkAttributes() instead.
+$linkAttributes = ApplicationConfig::upsertModal(76)-&gt;linkAttributes();</code></pre>
+    </div>
+
+    <h3 class="docs-subheading mb-3">Browse actions</h3>
+    <p class="docs-body">
+        Browse actions render as buttons when no URL is supplied.
+    </p>
+    <div class="docs-code-block mb-4">
+        <pre><code>BrowseAction::make('Application settings', 'fa-solid fa-cog')
+    -&gt;openUpsertModal(ApplicationConfig::class, 76);</code></pre>
+    </div>
+
+    <h3 class="docs-subheading mb-3">Navigation items</h3>
+    <p class="docs-body">
+        Use <code class="docs-inline-code">openUpsertModal()</code> directly on any navigation item.
+    </p>
+    <div class="docs-code-block">
+        <pre><code>NavigationItem::make(
+    'wrla.manageable-models.edit',
+    ['modelUrlAlias' =&gt; ApplicationConfig::getUrlAlias(), 'id' =&gt; 76],
+    'Application settings',
+    'fa-solid fa-cog',
+)-&gt;openUpsertModal(ApplicationConfig::class, 76);</code></pre>
+    </div>
+</div>
+
 <!-- setBaseModelClass -->
 <div class="docs-section">
     <h2 class="docs-heading font-mono text-primary-600">setBaseModelClass()</h2>

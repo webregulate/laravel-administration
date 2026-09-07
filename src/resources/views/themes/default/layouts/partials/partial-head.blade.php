@@ -65,25 +65,27 @@
         
         // Find the <i> icon element and change to spinner
         let iconElement = element.querySelector('i');
-
-        // Get current icon class
-        let currentIconClass = iconElement.classList[1];
+        let currentIconClass = iconElement?.classList[1];
 
         // Disable button
         element.disabled = true;
 
         // Remove the current icon class and replace with spinner
-        iconElement.classList.remove(currentIconClass);
-        iconElement.classList.add('fa-spinner');
-        iconElement.classList.add('animate-spin');
+        if (iconElement) {
+            iconElement.classList.remove(currentIconClass);
+            iconElement.classList.add('fa-spinner');
+            iconElement.classList.add('animate-spin');
+        }
 
         // Await the waitUntil promise to be resolved
         await waitUntil();
 
         // Revert to the original icon
-        iconElement.classList.remove('fa-spinner');
-        iconElement.classList.remove('animate-spin');
-        iconElement.classList.add(currentIconClass);
+        if (iconElement) {
+            iconElement.classList.remove('fa-spinner');
+            iconElement.classList.remove('animate-spin');
+            iconElement.classList.add(currentIconClass);
+        }
 
         // Re-enable the button
         element.disabled = false;

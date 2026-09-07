@@ -3,6 +3,7 @@
 namespace WebRegulate\LaravelAdministration\Classes\BrowseActions;
 
 use WebRegulate\LaravelAdministration\Classes\BrowseAction;
+use WebRegulate\LaravelAdministration\Classes\UpsertModal;
 use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
 
 class BrowseActionCreate
@@ -15,13 +16,7 @@ class BrowseActionCreate
         $upsertOptions = $manageableModelClass::getUpsertOptions();
 
         if ($upsertOptions->isModal()) {
-            return $action->setAttributes([
-                'onclick' => "window.wrlaOpenUpsertModal(this, {
-                    modelUrlAlias: '".$manageableModelClass::getUrlAlias()."',
-                    maxWidth: '".$upsertOptions->getModalSize()."',
-                    maxWidthClass: '".$upsertOptions->getModalSizeClass()."'
-                });",
-            ]);
+            return $action->setAttributes(UpsertModal::make($manageableModelClass)->attributes());
         }
 
         return $action->setHref(route('wrla.manageable-models.create', [

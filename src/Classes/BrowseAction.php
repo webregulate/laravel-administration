@@ -78,6 +78,18 @@ class BrowseAction
     }
 
     /**
+     * Open a manageable model's create, edit, or duplicate form in a modal.
+     *
+     * @param  class-string<ManageableModel>  $manageableModelClass
+     */
+    public function openUpsertModal(string $manageableModelClass, ?int $modelId = null, ?int $duplicateFrom = null): static
+    {
+        return $this->mergeAttributes(
+            UpsertModal::make($manageableModelClass, $modelId, $duplicateFrom)->attributes()
+        );
+    }
+
+    /**
      * Set the button size.
      */
     public function setSize(string $size): static

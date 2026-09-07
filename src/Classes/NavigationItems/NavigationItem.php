@@ -5,6 +5,8 @@ namespace WebRegulate\LaravelAdministration\Classes\NavigationItems;
 use App\Models\UserData;
 use Illuminate\Support\Arr;
 use Illuminate\View\ComponentAttributeBag;
+use WebRegulate\LaravelAdministration\Classes\ManageableModel;
+use WebRegulate\LaravelAdministration\Classes\UpsertModal;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 
 class NavigationItem
@@ -193,6 +195,21 @@ class NavigationItem
     public function openInNewTab(bool $openInNewTab = true): static
     {
         $this->openInNewTab = $openInNewTab;
+
+        return $this;
+    }
+
+    /**
+     * Open a manageable model's create, edit, or duplicate form in a modal.
+     *
+     * @param  class-string<ManageableModel>  $manageableModelClass
+     */
+    public function openUpsertModal(string $manageableModelClass, ?int $modelId = null, ?int $duplicateFrom = null): static
+    {
+        $this->attributes = array_merge(
+            $this->attributes,
+            UpsertModal::make($manageableModelClass, $modelId, $duplicateFrom)->attributes(preventNavigation: true),
+        );
 
         return $this;
     }

@@ -23,14 +23,11 @@ class InstanceActionEdit
         $upsertOptions = $manageableModel::getUpsertOptions();
 
         if ($upsertOptions->isModal()) {
-            return $action->setAdditionalAttributes([
-                'onclick' => "window.wrlaOpenUpsertModal(this, {
-                    modelUrlAlias: '".$modelUrlAlias."',
-                    id: ".($modelId ?? 'null').",
-                    maxWidth: '".$upsertOptions->getModalSize()."',
-                    maxWidthClass: '".$upsertOptions->getModalSizeClass()."'
-                });",
-            ]);
+            return $action->setAdditionalAttributes(
+                $manageableModel::upsertModal($modelId)
+                    ->withModelUrlAlias($modelUrlAlias)
+                    ->attributes()
+            );
         }
 
         return $action->setAction(route('wrla.manageable-models.edit', [
