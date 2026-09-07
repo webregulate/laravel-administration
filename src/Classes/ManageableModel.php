@@ -1300,6 +1300,11 @@ abstract class ManageableModel
         foreach ($manageableFields as $manageableField) {
             $fieldName = $manageableField->getAttribute('name');
 
+            // Disabled controls are display-only and must not participate in persistence.
+            if ($manageableField->getAttribute('disabled')) {
+                continue;
+            }
+
             // If array key doesn't exist in form key values, we skip it
             if (!array_key_exists($fieldName, $formKeyValues)) {
                 continue;
