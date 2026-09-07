@@ -1,0 +1,42 @@
+<p class="docs-lead">
+    Refines <strong>modal upsert forms</strong> with cleaner presentation, visible rounded corners,
+    and protection against accidentally discarding unsaved changes.
+</p>
+
+<!-- Breaking Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        Breaking Changes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>None.</li>
+    </ul>
+</div>
+
+<!-- Improvements -->
+<div class="docs-section">
+    <h2 class="docs-heading">Improvements</h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>Modal upsert forms no longer render an additional padded, bordered, and shadowed inner container.</li>
+        <li>Modal layouts now preserve their rounded outer corners in both light and dark themes.</li>
+        <li>Clicking the backdrop of a changed upsert form now asks for confirmation before discarding unsaved changes.</li>
+        <li>The default alert top offset is now <code class="docs-inline-code">38px</code>.</li>
+    </ul>
+</div>
+
+<!-- Configuration -->
+<div class="docs-section">
+    <h2 class="docs-heading">Configuration</h2>
+    <p class="docs-body">
+        Update the alert offset in published configuration to match the new default:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>'alerts' => [
+    // ...
+    'top_offset' => '38px',
+],</code></pre>
+    </div>
+</div>

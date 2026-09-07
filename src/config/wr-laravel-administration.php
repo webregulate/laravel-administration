@@ -158,7 +158,7 @@ return [
         // TTL measured in milliseconds; use 0 to keep alerts open
         'ttl' => 5000,
         'max_visible' => 5,
-        'top_offset' => '32px',
+        'top_offset' => '38px',
     ],
 
     // Logging

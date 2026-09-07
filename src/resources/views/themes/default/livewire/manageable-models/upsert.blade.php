@@ -36,9 +36,15 @@
         id="upsert-form"
         autocomplete="off"
         wire:submit="save"
+        x-data="{ isDirty: false }"
+        x-on:input="isDirty = true"
+        x-on:change="isDirty = true"
         class="w-full"
     >
-        <div class="flex flex-wrap gap-6 mt-4 p-4 {{ !$inModal ? 'bg-slate-100' : 'bg-white' }} dark:bg-slate-800 dark:border-slate-700 border shadow-slate-300 dark:shadow-slate-850 rounded-lg shadow-lg">
+        <div @class([
+            'flex flex-wrap gap-6 p-2',
+            'mt-4 p-4 bg-slate-100 dark:bg-slate-800 dark:border-slate-700 border shadow-slate-300 dark:shadow-slate-850 rounded-lg shadow-lg' => !$inModal,
+        ])>
             @if(!empty($manageableFields))
                 @foreach($manageableFields as $manageableField)
                     {!! $manageableField->renderParent($upsertType, $livewireData, $loop->index) !!}

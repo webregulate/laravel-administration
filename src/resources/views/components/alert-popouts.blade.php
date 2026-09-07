@@ -120,7 +120,7 @@
     x-data="wrlaAlertPopouts(@js($initialAlerts->values()), {{ (int) config('wr-laravel-administration.alerts.max_visible', 5) }}, {{ (int) config('wr-laravel-administration.alerts.ttl', 5000) }})"
     x-on:wrla-alert.window="push($event.detail)"
     class="fixed right-3 sm:right-5 flex w-[calc(100%-1.5rem)] max-w-sm flex-col gap-3 pointer-events-none"
-    style="top: {{ config('wr-laravel-administration.alerts.top_offset', '52px') }}; z-index: 2147483647;"
+    style="top: {{ config('wr-laravel-administration.alerts.top_offset', '38px') }}; z-index: 2147483647;"
     aria-live="polite"
 >
     <template x-for="alert in alerts" :key="alert.id">

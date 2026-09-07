@@ -16,3 +16,18 @@
         'inModal' => true,
     ], key('wrla-upsert-modal-'.$modelUrlAlias.'-'.($modelId ?? 'new')))
 </x-wrla-modal-layout>
+
+@script
+<script>
+    $wire.on('closingModalOnClickAway', function (data) {
+        var upsertForm = $wire.$el.querySelector('#upsert-form');
+        var isDirty = upsertForm
+            && window.Alpine
+            && window.Alpine.$data(upsertForm).isDirty === true;
+
+        if (isDirty && !confirm('You have unsaved changes. Are you sure you want to close this dialog?')) {
+            data.closing = false;
+        }
+    });
+</script>
+@endscript
