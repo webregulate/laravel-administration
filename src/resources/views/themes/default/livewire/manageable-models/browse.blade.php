@@ -38,6 +38,12 @@
                         <option value="{{ $wrlaPerPageOption }}">{{ $wrlaPerPageOption }}</option>
                     @endforeach
                 </select>
+                <button type="button" wire:click="$refresh" wire:loading.class="bg-slate-700"
+                    class="w-7 h-7 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700"
+                    title="Refresh" aria-label="Refresh">
+                    <i wire:loading.remove class="fas fa-sync-alt text-primary-500"></i>
+                    <i wire:loading class="fas fa-sync-alt animate-spin inline-block text-primary-500"></i>
+                </button>
             </div>
         </div>
     </div>

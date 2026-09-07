@@ -1,0 +1,43 @@
+<p class="docs-lead">
+    Improves <strong>manageable model browse actions</strong> with native page navigation from modal
+    edit links, manual refreshing, and reusable upsert modal JavaScript helpers.
+</p>
+
+<!-- Breaking Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        Breaking Changes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>None.</li>
+    </ul>
+</div>
+
+<!-- Improvements -->
+<div class="docs-section">
+    <h2 class="docs-heading">Improvements</h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>When modal upsert mode is enabled, edit actions can now be middle-clicked to open the full-page upsert form in a new tab.</li>
+        <li>Manageable model browse pages now include a refresh action beside the per-page selector.</li>
+        <li>The refresh icon and button show a clear loading state while records are refreshed.</li>
+    </ul>
+</div>
+
+<!-- Upsert modal helper -->
+<div class="docs-section">
+    <h2 class="docs-heading font-mono text-primary-600">upsertModal()-&gt;onclick()</h2>
+    <p class="docs-body">
+        Manageable models now provide a helper for generating the JavaScript needed to open an upsert
+        modal from custom buttons and links.
+    </p>
+    <div class="docs-code-block">
+        <pre><code>// Generate an onclick handler for editing record 76.
+$onclick = ApplicationConfig::upsertModal(76)-&gt;onclick();
+
+// Prevent normal navigation when using an anchor with an href fallback.
+$linkOnclick = ApplicationConfig::upsertModal(76)-&gt;onclick(preventNavigation: true);</code></pre>
+    </div>
+</div>

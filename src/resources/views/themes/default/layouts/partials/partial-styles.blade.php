@@ -10,6 +10,15 @@
 --}}
 <style type="text/tailwindcss">
 
+    /* Prevent native buttons from receiving browser or Tailwind focus rings. */
+    button:focus,
+    button:focus-visible {
+        outline: none !important;
+        --tw-ring-offset-shadow: 0 0 #0000 !important;
+        --tw-ring-shadow: 0 0 #0000 !important;
+        box-shadow: var(--tw-shadow, 0 0 #0000) !important;
+    }
+
     /* ================================================================
      * SIDEBAR
      * ================================================================ */
