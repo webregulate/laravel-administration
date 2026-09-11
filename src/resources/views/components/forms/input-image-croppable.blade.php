@@ -1,7 +1,9 @@
 @props(['fileSystem' => null, 'publicUrl' => '', 'publicUrlWithoutDomain' => '', 'options' => [], 'label' => null])
 
-<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+@assets
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+@endassets
 
 @php
     // Set id from name if unset
@@ -116,13 +118,13 @@
 </div>
 
 {{-- Cropper JS preview / cropper area --}}
-<div id="imageToCropContainer" class="flex justify-center items-center mt-4 p-3 bg-slate-200 dark:bg-slate-900 rounded-md">
+<div id="imageToCropContainer" class="flex justify-center items-center mt-4 p-3 bg-slate-200 dark:bg-slate-900 rounded-md" style="display: none;">
     <div style="width: 100%; max-width: 600px; margin-auto;">
         <img id="imageToCrop" src="" alt="Image to crop" style="max-width: 100%;">
     </div>
 </div>
 
-@once
+@script
 <script>
     // Resolve the livewire ($wire) component instance that owns the given element.
     function wrla_croppable_getWire(el) {
@@ -136,7 +138,7 @@
         return root ? root.getAttribute('data-wrla-field-name') : null;
     }
 
-    function wrla_setPreviewImage(input) {
+    window.wrla_setPreviewImage = function (input) {
         if (input.files && input.files[0]) {
             var previewImageElement = input.parentElement.parentElement.parentElement.querySelector('.wrla_image_preview');
 
@@ -163,9 +165,9 @@
                 wire.set('livewireData.wrla_remove_' + name, 'false', false);
             }
         }
-    }
+    };
 
-    function wrla_removeImage(button) {
+    window.wrla_removeImage = function (button) {
         var input = button.parentElement.parentElement.querySelector('.wrla_image_input');
         var previewImageElement = input.parentElement.parentElement.parentElement.querySelector('.wrla_image_preview');
         var removeInput = button.parentElement.querySelector('.wrla_remove_input');
@@ -200,17 +202,18 @@
             wire.set('livewireData.wrla_rotation_' + name, 0, false);
             wire.set('livewireData.wrla_remove_' + name, imageExists ? 'true' : 'false', false);
         }
-    }
+    };
 
-    document.addEventListener('DOMContentLoaded', function () {
+    window.wrla_croppable_initialize = function () {
         const form = document.querySelector('#upsert-form');
         const imageInput = document.getElementById('imageInput');
         const imageToCrop = document.getElementById('imageToCrop');
         const imageToCropContainer = document.getElementById('imageToCropContainer');
         const croppedImagePreview = document.getElementById('croppedImagePreview');
 
-        // Hide preview om start
-        imageToCropContainer.style.display = 'none';
+        if (!form || !imageInput || !imageToCrop || !imageToCropContainer || !croppedImagePreview) {
+            return;
+        }
 
         // Livewire binding for this field (deferred until save)
         const wrlaName = @js($name);
@@ -361,10 +364,20 @@
                 e.stopImmediatePropagation();
 
                 cropper.getCroppedCanvas().toBlob(function (blob) {
+                    if (!blob) {
+                        window.wrlaUpsertSubmitPending = false;
+                        alert('The cropped image could not be generated. Please choose the image again.');
+                        return;
+                    }
+
                     const file = new File([blob], 'cropped.png', { type: 'image/png' });
                     const wire = wrlaWire();
 
-                    if (!wire) return;
+                    if (!wire) {
+                        window.wrlaUpsertSubmitPending = false;
+                        alert('The image could not be attached to the form. Please reopen the form and try again.');
+                        return;
+                    }
 
                     // Sync all other native form inputs into livewire first, then
                     // upload the cropped image and run the save action.
@@ -374,19 +387,35 @@
 
                     wire.upload('livewireData.' + wrlaName, file, function () {
                         wire.set('livewireData.wrla_remove_' + wrlaName, 'false', false);
-                        wire.call('save');
+                        window.wrlaUpsertSubmitPending = true;
+                        wire.call('save').catch(function (error) {
+                            window.wrlaUpsertSubmitPending = false;
+                            console.error('Unable to save the cropped image.', error);
+                            alert('The form could not be saved. Please try again.');
+                        });
+                    }, function (error) {
+                        window.wrlaUpsertSubmitPending = false;
+                        console.error('Unable to upload the cropped image.', error);
+                        alert('The cropped image could not be uploaded. Please check the image and try again.');
                     });
                 }, 'image/png');
             } catch (error) {
+                window.wrlaUpsertSubmitPending = false;
                 alert('Error during form submission:' + error);
             }
         }, true);
-    });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', window.wrla_croppable_initialize, { once: true });
+    } else {
+        window.wrla_croppable_initialize();
+    }
 </script>
-@endonce
+@endscript
+
+</div>
 
 @error($name)
     @themeComponent('alert', ['type' => 'error', 'message' => $message, 'class' => 'mt-2'])
 @enderror
-
-</div>

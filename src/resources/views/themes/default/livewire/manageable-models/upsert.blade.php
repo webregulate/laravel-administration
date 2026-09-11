@@ -155,8 +155,7 @@
     request. This covers composite fields (multi-image / multi-field) whose nested
     livewire components write native inputs, as well as standard fields. File
     inputs are handled separately as native livewire uploads. --}}
-@once
-@push('append-body')
+@assets
 <script>
     if (!window.wrlaSyncFormToLivewire) {
         // Parse an input name (supporting bracket notation) into a path array.
@@ -400,8 +399,7 @@
         }
     }
 </script>
-@endpush
-@endonce
+@endassets
 
 @if($usesWysiwyg === true)
     @assets
