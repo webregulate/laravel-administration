@@ -502,6 +502,11 @@ class ManageableModelUpsert extends WRLAPageComponent
                 $this->modelId = $savedId;
                 $this->upsertType = PageType::EDIT;
                 WRLAHelper::setCurrentPageType($this->upsertType);
+
+                if ($this->inModal) {
+                    $this->dispatch('wrla-upsert-created', modelId: $savedId)
+                        ->to(ManageableModelUpsertModal::class);
+                }
             }
 
             // Reset any write-only fields (e.g. passwords) server-side so stale values are not

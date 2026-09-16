@@ -2,6 +2,7 @@
 
 namespace WebRegulate\LaravelAdministration\Livewire\ManageableModels;
 
+use Livewire\Attributes\On;
 use LivewireUI\Modal\ModalComponent;
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
@@ -30,6 +31,13 @@ class ManageableModelUpsertModal extends ModalComponent
 
         // Resolves the button-loading promise in the JS opener.
         $this->dispatch('manageable-models.upsert-modal.opened');
+    }
+
+    #[On('wrla-upsert-created')]
+    public function showCreatedModel(int $modelId): void
+    {
+        $this->modelId = $modelId;
+        $this->duplicateFrom = null;
     }
 
     /**
