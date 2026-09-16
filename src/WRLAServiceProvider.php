@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebRegulate\LaravelAdministration\Livewire\Dashboard;
+use WebRegulate\LaravelAdministration\Livewire\WireElementsModal;
 use Opcodes\LogViewer\Facades\LogViewer;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\ComponentAttributeBag;
@@ -273,7 +274,7 @@ class WRLAServiceProvider extends ServiceProvider
         Livewire::component('wrla.notifications-widget', NotificationsWidget::class);
         Livewire::component('wrla.import-data-modal', ImportDataModal::class);
         Livewire::component('wrla.dev-tools.dev-tools-modal', DevToolsModal::class);
-        Livewire::component('wrla.wire-elements-modal', \LivewireUI\Modal\Modal::class);
+        Livewire::component('wrla.wire-elements-modal', WireElementsModal::class);
         Livewire::component('wrla.manageable-fields.searchable-value', SearchableValue::class);
         Livewire::component('wrla.manageable-fields.search-select', SearchSelect::class);
         Livewire::component('wrla.file-manager', FileManager::class);
