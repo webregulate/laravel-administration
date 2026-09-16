@@ -315,7 +315,7 @@ return [
         // Full page upsert defaults
         'page' => [
             // Whether a successful save returns to the browse page (redirect + flash success)
-            'return_to_browse_after_save' => true,
+            'return_to_browse_after_save' => false,
         ],
 
         // Modal upsert defaults
@@ -324,7 +324,7 @@ return [
             'size' => '6xl',
 
             // Whether a successful save returns to the browse page (closes the modal + browse flash success)
-            'return_to_browse_after_save' => true,
+            'return_to_browse_after_save' => false,
         ],
     ],
 
