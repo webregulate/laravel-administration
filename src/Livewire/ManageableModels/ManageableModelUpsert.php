@@ -494,19 +494,25 @@ class ManageableModelUpsert extends WRLAPageComponent
                 ]);
             }
 
-            // Stay on the page (no full-page refresh) and surface the result inline.
-            // When a new record was just created, transition the component into edit
-            // mode for that record so subsequent saves update it rather than creating
-            // duplicate records.
+            // If created
             if ($created) {
+                if (!$this->inModal) {
+                    WRLAHelper::pushAlert('success', $defaultSuccessMessage);
+
+                    $this->redirectRoute('wrla.manageable-models.edit', [
+                        'modelUrlAlias' => $manageableModel->getUrlAlias(),
+                        'id' => $savedId,
+                    ]);
+
+                    return null;
+                }
+
                 $this->modelId = $savedId;
                 $this->upsertType = PageType::EDIT;
                 WRLAHelper::setCurrentPageType($this->upsertType);
 
-                if ($this->inModal) {
-                    $this->dispatch('wrla-upsert-created', modelId: $savedId)
-                        ->to(ManageableModelUpsertModal::class);
-                }
+                $this->dispatch('wrla-upsert-created', modelId: $savedId)
+                    ->to(ManageableModelUpsertModal::class);
             }
 
             // Reset any write-only fields (e.g. passwords) server-side so stale values are not
