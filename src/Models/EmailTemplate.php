@@ -419,8 +419,7 @@ class EmailTemplate extends Model
     {
         $subject = $this->injectVariablesIntoString($this->subject ?? '', $renderMode);
 
-        // Fix for ' character
-        return str($subject)->replace('&#39;', "'")->toString();
+        return html_entity_decode($subject, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 
     /**
