@@ -1131,7 +1131,7 @@ trait ManageableField
 
         // Group open/close tags stay OUTSIDE the per-field key wrapper because a group can span
         // multiple fields (beginGroup on the first field, endGroup on the last).
-        $HTML = $this->getOption('beginGroup') == true ? '<div class="w-full flex flex-col md:flex-row items-center gap-6">' : '';
+        $HTML = $this->getOption('beginGroup') == true ? '<div class="w-full flex flex-col md:flex-row items-start gap-6">' : '';
         $HTML .= '<div wire:key="'.$wireKey.'" class="contents">'.$renderedField.'</div>';
         $HTML .= $this->getOption('endGroup') == true ? '</div>' : '';
 
