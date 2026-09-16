@@ -310,7 +310,7 @@ return [
     // Upsert (create/edit) view configuration
     'upsert' => [
         // Default upsert mode: 'page' | 'modal'
-        'mode' => 'modal',
+        'mode' => 'page',
 
         // Full page upsert defaults
         'page' => [

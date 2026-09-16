@@ -262,7 +262,7 @@
                 }
             }, 0);
 
-            var root = form.closest('[wire\\:id]');
+            var root = form.closest('[wire\\\\:id]');
             if (!root || !window.Livewire) return;
 
             var wire = window.Livewire.find(root.getAttribute('wire:id'));
