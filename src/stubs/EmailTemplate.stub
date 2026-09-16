@@ -133,9 +133,11 @@ class EmailTemplate extends ManageableModel
                         // Set data array for injections. Any keys not provided here
                         // will fall back to string defaults defined in the template's
                         // mappings JSON (handled by EmailTemplate::applyCustomisedDataValues).
-                        $emailTemplate->setDataArray([
-                            'user' => $user,
-                        ]);
+                        $emailTemplate->setDataArray(
+                            isset($emailTemplate->getKeyMappings()['user'])
+                                ? ['user' => $user]
+                                : []
+                        );
 
                         // sendEmail() accepts an array or comma delimited string of recipients
                         $success = $emailTemplate->sendEmail($emails);
