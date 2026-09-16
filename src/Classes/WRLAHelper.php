@@ -1782,9 +1782,8 @@ class WRLAHelper
     }
 
     /**
-     * Normalise an empty string to null when the target column cannot store '' under a strict
-     * SQL mode (temporal, numeric, boolean types) and is nullable. String/text/json/binary/enum
-     * columns keep the empty string. Non-column attributes and non-empty values pass through.
+     * Normalise an empty string to null when the target column is nullable.
+     * Non-column attributes, non-nullable columns, and non-empty values pass through.
      */
     public static function normaliseEmptyValueForColumn(Model $model, string $column, mixed $value): mixed
     {
@@ -1805,14 +1804,7 @@ class WRLAHelper
             return $value;
         }
 
-        // Types that legitimately store an empty string — leave those untouched.
-        $stringLikeTypes = [
-            'char', 'varchar', 'string', 'tinytext', 'text', 'mediumtext', 'longtext',
-            'enum', 'set', 'json', 'binary', 'varbinary',
-            'tinyblob', 'blob', 'mediumblob', 'longblob', 'uuid', 'inet', 'cidr', 'macaddr',
-        ];
-
-        return in_array($definition['type'], $stringLikeTypes, true) ? $value : null;
+        return null;
     }
 
     /**

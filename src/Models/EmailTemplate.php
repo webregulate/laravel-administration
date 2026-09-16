@@ -239,9 +239,9 @@ class EmailTemplate extends Model
             $keyMappings = $this->getKeyMappings();
 
             // If key does not exist in key mappings, skip
-            // if(!isset($keyMappings[$key])) {
-            //     continue;
-            // }
+            if (! isset($keyMappings[$key])) {
+                continue;
+            }
 
             // If data is Model, get only the attributes that are in the key mappings
             if ($dataOrModel instanceof Model) {

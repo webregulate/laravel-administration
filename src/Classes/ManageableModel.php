@@ -1368,8 +1368,18 @@ abstract class ManageableModel
 
             // Standard field value
             if (!$isUsingNestedJson) {
+                $targetInstance = $relationshipInstance ?? $this->modelInstance;
+                $targetKey = $relationshipInstance != null
+                    ? $manageableField->getRelationshipFieldName()
+                    : $fieldName;
+                $submittedValue = WRLAHelper::normaliseEmptyValueForColumn(
+                    $targetInstance,
+                    $targetKey,
+                    $formKeyValues[$fieldName]
+                );
+
                 // Apply the value to the form component and get the field value
-                $fieldValue = $formComponent->applySubmittedValueFinal($request, $formKeyValues[$fieldName]);
+                $fieldValue = $formComponent->applySubmittedValueFinal($request, $submittedValue);
             }
             // JSON notation
             else {
@@ -1440,7 +1450,7 @@ abstract class ManageableModel
                     $this->preUpdateRelationshipInstanceField($this->modelInstance, $relationshipInstance, $manageableField->getRelationshipName(), $manageableField->getRelationshipFieldName(), $fieldValue);
 
                     // Update field and save the relationship instance
-                    $relationshipInstance->{$manageableField->getRelationshipFieldName()} = WRLAHelper::normaliseEmptyValueForColumn($relationshipInstance, $manageableField->getRelationshipFieldName(), $fieldValue);
+                    $relationshipInstance->{$manageableField->getRelationshipFieldName()} = $fieldValue;
                     $relationshipInstance->save();
 
                     // if(isset($jsonNotation) && str($jsonNotation)->contains('avatar')) {
@@ -1448,7 +1458,7 @@ abstract class ManageableModel
                     // }
                 } else {
                     // Update the field value of the model instance
-                    $this->modelInstance->{$fieldName} = WRLAHelper::normaliseEmptyValueForColumn($this->modelInstance, $fieldName, $fieldValue);
+                    $this->modelInstance->{$fieldName} = $fieldValue;
                 }
             }
         }
