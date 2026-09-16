@@ -36,7 +36,7 @@
         id="upsert-form"
         autocomplete="off"
         wire:submit="save"
-        x-data="{ isDirty: false }"
+        x-data="{ isDirty: false, isPreparingSubmit: false }"
         x-on:input="isDirty = true"
         x-on:change="isDirty = true"
         class="w-full"
@@ -105,6 +105,7 @@
                 'color' => 'primary',
                 'text' => 'Save',
                 'icon' => 'fa fa-edit',
+                'clientLoading' => 'isPreparingSubmit',
                 'attributes' => Arr::toAttributeBag([
                     'wire:target' => 'save',
                 ]),
@@ -240,11 +241,26 @@
     if (!window.wrlaUpsertSubmitSyncBound) {
         window.wrlaUpsertSubmitSyncBound = true;
 
+        window.wrlaSetUpsertPreparing = function (form, preparing) {
+            if (!form || !window.Alpine) return;
+            window.Alpine.$data(form).isPreparingSubmit = preparing;
+        };
+
         // Capture-phase: sync native inputs before livewire's wire:submit handler
         // runs. Does not preventDefault, so livewire still performs the save.
         document.addEventListener('submit', function (e) {
             var form = e.target;
             if (!form || form.id !== 'upsert-form') return;
+
+            window.wrlaSetUpsertPreparing(form, true);
+
+            // ImageCroppable marks submissions that it takes over. Otherwise this
+            // temporary state only bridges the click to Livewire's loading state.
+            setTimeout(function () {
+                if (form.dataset.wrlaCroppablePreparing !== 'true') {
+                    window.wrlaSetUpsertPreparing(form, false);
+                }
+            }, 0);
 
             var root = form.closest('[wire\\:id]');
             if (!root || !window.Livewire) return;

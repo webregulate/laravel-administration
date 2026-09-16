@@ -4,7 +4,8 @@
     'size' => 'small',
     'color' => 'primary',
     'href' => null,
-    'error' => null
+    'error' => null,
+    'clientLoading' => null,
 ])
 
 @php
@@ -37,6 +38,13 @@
             'wire:target' => $wireTarget
         ]);
     }
+
+    if($clientLoading) {
+        $attributes = $attributes->merge([
+            'x-bind:disabled' => $clientLoading,
+            'x-bind:class' => "$clientLoading ? 'opacity-80 cursor-not-allowed' : ''",
+        ]);
+    }
 @endphp
 
 @if(empty($href))
@@ -47,11 +55,16 @@
     {{ $attributes->merge([
         'class' => "flex justify-center items-center gap-1 whitespace-nowrap $sizeClasses font-semibold border $colorClasses rounded-md shadow-sm whitespace-nowrap"
     ]) }}>
-    @if(!empty($icon))
-        <i class="{{ $icon }} text-[13px] mr-1" @if(!empty($wireTarget)) wire:loading.remove wire:target="{{ $wireTarget }}" @endif></i>
-    @endif
-    @if(!empty($wireTarget))
-        <i class="fa fa-spinner animate-spin text-[13px] mr-1" wire:loading.flex wire:target="{{ $wireTarget }}"></i>
+    <span @if($clientLoading) x-show="!({{ $clientLoading }})" @endif class="contents">
+        @if(!empty($icon))
+            <i class="{{ $icon }} text-[13px] mr-1" @if(!empty($wireTarget)) wire:loading.remove wire:target="{{ $wireTarget }}" @endif></i>
+        @endif
+        @if(!empty($wireTarget))
+            <i class="fa fa-spinner animate-spin text-[13px] mr-1" wire:loading.flex wire:target="{{ $wireTarget }}"></i>
+        @endif
+    </span>
+    @if($clientLoading)
+        <i class="fa fa-spinner animate-spin text-[13px] mr-1" x-cloak x-show="{{ $clientLoading }}"></i>
     @endif
     <div class="inline">{!! $text !!}</div>
 @if(empty($href))

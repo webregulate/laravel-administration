@@ -362,9 +362,12 @@
 
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                form.dataset.wrlaCroppablePreparing = 'true';
 
                 cropper.getCroppedCanvas().toBlob(function (blob) {
                     if (!blob) {
+                        delete form.dataset.wrlaCroppablePreparing;
+                        window.wrlaSetUpsertPreparing?.(form, false);
                         window.wrlaUpsertSubmitPending = false;
                         alert('The cropped image could not be generated. Please choose the image again.');
                         return;
@@ -374,6 +377,8 @@
                     const wire = wrlaWire();
 
                     if (!wire) {
+                        delete form.dataset.wrlaCroppablePreparing;
+                        window.wrlaSetUpsertPreparing?.(form, false);
                         window.wrlaUpsertSubmitPending = false;
                         alert('The image could not be attached to the form. Please reopen the form and try again.');
                         return;
@@ -393,13 +398,21 @@
                             console.error('Unable to save the cropped image.', error);
                             alert('The form could not be saved. Please try again.');
                         });
+                        delete form.dataset.wrlaCroppablePreparing;
+                        requestAnimationFrame(function () {
+                            window.wrlaSetUpsertPreparing?.(form, false);
+                        });
                     }, function (error) {
+                        delete form.dataset.wrlaCroppablePreparing;
+                        window.wrlaSetUpsertPreparing?.(form, false);
                         window.wrlaUpsertSubmitPending = false;
                         console.error('Unable to upload the cropped image.', error);
                         alert('The cropped image could not be uploaded. Please check the image and try again.');
                     });
                 }, 'image/png');
             } catch (error) {
+                delete form.dataset.wrlaCroppablePreparing;
+                window.wrlaSetUpsertPreparing?.(form, false);
                 window.wrlaUpsertSubmitPending = false;
                 alert('Error during form submission:' + error);
             }
