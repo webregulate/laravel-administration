@@ -336,8 +336,11 @@ class ManageableModelUpsert extends WRLAPageComponent
                 continue;
             }
 
-            // Respect shouldSubmit(false) — such fields must not sync or submit.
-            if ($manageableField->getAttribute('form') === 'none') {
+            // Display-only fields must not sync or submit.
+            if (
+                $manageableField->getAttribute('disabled')
+                || $manageableField->getAttribute('form') === 'none'
+            ) {
                 continue;
             }
 
@@ -550,17 +553,32 @@ class ManageableModelUpsert extends WRLAPageComponent
         $inputs = [];
         $files = [];
 
+        // Disabled and explicitly non-submitting fields are display-only. They may
+        // still exist in livewireData from an earlier render, so omit them here too.
+        $excludedFieldNames = [];
+
         // Field names that represent file uploads. Their bound value is an
         // UploadedFile when a fresh file was selected; otherwise the key must be
         // omitted so the existing stored value is retained by the pipeline.
         $fileFieldNames = [];
         foreach ($manageableFields as $manageableField) {
+            if (
+                $manageableField->getAttribute('disabled')
+                || $manageableField->getAttribute('form') === 'none'
+            ) {
+                $excludedFieldNames[$manageableField->getAttribute('name')] = true;
+            }
+
             if ($manageableField->isFileUploadField()) {
                 $fileFieldNames[$manageableField->getAttribute('name')] = true;
             }
         }
 
         foreach ($this->livewireData as $key => $value) {
+            if (isset($excludedFieldNames[$key])) {
+                continue;
+            }
+
             // Uploaded file(s) go straight into the request's file bag.
             if ($value instanceof UploadedFile) {
                 $files[$key] = $value;
