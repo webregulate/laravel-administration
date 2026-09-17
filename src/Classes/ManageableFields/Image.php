@@ -93,11 +93,17 @@ class Image extends File
     }
 
     /**
-     * Run the upload through Intervention Image, applying rotation and any user
-     * supplied manipulation callback, then write the encoded result to disk.
+     * Store untouched uploads as-is. Only run Intervention Image when rotation
+     * or a user-supplied manipulation actually requires re-encoding.
      */
     protected function processUploadedFile(UploadedFile $file, string $path, string $filename): void
     {
+        if ($this->rotationDegrees === 0 && $this->manipulateImageFunction === null) {
+            parent::processUploadedFile($file, $path, $filename);
+
+            return;
+        }
+
         $imageManager = new ImageManager(new Driver);
         $image = $imageManager->read($file);
 
