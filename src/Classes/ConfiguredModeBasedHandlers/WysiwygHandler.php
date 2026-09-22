@@ -125,7 +125,7 @@ class WysiwygHandler extends ConfiguredModeBasedHandler
 
                                 xhr.send(formData);
                             }),
-                            relative_urls: false,
+                            convert_urls: false,
                             content_style: `{{ config('wr-laravel-administration.wysiwyg_css') }}`,
                         });
                     });

@@ -33,10 +33,6 @@
         return this.maxTags !== null && this.tags.length >= this.maxTags;
     },
     init() {
-        // Set size to parent width on init and resize
-        setTimeout(() => this.$el.style.width = this.$el.parentElement.offsetWidth + 'px', 0);
-        window.addEventListener('resize', (e) => this.$el.style.width = this.$el.parentElement.offsetWidth + 'px');
-
         const initialVal = '{{ old($attributes->get('name'), $attributes->get('value') ?? '') }}';
         if (initialVal.trim()) {
             initialVal.split(',').forEach(tag => this.addTag(tag.trim()));
