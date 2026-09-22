@@ -67,8 +67,11 @@ class WysiwygHandler extends ConfiguredModeBasedHandler
      * Get TinyMCE setup JavaScript.
      */
     public function getTinyMCESetupJS() {
+        $scriptUrl = $this->currentConfiguration['script_url']
+            ?? 'https://cdn.tiny.cloud/1/'.$this->currentConfiguration['apikey'].'/tinymce/7/tinymce.min.js';
+
         return Blade::render(<<<'HTML'
-            <script src="https://cdn.tiny.cloud/1/{{ $currentWysiwygEditorSettings['apikey'] }}/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+            <script src="{{ $scriptUrl }}" referrerpolicy="origin"></script>
             <script>
                 window.wrlaInitWysiwyg = function (root) {
                     root = root || document;
@@ -89,6 +92,7 @@ class WysiwygHandler extends ConfiguredModeBasedHandler
 
                         window.tinymce.init({
                             target: element,
+                            license_key: {!! json_encode($currentWysiwygEditorSettings['license_key'] ?? null) !!},
                             plugins: '{{ $currentWysiwygEditorSettings["plugins"] }}',
                             menubar: '{{ $currentWysiwygEditorSettings["menubar"] }}',
                             toolbar: '{{ $currentWysiwygEditorSettings["toolbar"] }}',
@@ -133,6 +137,7 @@ class WysiwygHandler extends ConfiguredModeBasedHandler
             </script>
         HTML, [
             'currentWysiwygEditorSettings' => $this->currentConfiguration,
+            'scriptUrl' => $scriptUrl,
         ]);
     }
 

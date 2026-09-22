@@ -236,6 +236,8 @@ return [
         // TinyMCE - https://www.tiny.cloud/docs/tinymce/latest
         'tinymce' => [
             'apikey' => env('TINYMCE_API_KEY', ''), // Add your TinyMCE API key in your .env file
+            'script_url' => null, // Optional self-hosted TinyMCE script URL; when null, Tiny Cloud is used
+            'license_key' => null, // Use 'gpl' with the open-source self-hosted build
             'plugins' => 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount code paste fullscreen',
             'menubar' => 'edit view insert tools table',
             'toolbar' => 'undo redo | bold italic underline | link image media table | align | numlist bullist indent | code',
