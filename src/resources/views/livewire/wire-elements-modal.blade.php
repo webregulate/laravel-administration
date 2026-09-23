@@ -7,7 +7,7 @@
     @endisset
 
     <div
-            x-data="LivewireUIModal()"
+            x-data="{ ...LivewireUIModal(), clickAwayStartedOutside: false }"
             x-on:close.stop="setShowPropertyTo(false)"
             x-on:keydown.escape.window="show && closeModalOnEscape()"
             x-show="show"
@@ -15,7 +15,8 @@
             style="display: none;"
     >
         <div
-                x-on:click="closeModalOnClickAway()"
+                x-on:pointerdown="clickAwayStartedOutside = !$event.target.closest('#modal-container')"
+                x-on:click="if (clickAwayStartedOutside) closeModalOnClickAway()"
                 class="flex items-end justify-center min-h-dvh px-4 pt-4 pb-10 text-center sm:block sm:p-0"
         >
             <div
