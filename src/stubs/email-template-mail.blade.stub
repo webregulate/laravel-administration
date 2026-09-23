@@ -1,28 +1,3 @@
-<html>
-    <head>
-        <style>
-            /* Laravel default mail theme font stack */
-            body,
-            body *:not(html):not(style):not(br):not(tr):not(code) {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif,
-                    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
-            }
-
-            body {
-                line-height: 1.4;
-                margin: 0;
-                padding: 0;
-                color: #000000;
-            }
-
-            a {
-                color: #007bff;
-                text-decoration: underline;
-            }
-        </style>
-    </head>
-    <body>
-        {{-- Body rendered per the template's type (markdown converted, html as-is) --}}
-        {!! $emailTemplate->getRenderedBody($renderMode ?? 'email') !!}
-    </body>
-</html>
+<x-mail::message>
+{!! $emailTemplate->getRenderedBody($renderMode ?? 'email') !!}
+</x-mail::message>

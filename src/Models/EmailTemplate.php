@@ -622,18 +622,13 @@ class EmailTemplate extends Model
      */
     public function renderEmail(string $renderMode = EmailTemplate::RENDER_MODE_EMAIL)
     {
-        // Markdown emails go through the mail Markdown renderer so the <style> block is
-        // inlined onto elements (email clients such as Gmail strip <head> styles).
+        // Render through Laravel's mail renderer so the standard layout is applied and
+        // its styles are inlined (email clients such as Gmail strip <head> styles).
         return match($this->getRenderMode()) {
-            'markdown' => app(Markdown::class)->render('email.wrla.email-template-mail', [
+            'markdown', 'html' => app(Markdown::class)->render('email.wrla.email-template-mail', [
                 'emailTemplate' => $this,
                 'renderMode' => $renderMode,
             ])->toHtml(),
-
-            'html' => view('email.wrla.email-template-mail', [
-                'emailTemplate' => $this,
-                'renderMode' => $renderMode,
-            ])->render(),
 
             default => $this->getFinalBody($renderMode),
         };
