@@ -389,29 +389,41 @@
         window.wrlaUpsertErrorScrollBound = true;
 
         var bindErrorScrollHook = function () {
-            if (!window.Livewire || !window.Livewire.hook) return;
+            if (!window.Livewire) return;
 
-            // After the save commit is applied to the DOM, scroll to the first error
-            // (if any) but only when it followed an upsert form submit.
-            window.Livewire.hook('commit', function (payload) {
-                var succeed = payload.succeed;
-                if (typeof succeed !== 'function') return;
+            var scrollAfterSubmit = function () {
+                if (!window.wrlaUpsertSubmitPending) return;
+                window.wrlaUpsertSubmitPending = false;
 
-                succeed(function () {
-                    if (!window.wrlaUpsertSubmitPending) return;
-                    window.wrlaUpsertSubmitPending = false;
-
-                    // Wait for the morph to apply so error nodes exist before scrolling.
+                requestAnimationFrame(function () {
                     requestAnimationFrame(function () {
-                        requestAnimationFrame(function () {
-                            window.wrlaScrollToFirstError();
-                        });
+                        window.wrlaScrollToFirstError();
                     });
                 });
-            });
+            };
+
+            if (typeof window.Livewire.interceptMessage === 'function') {
+                window.Livewire.interceptMessage(function (payload) {
+                    payload.onSuccess(function (success) {
+                        success.onMorphed(scrollAfterSubmit);
+                    });
+                });
+
+                return;
+            }
+
+            if (typeof window.Livewire.hook === 'function') {
+                window.Livewire.hook('commit', function (payload) {
+                    if (typeof payload.succeed !== 'function') return;
+                    payload.succeed(scrollAfterSubmit);
+                });
+            }
         };
 
-        if (window.Livewire && window.Livewire.hook) {
+        if (window.Livewire && (
+            typeof window.Livewire.interceptMessage === 'function'
+            || typeof window.Livewire.hook === 'function'
+        )) {
             bindErrorScrollHook();
         } else {
             document.addEventListener('livewire:init', bindErrorScrollHook);
