@@ -57,6 +57,7 @@ class MultiField
             'emptyText' => 'No items yet added, click the button below to add one.',
             'skipItem' => null,
             'finalValueOverride' => null,
+            'unlinkOld' => true,
             'layout' => self::LAYOUT_ROW,
             'columns' => 4,
         ]);
@@ -190,6 +191,15 @@ class MultiField
     }
 
     /**
+     * Set whether images removed or replaced on submission are deleted from storage.
+     */
+    public function unlinkOld(bool $unlink = true): static
+    {
+        $this->setOption('unlinkOld', $unlink);
+        return $this;
+    }
+
+    /**
      * Resolve a public URL for a stored image filename within an item.
      */
     protected function resolveImageUrl(MultiFieldItem $item, string $filename): string
@@ -261,6 +271,44 @@ class MultiField
         $disk->put("{$path}/{$filename}", $file->get());
 
         return $filename;
+    }
+
+    /**
+     * Delete images from the original groups that are absent from the submitted groups.
+     *
+     * @param MultiFieldItem[] $items
+     */
+    protected function unlinkRemovedImages(array $items, array $originalGroups, array $resultGroups): void
+    {
+        if ($this->getOption('unlinkOld') !== true) {
+            return;
+        }
+
+        $imageItems = array_values(array_filter($items, fn (MultiFieldItem $item) => $item->isImage()));
+        $originalFiles = [];
+        $keptFiles = [];
+
+        foreach ($imageItems as $item) {
+            foreach ($originalGroups as $group) {
+                $filename = is_array($group) ? ($group[$item->key] ?? null) : null;
+                if (is_string($filename) && $filename !== '') {
+                    $filePath = ltrim(WRLAHelper::forwardSlashPath($item->path . '/' . $filename), '/');
+                    $originalFiles[$item->fileSystem . "\0" . $filePath] = [$item->fileSystem, $filePath];
+                }
+            }
+
+            foreach ($resultGroups as $group) {
+                $filename = $group[$item->key] ?? null;
+                if (is_string($filename) && $filename !== '') {
+                    $filePath = ltrim(WRLAHelper::forwardSlashPath($item->path . '/' . $filename), '/');
+                    $keptFiles[$item->fileSystem . "\0" . $filePath] = true;
+                }
+            }
+        }
+
+        foreach (array_diff_key($originalFiles, $keptFiles) as [$fileSystem, $filePath]) {
+            Storage::disk($fileSystem)->delete($filePath);
+        }
     }
 
     /**
@@ -336,6 +384,10 @@ class MultiField
         }
 
         $items = $this->getItems();
+        $originalGroups = is_array($value) ? $value : json_decode((string) $value, true);
+        if (!is_array($originalGroups)) {
+            $originalGroups = [];
+        }
 
         // Native scalar form group data, keyed by group index.
         $scalarGroups = $request->input($fieldName . '_groups', []);
@@ -395,6 +447,8 @@ class MultiField
         if (is_callable($skipItem)) {
             $resultGroups = array_values(array_filter($resultGroups, fn (array $group) => !$skipItem($group)));
         }
+
+        $this->unlinkRemovedImages($items, $originalGroups, $resultGroups);
 
         // Apply final value override (allows mapping the stored shape differently).
         $finalValueOverride = $this->getOption('finalValueOverride');
