@@ -2,6 +2,7 @@
 
 namespace WebRegulate\LaravelAdministration;
 
+use Composer\InstalledVersions;
 use Livewire\Livewire;
 use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use WebRegulate\LaravelAdministration\Livewire\Dashboard;
 use WebRegulate\LaravelAdministration\Livewire\WireElementsModal;
@@ -264,6 +266,10 @@ class WRLAServiceProvider extends ServiceProvider
         // Load views
         $this->loadViewsFrom(__DIR__ . '/resources/views', 'wr-laravel-administration');
 
+        if (version_compare(InstalledVersions::getVersion('livewire/livewire') ?? '0.0.0', '4.0.0', '>=')) {
+            $this->registerLivewireLayoutNamespaceFallback();
+        }
+
         // Livewire component registering and asset injection
         Livewire::component('wrla.dashboard', Dashboard::class);
         Livewire::component('wrla.manageable-models.dynamic-browse-filters', ManageableModelDynamicBrowseFilters::class);
@@ -442,6 +448,30 @@ class WRLAServiceProvider extends ServiceProvider
             // Display the component with the provided attributes
             return "<?php echo view('{$fullComponentPath}', {$args[1]})->render(); ?>";
         });
+    }
+
+    /**
+     * Register Livewire 4's default layout namespace when an older application
+     * config does not include its component_namespaces entry.
+     */
+    private function registerLivewireLayoutNamespaceFallback(): void
+    {
+        if (
+            !str_starts_with((string) config('livewire.component_layout'), 'layouts::')
+            || array_key_exists('layouts', View::getFinder()->getHints())
+        ) {
+            return;
+        }
+
+        $paths = array_values(array_unique(array_filter([
+            config('livewire.component_namespaces.layouts'),
+            resource_path('views/layouts'),
+            resource_path('views/components/layouts'),
+        ], fn ($path) => is_string($path) && is_dir($path))));
+
+        if ($paths !== []) {
+            View::addNamespace('layouts', $paths);
+        }
     }
 
     /**
