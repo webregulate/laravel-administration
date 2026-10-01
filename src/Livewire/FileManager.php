@@ -3,7 +3,6 @@
 namespace WebRegulate\LaravelAdministration\Livewire;
 
 use Exception;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Title;
 use Livewire\WithFileUploads;
@@ -332,10 +331,18 @@ class FileManager extends WRLAPageComponent
 
     public function deleteFile(string $directoryPath, string $name)
     {
-        $diskPath = rtrim($directoryPath.'/'.$name, '/');
+        $diskPath = rtrim(str_replace('.', '/', $directoryPath).'/'.$name, '/');
 
-        // Delete file
-        $this->getCurrentFileSystem()->delete($diskPath);
+        try {
+            $deleted = $this->getCurrentFileSystem()->delete($diskPath);
+        } catch (Exception) {
+            $deleted = false;
+        }
+
+        WRLAHelper::pushAlert(
+            $deleted ? 'success' : 'danger',
+            $deleted ? 'File deleted successfully.' : 'File could not be deleted.',
+        );
 
         // Clean up, refresh and re-render
         $this->viewingDirectory = $directoryPath;
@@ -346,10 +353,18 @@ class FileManager extends WRLAPageComponent
 
     public function deleteDirectory(string $directoryPath, string $name)
     {
-        $diskPath = rtrim($directoryPath.'/'.$name, '/');
+        $diskPath = rtrim(str_replace('.', '/', $directoryPath).'/'.$name, '/');
 
-        // Delete directory
-        $this->getCurrentFileSystem()->deleteDirectory($diskPath);
+        try {
+            $deleted = $this->getCurrentFileSystem()->deleteDirectory($diskPath);
+        } catch (Exception) {
+            $deleted = false;
+        }
+
+        WRLAHelper::pushAlert(
+            $deleted ? 'success' : 'danger',
+            $deleted ? 'Directory deleted successfully.' : 'Directory could not be deleted.',
+        );
 
         // Clean up, refresh and re-render
         $this->viewingDirectory = $directoryPath;
