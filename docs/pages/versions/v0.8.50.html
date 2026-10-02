@@ -1,0 +1,31 @@
+<p class="docs-lead">
+    Consolidates changes since <code class="docs-inline-code">v0.8.32</code>, including reorderable
+    models, Laravel 13 and Livewire 4 support, and improved modal workflows.
+</p>
+
+<!-- Breaking Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        Breaking Changes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>Manageable model create/edit forms now open in a modal by default. Set <code class="docs-inline-code">upsert.mode</code> to <code class="docs-inline-code">page</code> to retain full pages.</li>
+        <li>Successful saves now remain on the form by default. Set <code class="docs-inline-code">return_to_browse_after_save</code> to <code class="docs-inline-code">true</code> for the previous behaviour.</li>
+        <li>Removed or replaced MultiField images are now deleted from storage. Use <code class="docs-inline-code">unlinkOld(false)</code> to retain them.</li>
+    </ul>
+</div>
+
+<!-- Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">Changes &amp; Improvements</h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>Manageable models can now be reordered by drag and drop in a modal or dedicated page.</li>
+        <li>Added Laravel 13, Livewire 4, and Wire Elements Modal 3 support.</li>
+        <li>Modal forms gained responsive widths, loading states, click-away handling, reliable browse refreshes, and improved create/edit state.</li>
+        <li>Improved disabled fields, empty values, image uploads, file deletion feedback, and field layouts.</li>
+        <li>Improved email rendering and encoding, plus self-hosted TinyMCE and license-key support.</li>
+    </ul>
+</div>
