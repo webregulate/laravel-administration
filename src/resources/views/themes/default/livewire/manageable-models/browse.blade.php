@@ -60,6 +60,25 @@
                 {!! $browseAction->render() !!}
             @endif
         @endforeach
+
+        @php
+            $orderableOptions = $manageableModelClass::getOrderableOptions();
+        @endphp
+        @if ($orderableOptions->enabled
+            && $manageableModelClass::getPermission(\WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions::EDIT))
+            @themeComponent('forms.button', [
+                'text' => 'Reorder',
+                'size' => 'small',
+                'color' => 'secondary',
+                'icon' => 'fa fa-arrow-down-up-across-line',
+                'attributes' => Arr::toAttributeBag($orderableOptions->isModal() ? [
+                    'onclick' => "window.wrlaOpenReorderModal(this, { modelUrlAlias: '".
+                        addslashes($manageableModelClass::getUrlAlias())."' });",
+                ] : [
+                    'href' => $manageableModelClass::urlReorder(),
+                ]),
+            ])
+        @endif
     </div>
 
     {{-- Browse additional rendering --}}

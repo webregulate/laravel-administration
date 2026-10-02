@@ -220,6 +220,16 @@ abstract class ManageableModel
     }
 
     /**
+     * URL for the dedicated reorder page.
+     */
+    public static function urlReorder(): string
+    {
+        return route('wrla.manageable-models.reorder', [
+            'modelUrlAlias' => static::getUrlAlias(),
+        ]);
+    }
+
+    /**
      * URL edit
      */
     public static function urlCreate(): string
@@ -522,6 +532,24 @@ abstract class ManageableModel
     public static function getUpsertOptions(): UpsertOptions
     {
         return static::getStaticOption(static::class, 'upsert') ?? UpsertOptions::fromConfig();
+    }
+
+    /**
+     * Set the options for reordering records from the browse page.
+     */
+    public static function setOrderableOptions(OrderableOptions $orderableOptions): string
+    {
+        static::setStaticOption('orderable', $orderableOptions);
+
+        return static::class;
+    }
+
+    /**
+     * Get reorder options, defaulting to disabled for backward compatibility.
+     */
+    public static function getOrderableOptions(): OrderableOptions
+    {
+        return static::getStaticOption(static::class, 'orderable') ?? OrderableOptions::disabled();
     }
 
     /**

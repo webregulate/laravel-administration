@@ -137,6 +137,23 @@
         }));
     };
 
+    window.wrlaOpenReorderModal = function(buttonElement, data) {
+        window.buttonSignifyLoading(buttonElement, () => new Promise((resolve) => {
+            Livewire.dispatch('openModal', {
+                component: 'wrla.manageable-models.reorder-modal',
+                arguments: {
+                    modelUrlAlias: data.modelUrlAlias,
+                },
+                modalAttributes: {
+                    maxWidth: '5xl',
+                    maxWidthClass: 'sm:max-w-md md:max-w-xl lg:max-w-3xl xl:max-w-5xl',
+                },
+            });
+
+            Livewire.on('manageable-models.reorder-modal.opened', () => resolve());
+        }));
+    };
+
     /**
      * The below is for the wrlaInsertTextAtCursor function which is used to insert text at the cursor position in an input or textarea element.
      * 

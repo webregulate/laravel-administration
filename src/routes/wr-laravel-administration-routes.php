@@ -5,6 +5,7 @@ use WebRegulate\LaravelAdministration\Http\Controllers\WRLAAdminController;
 use WebRegulate\LaravelAdministration\Http\Controllers\WRLAAuthController;
 use WebRegulate\LaravelAdministration\Http\Controllers\WRLADocumentationController;
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelBrowse;
+use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelReorder;
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelUpsert;
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageAccount;
 
@@ -84,6 +85,7 @@ Route::prefix(config('wr-laravel-administration.base_url', 'wr-admin'))
 
         // Manageable model browse & upsert
         Route::get('browse/{modelUrlAlias}', ManageableModelBrowse::class)->name('manageable-models.browse');
+        Route::get('reorder/{modelUrlAlias}', ManageableModelReorder::class)->name('manageable-models.reorder');
         Route::get('create/{modelUrlAlias}', ManageableModelUpsert::class)->name('manageable-models.create');
         Route::get('edit/{modelUrlAlias}/{id}', ManageableModelUpsert::class)->name('manageable-models.edit');
     });

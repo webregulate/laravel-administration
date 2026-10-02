@@ -457,6 +457,82 @@ static::setNavigationItems(fn () => [
     </div>
 </div>
 
+<!-- setOrderableOptions -->
+<div class="docs-section">
+    <h2 class="docs-heading font-mono text-primary-600">setOrderableOptions()</h2>
+    <p class="docs-body">
+        Enables a searchable drag-and-drop interface for changing record priority. It opens in a modal by
+        default, which closes and refreshes the browse view after saving, or can use a dedicated page.
+        Reordering is disabled by default, and the configured order column must exist on the model's database table.
+    </p>
+    <div class="docs-code-block mb-4">
+        <pre><code>use WebRegulate\LaravelAdministration\Classes\OrderableOptions;
+
+// Default: no reorder action is shown
+static::setOrderableOptions(OrderableOptions::disabled());
+
+// Enable modal reordering (the default) and display each record's name
+static::setOrderableOptions(OrderableOptions::make('sort_order', 'name'));
+
+// Explicit modal and dedicated page modes
+static::setOrderableOptions(OrderableOptions::modal('sort_order', 'name'));
+static::setOrderableOptions(OrderableOptions::page('sort_order', 'name'));
+
+// Configure search, zero-based positions, and database update batch size
+static::setOrderableOptions(
+    OrderableOptions::make('priority')
+        ->labelColumn('title')
+        ->searchColumns('title', 'reference')
+        ->startAt(0)
+        ->updateChunkSize(200)
+);</code></pre>
+    </div>
+
+    <h3 class="docs-subheading mb-3">Available options</h3>
+    <table class="docs-table">
+        <thead>
+            <tr>
+                <th>Option</th>
+                <th>Behaviour</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code class="docs-inline-code">OrderableOptions::disabled()</code></td>
+                <td>Disables reordering and hides the browse action.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">OrderableOptions::make($orderColumn, $labelColumn)</code></td>
+                <td>Enables modal reordering using the given persisted position column and optional display column.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">OrderableOptions::modal($orderColumn, $labelColumn)</code></td>
+                <td>Explicitly enables modal reordering. This is equivalent to <code class="docs-inline-code">make()</code>.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">OrderableOptions::page($orderColumn, $labelColumn)</code></td>
+                <td>Enables reordering on the dedicated reorder page.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">-&gt;labelColumn($column)</code></td>
+                <td>Sets the text shown for each record. The primary key is shown when omitted.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">-&gt;searchColumns(...$columns)</code></td>
+                <td>Adds fields to the instant client-side search used on large lists.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">-&gt;startAt($position)</code></td>
+                <td>Sets the first saved position; defaults to <code class="docs-inline-code">1</code>.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">-&gt;updateChunkSize($size)</code></td>
+                <td>Controls the number of rows per upsert while retaining a single transaction.</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
 <!-- setUpsertOptions -->
 <div class="docs-section">
     <h2 class="docs-heading font-mono text-primary-600">setUpsertOptions()</h2>
