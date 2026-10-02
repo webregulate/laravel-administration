@@ -39,6 +39,7 @@
         x-data="{ isDirty: false, isPreparingSubmit: false }"
         x-on:input="isDirty = true"
         x-on:change="isDirty = true"
+        x-on:wrla-upsert-saved.window="isDirty = false"
         class="w-full"
     >
         <div @class([

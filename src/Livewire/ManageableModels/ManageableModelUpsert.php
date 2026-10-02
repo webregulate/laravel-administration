@@ -466,6 +466,10 @@ class ManageableModelUpsert extends WRLAPageComponent
                 ? ' <a href="'.route('wrla.manageable-models.create', ['modelUrlAlias' => $manageableModel->getUrlAlias()]).'" class="font-bold underline">Click here</a> to create another '.$manageableModel->getDisplayName(false).' record.'
                 : '';
 
+            if ($this->inModal) {
+                $this->dispatch('wrla-browse-refresh')->to(ManageableModelBrowse::class);
+            }
+
             // If an override redirect route was provided, redirect there instead
             if ($this->overrideRedirectRoute !== null) {
                 $message = $this->overrideSuccessMessage ?? $defaultSuccessMessage;
@@ -485,7 +489,6 @@ class ManageableModelUpsert extends WRLAPageComponent
 
                 if ($this->inModal) {
                     WRLAHelper::pushAlert('success', $defaultSuccessMessage);
-                    $this->dispatch('wrla-browse-refresh')->to(ManageableModelBrowse::class);
                     $this->dispatch('closeModal');
 
                     return null;
