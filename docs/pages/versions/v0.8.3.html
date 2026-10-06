@@ -1,12 +1,10 @@
 <p class="docs-lead">
-    Simplifies how custom WRLA pages are registered. Full-page Livewire components are now
-    registered with a plain <code class="docs-inline-code">Route::get()</code> in a renamed
-    <code class="docs-inline-code">buildRoutes()</code> method, replacing the old
-    <code class="docs-inline-code">buildCustomRoutes()</code> +
-    <code class="docs-inline-code">WRLAHelper::registerLivewireRoute()</code> approach.
+    Simplifies custom WRLA page registration with standard Laravel routes and introduces fully
+    Livewire-driven manageable model create/edit screens. Full-page components now use
+    <code class="docs-inline-code">WRLAPageComponent</code>, while validation, saving and success
+    feedback happen reactively without a full page reload.
 </p>
 
-<!-- Breaking Changes -->
 <div class="docs-section">
     <h2 class="docs-heading">
         <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -34,7 +32,6 @@
     </ul>
 </div>
 
-<!-- Upgrade Guide -->
 <div class="docs-section">
     <h2 class="docs-heading">
         <svg class="h-6 w-6 text-primary-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,7 +40,6 @@
         Upgrade Guide
     </h2>
 
-    <!-- Step 1 -->
     <h3 class="text-base font-semibold text-gray-800 mt-2 mb-2">
         1. Rename <code class="docs-inline-code">buildCustomRoutes()</code> to <code class="docs-inline-code">buildRoutes()</code>
     </h3>
@@ -58,7 +54,6 @@ public static function buildCustomRoutes(): void
 public static function buildRoutes(): void</code></pre>
     </div>
 
-    <!-- Step 2 -->
     <h3 class="text-base font-semibold text-gray-800 mt-5 mb-2">
         2. Register each page with a plain <code class="docs-inline-code">Route::get()</code>
     </h3>
@@ -80,7 +75,6 @@ WRLAHelper::registerLivewireRoute(
 Route::get('my-page', MyPage::class)-&gt;name('wrla.my-page');</code></pre>
     </div>
 
-    <!-- Step 3 -->
     <h3 class="text-base font-semibold text-gray-800 mt-5 mb-2">
         3. Make each page component extend <code class="docs-inline-code">WRLAPageComponent</code>
     </h3>
@@ -109,7 +103,6 @@ class MyPage extends WRLAPageComponent
     </p>
 </div>
 
-<!-- Features -->
 <div class="docs-section">
     <h2 class="docs-heading">
         <svg class="h-6 w-6 text-primary-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,6 +110,7 @@ class MyPage extends WRLAPageComponent
         </svg>
         Features
     </h2>
+    <h3 class="text-base font-semibold text-gray-800 mt-2 mb-2">Custom Pages</h3>
     <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
         <li>
             New <code class="docs-inline-code">WRLAPageComponent</code> base class renders any Livewire
@@ -135,9 +129,31 @@ class MyPage extends WRLAPageComponent
             don't, the default dashboard is still registered automatically.
         </li>
     </ul>
+    <h3 class="text-base font-semibold text-gray-800 mt-5 mb-2">Manageable Model Upsert</h3>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>
+            The manageable model upsert page is now handled entirely by the
+            <code class="docs-inline-code">ManageableModelUpsert</code> Livewire component. Creating and
+            editing records is driven by a single <code class="docs-inline-code">save()</code> method
+            that runs validation, persists the model and logs the change &mdash; no more separate
+            controller POST route.
+        </li>
+        <li>
+            Saving happens in place without a full page reload, and an inline success message confirms
+            the record was saved. This keeps you on the same screen with your scroll position and form
+            state intact, which is much nicer when making a series of quick edits.
+        </li>
+        <li>
+            Fields bind directly to Livewire, so complex inputs (such as
+            <code class="docs-inline-code">SearchSelect</code>, croppable and standard image uploads,
+            and the WYSIWYG editor) stay in sync with the component's data and validate reactively.
+        </li>
+        <li>
+            Buttons now support loading states, giving clear visual feedback while a save is in progress.
+        </li>
+    </ul>
 </div>
 
-<!-- Bug Fixes -->
 <div class="docs-section">
     <h2 class="docs-heading">
         <svg class="h-6 w-6 text-green-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,6 +162,6 @@ class MyPage extends WRLAPageComponent
         Bug Fixes
     </h2>
     <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
-        <li>None</li>
+        <li>Updated the cancel button text and icon on the upsert form for clearer labelling.</li>
     </ul>
 </div>

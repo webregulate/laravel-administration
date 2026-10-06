@@ -1,7 +1,8 @@
 <p class="docs-lead">
-    Simplifies how the admin panel <strong>logo</strong> is configured. Instead of supplying two
-    separate image files (one for light mode, one for dark), you now provide a single logo image and,
-    if you want, let WRLA recolour it automatically for dark mode.
+    Introduces fully Livewire-driven manageable model create/edit screens, a <strong>Database Schema
+    viewer</strong> and a <strong>Scheduler &amp; Jobs</strong> page for developers. Also simplifies
+    <strong>logo</strong> configuration: provide a single image and optionally let WRLA recolour it
+    automatically for dark mode.
 </p>
 
 <!-- Breaking Changes -->
@@ -32,6 +33,94 @@
         </svg>
         Features
     </h2>
+    <h3 class="text-base font-semibold text-gray-800 mt-2 mb-2">Manageable Model Upsert</h3>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>
+            The manageable model upsert page is now handled entirely by the
+            <code class="docs-inline-code">ManageableModelUpsert</code> Livewire component. Creating and
+            editing records is driven by a single <code class="docs-inline-code">save()</code> method
+            that runs validation, persists the model and logs the change &mdash; no more separate
+            controller POST route.
+        </li>
+        <li>
+            Saving happens in place without a full page reload, and an inline success message confirms
+            the record was saved. This keeps you on the same screen with your scroll position and form
+            state intact, which is much nicer when making a series of quick edits.
+        </li>
+        <li>
+            Fields bind directly to Livewire, so complex inputs (such as
+            <code class="docs-inline-code">SearchSelect</code>, croppable and standard image uploads,
+            and the WYSIWYG editor) stay in sync with the component's data and validate reactively.
+        </li>
+        <li>
+            Buttons now support loading states, giving clear visual feedback while a save is in progress.
+        </li>
+    </ul>
+    <h3 class="text-base font-semibold text-gray-800 mt-5 mb-2">Database Schema Viewer</h3>
+    <p class="docs-body">
+        Powered by <code class="docs-inline-code">albertoarena/laravel-truss</code>, the viewer gives
+        master/developer users a visual diagram of the application's database tables and relationships,
+        either embedded inside the WRLA layout or opened as the standalone Truss dashboard.
+    </p>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>
+            New <strong>Database Schema</strong> page (<code class="docs-inline-code">wrla.database-schema</code>)
+            served by the <code class="docs-inline-code">DatabaseSchema</code> Livewire component and shown
+            in the navigation when enabled.
+        </li>
+        <li>
+            Configurable via a new <code class="docs-inline-code">database_schema_viewer</code> config block:
+            control who can access it, whether it renders <code class="docs-inline-code">embed</code>ded or
+            via <code class="docs-inline-code">redirect</code>, the default colour mode, which database
+            connections are shown, and any extra Truss options.
+        </li>
+        <li>
+            Available as a Dev Tools shortcut, so developers can jump straight to the schema diagram.
+        </li>
+    </ul>
+    <h3 class="text-base font-semibold text-gray-800 mt-5 mb-2">Scheduler &amp; Jobs</h3>
+    <p class="docs-body">
+        Master/developer users can inspect scheduled tasks, view and delete pending queue jobs, and
+        retry, delete or flush failed jobs without touching the command line.
+    </p>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>
+            New <strong>Scheduler &amp; Jobs</strong> page (<code class="docs-inline-code">wrla.scheduler</code>)
+            served by the <code class="docs-inline-code">Scheduler</code> Livewire component and shown
+            in the navigation when enabled.
+        </li>
+        <li>
+            <strong>Scheduled Tasks</strong> section lists every registered task with its type/flags
+            (<code class="docs-inline-code">no overlap</code>, <code class="docs-inline-code">one server</code>),
+            cron expression (human-readable) and next run time.
+        </li>
+        <li>
+            <strong>Pending Jobs</strong> section lists queued jobs (for the
+            <code class="docs-inline-code">database</code> queue driver) with the ability to delete an
+            individual job.
+        </li>
+        <li>
+            <strong>Failed Jobs</strong> section lets you retry or delete a single job, or retry-all /
+            flush-all in one click.
+        </li>
+        <li>
+            <strong>Ad-hoc task runs</strong> &mdash; a &ldquo;play&rdquo; button on each scheduled task lets
+            authorised users run it on demand, gated by a new
+            <code class="docs-inline-code">scheduler.can_run_adhoc</code> config option.
+        </li>
+        <li>
+            Each section is collapsible, and the open/closed state is persisted per-user in the browser
+            via Alpine's <code class="docs-inline-code">$persist</code>.
+        </li>
+        <li>
+            Configurable via a new <code class="docs-inline-code">scheduler</code> config block: control who
+            can access it and the maximum number of pending/failed rows loaded at once.
+        </li>
+        <li>
+            Available as a Dev Tools shortcut, so developers can jump straight to the page.
+        </li>
+    </ul>
+    <h3 class="text-base font-semibold text-gray-800 mt-5 mb-2">Logo Configuration</h3>
     <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
         <li>
             Use <strong>one logo image</strong> for everywhere via
@@ -62,9 +151,127 @@
     </h2>
 
     <h3 class="text-base font-semibold text-gray-800 mt-2 mb-2">
+        Database Schema Viewer
+    </h3>
+    <h4 class="text-base font-semibold text-gray-800 mt-2 mb-2">
+        1. Add the <code class="docs-inline-code">database_schema_viewer</code> config default
+    </h4>
+    <p class="docs-body">
+        In your published <code class="docs-inline-code">config/wr-laravel-administration.php</code>, paste the
+        new block after the <code class="docs-inline-code">logs</code> section and before the
+        <code class="docs-inline-code">THEME / STYLING CONFIGURATION</code> divider:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>// Database schema viewer (albertoarena/laravel-truss) configuration
+'database_schema_viewer' => [
+    // Who may access the page: true / false, a Closure($wrlaUserData): bool,
+    // or null to fall back to the developer check (WRLAHelper::userIsDev()).
+    'enabled' => null,
+
+    // 'embed' (Truss dashboard inside the WRLA layout) or 'redirect' (standalone Truss page).
+    'display' => 'embed',
+
+    // Default colour mode until the user toggles it: 'light', 'dark', or 'auto'.
+    'default_mode' => 'dark',
+
+    // Connections (keys from config/database.php) to visualise, with per-connection
+    // Truss options. Leave empty to use the default connection.
+    'connections' => [
+        // 'mysql' => [],
+    ],
+
+    // Extra config passed straight through to Truss (config/truss.php).
+    'truss' => [
+        //
+    ],
+],</code></pre>
+    </div>
+
+    <h4 class="text-base font-semibold text-gray-800 mt-5 mb-2">
+        2. Register the route and nav item in <code class="docs-inline-code">WRLASettings.php</code>
+    </h4>
+    <p class="docs-body">
+        In <code class="docs-inline-code">app/WRLA/WRLASettings.php</code>, import the component and add the
+        route inside <code class="docs-inline-code">buildRoutes()</code>:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>use WebRegulate\LaravelAdministration\Livewire\DatabaseSchema;
+
+// ...inside buildRoutes()
+// Database schema viewer - Enabled via `wr-laravel-administration.database_schema_viewer.enabled`
+Route::get('database-schema', DatabaseSchema::class)
+    -&gt;name('wrla.database-schema');</code></pre>
+    </div>
+    <p class="docs-body mt-2">
+        Optional: Add the navigation item inside <code class="docs-inline-code">buildNavigation()</code>:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>// Database Schema (albertoarena/laravel-truss)
+NavigationItem::make('wrla.database-schema', [], 'Database Schema', 'fas fa-diagram-project')
+    -&gt;showOnCondition(fn() =&gt; WRLAHelper::databaseSchemaViewerEnabled()),</code></pre>
+    </div>
+
+    <h3 class="text-base font-semibold text-gray-800 mt-6 mb-2">Scheduler &amp; Jobs</h3>
+    <h4 class="text-base font-semibold text-gray-800 mt-2 mb-2">
+        1. Add the <code class="docs-inline-code">scheduler</code> config default
+        <span class="ml-2 align-middle inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">Required</span>
+    </h4>
+    <p class="docs-body">
+        In your published <code class="docs-inline-code">config/wr-laravel-administration.php</code>, paste the
+        new block after the <code class="docs-inline-code">logs</code> section and before the
+        <code class="docs-inline-code">THEME / STYLING CONFIGURATION</code> divider:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>// Scheduler / Job manager page configuration
+'scheduler' => [
+    // Enabled, use either: bool, fn($wrlaUserData): bool, null (fallback using WRLAHelper::userIsDev())
+    'enabled' => null,
+
+    // Allow adhoc running, use either: bool, fn($wrlaUserData): bool, null (fallback using WRLAHelper::userIsDev())
+    'can_run_adhoc' => null,
+
+    // Maximum number of pending / failed job rows to load into the table at once.
+    'max_rows' => 60,
+],</code></pre>
+    </div>
+
+    <h4 class="text-base font-semibold text-gray-800 mt-5 mb-2">
+        2. Register the route in <code class="docs-inline-code">WRLASettings.php</code>
+        <span class="ml-2 align-middle inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">Optional</span>
+    </h4>
+    <p class="docs-body">
+        In <code class="docs-inline-code">app/WRLA/WRLASettings.php</code>, import the component and add the
+        route inside <code class="docs-inline-code">buildRoutes()</code>:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>use WebRegulate\LaravelAdministration\Livewire\Scheduler;
+
+// ...inside buildRoutes()
+// Scheduler & Jobs - Access via `wr-laravel-administration.scheduler.enabled` configuration
+Route::get('scheduler', Scheduler::class)
+    -&gt;name('wrla.scheduler');</code></pre>
+    </div>
+
+    <h4 class="text-base font-semibold text-gray-800 mt-5 mb-2">
+        3. Add the navigation item in <code class="docs-inline-code">WRLASettings.php</code>
+        <span class="ml-2 align-middle inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">Optional</span>
+    </h4>
+    <p class="docs-body">
+        Add the navigation item inside <code class="docs-inline-code">buildNavigation()</code> so the page
+        appears in the sidebar when the user is allowed to access it:
+    </p>
+    <div class="docs-code-block">
+        <pre><code>// Scheduler & Jobs
+NavigationItem::make(url: route('wrla.scheduler'), name: 'Scheduler & Jobs', icon: 'fa fa-clock-rotate-left')-&gt;showOnCondition(fn() =&gt;
+    WRLAHelper::schedulerEnabled()
+),</code></pre>
+    </div>
+
+    <h3 class="text-base font-semibold text-gray-800 mt-6 mb-2">Logo Configuration</h3>
+    <h4 class="text-base font-semibold text-gray-800 mt-2 mb-2">
         Publish the new default logo asset
         <span class="ml-2 align-middle inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">Required</span>
-    </h3>
+    </h4>
     <p class="docs-body">
         If you don't already have your own logo set, run the following to publish the new default
         logo image (<code class="docs-inline-code">vendor/wr-laravel-administration/images/logo.svg</code>)
@@ -74,10 +281,10 @@
         <pre><code>php artisan vendor:publish --tag=wrla-assets</code></pre>
     </div>
 
-    <h3 class="text-base font-semibold text-gray-800 mt-6 mb-2">
+    <h4 class="text-base font-semibold text-gray-800 mt-6 mb-2">
         Update the <code class="docs-inline-code">logo</code> block
         <span class="ml-2 align-middle inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">Required</span>
-    </h3>
+    </h4>
     <p class="docs-body">
         In your published <code class="docs-inline-code">config/wr-laravel-administration.php</code>,
         replace the old logo block:
@@ -131,6 +338,6 @@
         Bug Fixes
     </h2>
     <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
-        <li>None</li>
+        <li>Updated the cancel button text and icon on the upsert form for clearer labelling.</li>
     </ul>
 </div>
