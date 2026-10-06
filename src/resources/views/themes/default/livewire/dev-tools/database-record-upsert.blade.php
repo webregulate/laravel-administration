@@ -44,7 +44,7 @@
                 @themeComponent('forms.button', ['text' => 'Cancel', 'size' => 'medium', 'color' => 'secondary', 'icon' => 'fa fa-xmark', 'attributes' => Arr::toAttributeBag($inModal ? ['type' => 'button', 'wire:click.prevent.stop' => "\$dispatch('closeModal')"] : ['href' => route('wrla.database.table', ['connection' => $connection, 'table' => $table])])])
             </div>
         @elseif($recordId !== null && $canEdit)
-            <div>@themeComponent('forms.button', ['text' => 'Edit record', 'icon' => 'fa fa-pen', 'attributes' => Arr::toAttributeBag($inModal ? ['wire:click' => 'editRecord'] : ['href' => $model->recordUrl('edit', $recordId)])])</div>
+            {{-- Nothing --}}
         @endif
     </form>
 </div>

@@ -39,7 +39,7 @@
     @endif
 
     <div class="w-full overflow-x-auto rounded-md shadow-lg shadow-slate-300 dark:shadow-slate-850">
-        <table class="w-full table-auto text-left border-collapse">
+        <table class="w-full table-auto text-left border-separate border-spacing-0">
             <thead><tr>
                 @foreach($model->schemaColumns as $column)
                     <th class="px-3 py-2 bg-slate-700 text-slate-100 border-b border-slate-400 text-sm whitespace-nowrap">
@@ -48,7 +48,7 @@
                         </button>
                     </th>
                 @endforeach
-                @if($model->primaryKey !== null)<th class="sticky right-0 px-3 py-2 bg-slate-700 text-slate-100 text-sm"></th>@endif
+                @if($model->primaryKey !== null)<th class="sticky right-0 z-10 shadow-[-6px_0_8px_-4px_rgba(0,0,0,0.25)] dark:shadow-[-6px_0_8px_-4px_rgba(0,0,0,0.5)] px-3 py-2 bg-slate-700 text-slate-100 text-sm"></th>@endif
             </tr></thead>
             <tbody>
                 @forelse($models as $record)
@@ -65,7 +65,7 @@
                             </td>
                         @endforeach
                         @if($model->primaryKey !== null)
-                            <td class="sticky right-0 px-3 py-2 {{ $loop->odd ? 'bg-slate-100 dark:bg-slate-800' : 'bg-white dark:bg-slate-900' }}">
+                            <td class="sticky right-0 z-10 shadow-[-6px_0_8px_-4px_rgba(0,0,0,0.25)] dark:shadow-[-6px_0_8px_-4px_rgba(0,0,0,0.5)] px-3 py-2 {{ $loop->odd ? 'bg-slate-100 dark:bg-slate-800' : 'bg-white dark:bg-slate-900' }}">
                                 <div class="flex justify-end gap-2">
                                     @foreach($canEdit ? ['view' => 'eye', 'edit' => 'pen'] : ['view' => 'eye'] as $action => $icon)
                                         <a class="inline-flex w-8 h-8 items-center justify-center rounded-md text-primary-600 hover:bg-slate-200 dark:hover:bg-slate-700" href="{{ $model->recordUrl($action, $record->getKey()) }}" @if($useModals) x-on:click="if (!$event.ctrlKey && !$event.metaKey && !$event.shiftKey && !$event.altKey) { $event.preventDefault(); window.wrlaOpenDatabaseRecordModal($el, () => $wire.openRecord(@js($action), @js(rtrim(strtr(base64_encode((string) $record->getKey()), '+/', '-_'), '=')))); }" @endif title="{{ ucfirst($action) }} record" aria-label="{{ ucfirst($action) }} record"><i class="fa fa-{{ $icon }}"></i></a>
