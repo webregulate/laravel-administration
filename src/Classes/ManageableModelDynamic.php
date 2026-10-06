@@ -19,8 +19,10 @@ class ManageableModelDynamic extends ManageableModel
     public function __construct(public string $connection, public string $table, mixed $recordId = null)
     {
         abort_unless(array_key_exists($connection, config('database.connections', [])), 404);
-        $schema = DB::connection($connection)->getSchemaBuilder();
-        $tables = array_column($schema->getTables(), 'schema_qualified_name');
+        $database = DB::connection($connection);
+        $schema = $database->getSchemaBuilder();
+        $namespace = in_array($database->getDriverName(), ['mysql', 'mariadb'], true) ? $database->getDatabaseName() : null;
+        $tables = array_column($schema->getTables($namespace), 'schema_qualified_name');
         abort_unless(in_array($table, $tables, true), 404);
 
         $this->schemaColumns = $schema->getColumns($table);

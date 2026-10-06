@@ -16,7 +16,7 @@
         $wrlaHelper = \WebRegulate\LaravelAdministration\Classes\WRLAHelper::class;
         $showDatabaseSchema = $wrlaHelper::databaseSchemaViewerEnabled() && \Illuminate\Support\Facades\Route::has('wrla.database-schema');
         $showScheduler = $wrlaHelper::schedulerEnabled() && \Illuminate\Support\Facades\Route::has('wrla.scheduler');
-        $showDatabaseBrowser = $wrlaHelper::userIsDev() && \Illuminate\Support\Facades\Route::has('wrla.database.tables');
+        $showDatabaseBrowser = $wrlaHelper::databaseBrowserEnabled() && \Illuminate\Support\Facades\Route::has('wrla.database.tables');
     @endphp
 
     @if($showDatabaseSchema || $showScheduler || $showDatabaseBrowser)

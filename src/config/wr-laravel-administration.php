@@ -379,34 +379,88 @@ return [
         ],
     ],
 
+    // Database browser (connections, tables, and raw records) configuration
+    'database_browser' => [
+        // bool, fn($wrlaUserData): bool, or null to use developer.enable.
+        'enabled' => null,
+
+        // Connection names from database.connections. null allows all; [] allows none.
+        'connections' => null,
+
+        // Initial connection; null uses database.default, then the first available connection.
+        'default_connection' => null,
+
+        // Table names or wildcard patterns, matched against bare and schema-qualified names.
+        // '*' applies to every connection; named connection entries add further exclusions.
+        'excluded_tables' => [
+            '*' => [],
+        ],
+
+        // Disable all writes while still allowing table browsing and record viewing.
+        'read_only' => false,
+
+        // Connections that must remain read-only even when writes are enabled elsewhere.
+        'read_only_connections' => [],
+
+        // Each permission accepts bool or fn($wrlaUserData): bool.
+        // These never override enabled, connection/table restrictions, or read-only mode.
+        'permissions' => [
+            'create' => true,
+            'edit' => true,
+            'delete' => true,
+        ],
+
+        // null values inherit browse.pagination; max_per_page also caps client-supplied values.
+        'pagination' => [
+            'default' => null,
+            'perPage' => null,
+            'max_per_page' => 1000,
+        ],
+
+        'filters' => [
+            'enable_all_fields' => true,
+            'max_filters' => 50,
+            'max_value_length' => 10000,
+        ],
+
+        // Character limits for cell previews and hover text; record views show full values.
+        'display' => [
+            'value_max_length' => 300,
+            'tooltip_max_length' => 1000,
+        ],
+
+        // null values inherit the corresponding general upsert settings.
+        'upsert' => [
+            'mode' => null,
+            'page' => [
+                'return_to_browse_after_save' => true,
+            ],
+            'modal' => [
+                'size' => null,
+                'return_to_browse_after_save' => null,
+            ],
+        ],
+    ],
+
     // Database schema viewer (albertoarena/laravel-truss) configuration
     'database_schema_viewer' => [
         // Enabled, use either: bool, fn($wrlaUserData): bool, null (fallback using WRLAHelper::userIsDev())
         'enabled' => null,
 
-        // How to present it: 'embed' (Truss dashboard inside the WRLA layout via an
-        // iframe) or 'redirect' (send the user to the standalone Truss page).
+        // 'embed' (Truss dashboard inside the WRLA layout) or 'redirect' (standalone Truss page).
         'display' => 'embed',
 
-        // Default colour mode the embedded dashboard opens in until the user toggles
-        // it themselves: 'light', 'dark', or 'auto' (follow the OS). Seeded once per browser.
+        // Default colour mode until the user toggles it: 'light', 'dark', or 'auto'.
         'default_mode' => 'dark',
 
-        // Database connections (keys from config/database.php) that may be visualised.
-        // Values are per-connection Truss options, e.g. ['excluded_tables' => [...]].
-        // Leave empty to use the application's default connection. When two or more
-        // are listed, Truss shows a connection picker in its toolbar.
+        // Connections (keys from config/database.php) to visualise, with per-connection
+        // Truss options. Leave empty to use the default connection.
         'connections' => [
             // 'mysql' => [],
             // 'reporting' => ['excluded_tables' => ['legacy_import']],
         ],
 
-        // Extra configuration passed straight through to Truss (config/truss.php),
-        // deep-merged over its defaults and the WRLA theme mapping. Lets you tune
-        // Truss from here without publishing its config, e.g:
-        //   'excluded_tables' => ['telemetry'],
-        //   'diagram' => ['type_labels' => 'laravel'],
-        //   'doctor' => ['dashboard' => false],
+        // Extra config passed straight through to Truss (config/truss.php).
         'truss' => [
             //
         ],

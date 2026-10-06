@@ -19,11 +19,15 @@ abstract class DatabasePage extends WRLAPageComponent
 
     public function boot(): void
     {
-        abort_unless(WRLAHelper::userIsDev(), 403);
+        abort_unless(WRLAHelper::databaseBrowserEnabled(), 403);
+        if ($this->connection !== '') {
+            abort_unless(WRLAHelper::databaseBrowserTableAllowed($this->connection, $this->table), 404);
+        }
     }
 
     protected function model(): ManageableModelDynamic
     {
+        abort_unless(WRLAHelper::databaseBrowserTableAllowed($this->connection, $this->table), 404);
         return $this->dynamicModel ??= new ManageableModelDynamic($this->connection, $this->table);
     }
 }

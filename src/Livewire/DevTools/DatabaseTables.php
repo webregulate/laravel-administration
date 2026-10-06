@@ -24,12 +24,12 @@ class DatabaseTables extends WRLAPageComponent
 
     public function boot(): void
     {
-        abort_unless(WRLAHelper::userIsDev(), 403);
+        abort_unless(WRLAHelper::databaseBrowserEnabled(), 403);
     }
 
     public function mount(): void
     {
-        foreach (array_keys(config('database.connections', [])) as $name) {
+        foreach (WRLAHelper::databaseBrowserConnections() as $name) {
             try {
                 $this->connectionTables($name);
                 $this->connections[] = $name;
@@ -38,7 +38,7 @@ class DatabaseTables extends WRLAPageComponent
                 report($exception);
             }
         }
-        $default = config('database.default');
+        $default = config('wr-laravel-administration.database_browser.default_connection') ?? config('database.default');
         $this->connection = in_array($default, $this->connections, true) ? $default : ($this->connections[0] ?? '');
     }
 
@@ -63,11 +63,15 @@ class DatabaseTables extends WRLAPageComponent
 
     protected function connectionTables(string $name): array
     {
+        abort_unless(in_array($name, WRLAHelper::databaseBrowserConnections(), true), 404);
         $connection = DB::connection($name);
         $schema = in_array($connection->getDriverName(), ['mysql', 'mariadb'], true)
             ? $connection->getDatabaseName()
             : null;
 
-        return $connection->getSchemaBuilder()->getTables($schema);
+        return array_values(array_filter(
+            $connection->getSchemaBuilder()->getTables($schema),
+            fn (array $table) => WRLAHelper::databaseBrowserTableAllowed($name, $table['schema_qualified_name']),
+        ));
     }
 }

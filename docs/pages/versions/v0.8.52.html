@@ -1,0 +1,113 @@
+<p class="docs-lead">
+    Consolidates the Database Browser changes from <code class="docs-inline-code">v0.8.51</code>,
+    adding dedicated access, safety and presentation configuration alongside shared dynamic filter
+    fixes and layout improvements.
+</p>
+
+<!-- Breaking Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        Breaking Changes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li><strong>Configuration update:</strong> Database Browser access, connection/table restrictions, write permissions, pagination, filtering, value previews and record forms are now controlled by the new <code class="docs-inline-code">database_browser</code> block. Merge this block into your published <code class="docs-inline-code">config/wr-laravel-administration.php</code>; <code class="docs-inline-code">database_schema_viewer</code> remains separate and does not control the browser.</li>
+        <li>Browser-specific pagination and upsert settings take precedence over the general <code class="docs-inline-code">browse.pagination</code> and <code class="docs-inline-code">upsert</code> settings. The <code class="docs-inline-code">null</code> defaults retain inheritance. Full-page saves still return to the table by default; page and modal save behavior now use the actual form being rendered.</li>
+        <li>MySQL and MariaDB record URLs can no longer target a database other than the connection's configured database. Define a separate allowed Laravel connection for each additional database you need to browse.</li>
+    </ul>
+    <h3 class="docs-subheading mt-6">Configuration Migration</h3>
+    <p class="docs-body">
+        Add the following block alongside <code class="docs-inline-code">database_schema_viewer</code>.
+        Preserve your application's existing configuration rather than force-republishing the entire file.
+        These defaults retain developer-only access and existing write permissions; choose allowed connections,
+        exclusions and read-only settings explicitly when restricting access to sensitive or production data.
+    </p>
+    <div class="docs-code-block mb-6">
+        <pre><code>'database_browser' => [
+    'enabled' => null,
+    'connections' => null,
+    'default_connection' => null,
+    'excluded_tables' => [
+        '*' => [],
+    ],
+    'read_only' => false,
+    'read_only_connections' => [],
+    'permissions' => [
+        'create' => true,
+        'edit' => true,
+        'delete' => true,
+    ],
+    'pagination' => [
+        'default' => null,
+        'perPage' => null,
+        'max_per_page' => 1000,
+    ],
+    'filters' => [
+        'enable_all_fields' => true,
+        'max_filters' => 50,
+        'max_value_length' => 10000,
+    ],
+    'display' => [
+        'value_max_length' => 300,
+        'tooltip_max_length' => 1000,
+    ],
+    'upsert' => [
+        'mode' => null,
+        'page' => [
+            'return_to_browse_after_save' => true,
+        ],
+        'modal' => [
+            'size' => null,
+            'return_to_browse_after_save' => null,
+        ],
+    ],
+],</code></pre>
+    </div>
+    <p class="docs-body">
+        <code class="docs-inline-code">enabled</code> accepts a boolean, a WRLA-user-data callback, or
+        <code class="docs-inline-code">null</code> to inherit <code class="docs-inline-code">developer.enable</code>.
+        <code class="docs-inline-code">connections</code> accepts a list of Laravel connection names;
+        <code class="docs-inline-code">null</code> allows all configured connections and
+        <code class="docs-inline-code">[]</code> allows none. Table exclusions support bare or schema-qualified
+        wildcard patterns under <code class="docs-inline-code">*</code> and individual connection names.
+        Each write permission accepts a boolean or WRLA-user-data callback, but cannot override read-only mode
+        or connection/table restrictions. See the Configuration page for every setting and a restricted-access example.
+    </p>
+</div>
+
+<!-- Features -->
+<div class="docs-section">
+    <h2 class="docs-heading">New Features</h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>Added a Database Browser to Developer Tools. Access defaults to <code class="docs-inline-code">WRLAHelper::userIsDev()</code> and can be overridden with <code class="docs-inline-code">database_browser.enabled</code>. Access is checked on every Livewire request.</li>
+        <li>Browse reachable allowed connections, search table names, and view records with sortable columns, configurable pagination, and dynamic filters. Unavailable connections are reported without blocking the browser; MySQL and MariaDB table lists and record routes are scoped to the configured database.</li>
+        <li>Added an opt-in all-column filter, enabled by default in the Database Browser. Positive searches match any column; negative searches require every column to pass. Commas combine terms with AND, and pipes combine alternatives with OR, including terms across different columns.</li>
+        <li>Added <code class="docs-inline-code">ManageableModelDynamic</code> to infer browse columns, form fields, and schema-based validation from the selected table, including numeric, date, boolean, enum, and JSON fields.</li>
+        <li>Tables with a single-column primary key support viewing, creating, editing, and confirmed permanent deletion, including string keys. Tables without a primary key or with a composite primary key remain browse-only.</li>
+        <li>Record forms provide separate NULL and database-default controls, with generated, auto-increment, and binary fields read-only. Existing primary keys cannot be edited.</li>
+        <li>Record actions follow <code class="docs-inline-code">database_browser.upsert</code>, inheriting general upsert settings by default, with configured modal size, close-after-save behavior, loading feedback, and automatic table refresh after modal saves. Full-page routes remain available, including record links opened in a new tab.</li>
+        <li>Added connection allowlists, wildcard table exclusions, global and per-connection read-only modes, and independent create/edit/delete permissions. Restrictions also apply to direct URLs, modal actions, saves and deletes; unauthorized controls are hidden.</li>
+        <li>Added browser-specific page sizes with a maximum row cap, all-column-search control, filter count/value-length limits, cell-preview/tooltip lengths, and configurable page/modal return-after-save behavior.</li>
+    </ul>
+    <p class="docs-body mt-4">
+        <strong>Database Browser operations write directly to the database:</strong> they bypass application
+        model hooks, casts, soft deletes, and business validation. Schema-based validation and database constraints
+        still apply, and deletions are permanent.
+    </p>
+</div>
+
+<!-- Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">Changes &amp; Improvements</h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>Shared dynamic browse filters now accept supplied schema columns and initial filters, with optional all-column filtering disabled by default for existing manageable models.</li>
+        <li>Filter additions and removals now immediately update browse results, and numeric zero is no longer skipped as an empty filter value.</li>
+        <li>Numeric comparison filters now use the connection's query grammar to quote column names instead of hard-coded MySQL quoting.</li>
+        <li>Improved filter accessibility with unique input IDs, accessible labels, and remove-button tooltips, plus wrapping layouts for narrower screens.</li>
+        <li>Reduced admin content padding to give wide tables more usable space.</li>
+        <li>Page forms can now remain open after saving without inserting a duplicate record on the next save.</li>
+        <li>Expanded focused Database Browser regression coverage using disposable in-memory SQLite databases, including access restrictions, revoked write permissions, pagination/filter limits, modal behavior and cross-database URL rejection.</li>
+    </ul>
+</div>

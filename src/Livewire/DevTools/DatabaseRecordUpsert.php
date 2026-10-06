@@ -31,6 +31,7 @@ class DatabaseRecordUpsert extends DatabasePage
         $this->recordId = $record === null ? null : ManageableModelDynamic::decodeRecordKey($record);
         $this->inModal = $inModal;
         $this->readOnly = $readOnly || request()->routeIs('wrla.database.record.view');
+        abort_unless(WRLAHelper::databaseBrowserCan($this->readOnly ? 'view' : ($this->recordId === null ? 'create' : 'edit'), $connection, $table), 403);
         $model = $this->model();
         abort_unless($model->primaryKey !== null, 422);
 
@@ -45,6 +46,7 @@ class DatabaseRecordUpsert extends DatabasePage
 
     protected function model(): ManageableModelDynamic
     {
+        abort_unless(WRLAHelper::databaseBrowserTableAllowed($this->connection, $this->table), 404);
         return $this->dynamicModel ??= new ManageableModelDynamic($this->connection, $this->table, $this->recordId);
     }
 
@@ -60,13 +62,13 @@ class DatabaseRecordUpsert extends DatabasePage
 
     public function editRecord(): void
     {
-        abort_unless(WRLAHelper::userIsDev() && $this->inModal && $this->recordId !== null, 403);
+        abort_unless($this->inModal && $this->recordId !== null && WRLAHelper::databaseBrowserCan('edit', $this->connection, $this->table), 403);
         $this->readOnly = false;
     }
 
     public function save(): void
     {
-        abort_unless(WRLAHelper::userIsDev() && !$this->readOnly, 403);
+        abort_unless(!$this->readOnly && WRLAHelper::databaseBrowserCan($this->recordId === null ? 'create' : 'edit', $this->connection, $this->table), 403);
         $model = $this->model();
         foreach ($model->schemaColumns as $index => $column) {
             if ($column['nullable'] && ($this->nullValues[$index] ?? false)) {
@@ -82,7 +84,10 @@ class DatabaseRecordUpsert extends DatabasePage
             $model->applyValues($this->values, $this->useDefaults);
             $model->model()->save();
             WRLAHelper::pushAlert('success', 'Record saved.');
-            if ($this->inModal) {
+            $returnToBrowse = WRLAHelper::databaseBrowserUpsertOptions($this->inModal)->shouldReturnToBrowseAfterSave();
+            if (!$this->inModal && $returnToBrowse) {
+                $this->redirectRoute('wrla.database.table', ['connection' => $this->connection, 'table' => $this->table]);
+            } else {
                 $this->recordId = (string) $model->model()->getKey();
                 $this->dynamicModel = null;
                 $this->useDefaults = array_fill(0, count($model->schemaColumns), false);
@@ -92,12 +97,12 @@ class DatabaseRecordUpsert extends DatabasePage
                     $this->values[$index] = $binary && $value !== null ? '[binary]' : $value;
                     $this->nullValues[$index] = $value === null && $column['nullable'];
                 }
-                $this->dispatch('database-record-saved', connection: $this->connection, table: $this->table);
-                if (config('wr-laravel-administration.upsert.modal.return_to_browse_after_save', true)) {
-                    $this->dispatch('closeModal');
+                if ($this->inModal) {
+                    $this->dispatch('database-record-saved', connection: $this->connection, table: $this->table);
+                    if ($returnToBrowse) {
+                        $this->dispatch('closeModal');
+                    }
                 }
-            } else {
-                $this->redirectRoute('wrla.database.table', ['connection' => $this->connection, 'table' => $this->table]);
             }
         } catch (Throwable $exception) {
             report($exception);
@@ -111,6 +116,7 @@ class DatabaseRecordUpsert extends DatabasePage
         return view(WRLAHelper::getViewPath('livewire.dev-tools.database-record-upsert'), [
             'model' => $model,
             'manageableFields' => $model->getManageableFields(),
+            'canEdit' => WRLAHelper::databaseBrowserCan('edit', $this->connection, $this->table),
         ]);
     }
 }

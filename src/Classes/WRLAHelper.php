@@ -910,6 +910,83 @@ class WRLAHelper
         });
     }
 
+    public static function databaseBrowserEnabled(): bool
+    {
+        $enabled = config('wr-laravel-administration.database_browser.enabled');
+
+        return $enabled === null ? static::userIsDev() : static::resolveDeveloperToolsFlag($enabled);
+    }
+
+    public static function databaseBrowserConnections(): array
+    {
+        $configured = array_keys(config('database.connections', []));
+        $allowed = config('wr-laravel-administration.database_browser.connections');
+
+        return $allowed === null ? $configured : array_values(array_intersect((array) $allowed, $configured));
+    }
+
+    public static function databaseBrowserTableAllowed(string $connection, string $table): bool
+    {
+        if (!in_array($connection, static::databaseBrowserConnections(), true)) {
+            return false;
+        }
+
+        $excluded = config('wr-laravel-administration.database_browser.excluded_tables', []);
+        $patterns = array_merge($excluded['*'] ?? [], $excluded[$connection] ?? []);
+
+        return !\Illuminate\Support\Str::is($patterns, $table)
+            && !\Illuminate\Support\Str::is($patterns, \Illuminate\Support\Str::afterLast($table, '.'));
+    }
+
+    public static function databaseBrowserCan(string $action, string $connection, string $table): bool
+    {
+        if (!static::databaseBrowserEnabled() || !static::databaseBrowserTableAllowed($connection, $table)) {
+            return false;
+        }
+        if ($action === 'view') {
+            return true;
+        }
+        if (!in_array($action, ['create', 'edit', 'delete'], true)
+            || config('wr-laravel-administration.database_browser.read_only', false)
+            || in_array($connection, config('wr-laravel-administration.database_browser.read_only_connections', []), true)) {
+            return false;
+        }
+
+        return static::resolveDeveloperToolsFlag(config('wr-laravel-administration.database_browser.permissions.'.$action, true));
+    }
+
+    public static function databaseBrowserPageSizes(): array
+    {
+        $maximum = max(1, (int) config('wr-laravel-administration.database_browser.pagination.max_per_page', 1000));
+        $options = config('wr-laravel-administration.database_browser.pagination.perPage')
+            ?? config('wr-laravel-administration.browse.pagination.perPage', [20, 30, 50, 75, 100]);
+        $sizes = array_values(array_unique(array_filter(
+            array_map('intval', (array) $options),
+            fn (int $size) => $size > 0 && $size <= $maximum,
+        )));
+
+        return $sizes ?: [min(20, $maximum)];
+    }
+
+    public static function databaseBrowserUpsertOptions(?bool $inModal = null): UpsertOptions
+    {
+        $mode = config('wr-laravel-administration.database_browser.upsert.mode')
+            ?? config('wr-laravel-administration.upsert.mode', UpsertOptions::MODE_PAGE);
+        $modal = $inModal ?? ($mode === UpsertOptions::MODE_MODAL);
+        $returnToBrowse = $modal
+            ? (config('wr-laravel-administration.database_browser.upsert.modal.return_to_browse_after_save')
+                ?? config('wr-laravel-administration.upsert.modal.return_to_browse_after_save', true))
+            : (config('wr-laravel-administration.database_browser.upsert.page.return_to_browse_after_save', true)
+                ?? config('wr-laravel-administration.upsert.page.return_to_browse_after_save', false));
+
+        return new UpsertOptions(
+            $modal ? UpsertOptions::MODE_MODAL : UpsertOptions::MODE_PAGE,
+            $modal ? (config('wr-laravel-administration.database_browser.upsert.modal.size')
+                ?? config('wr-laravel-administration.upsert.modal.size', '6xl')) : null,
+            (bool) $returnToBrowse,
+        );
+    }
+
     /**
      * Whether the current user may access the Database Schema viewer.
      *

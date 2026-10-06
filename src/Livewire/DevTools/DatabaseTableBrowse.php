@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\On;
 use Livewire\WithPagination;
 use Throwable;
-use WebRegulate\LaravelAdministration\Classes\UpsertOptions;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageableModelDynamicBrowseFilters;
 
@@ -32,7 +31,11 @@ class DatabaseTableBrowse extends DatabasePage
         $this->table = $table;
         $model = $this->model();
         $this->orderBy = $model->primaryKey ?? $model->columnNames()[0];
-        $this->perPage = $this->pageSize((int) config('wr-laravel-administration.browse.pagination.default', 20));
+        $this->perPage = $this->pageSize((int) (config('wr-laravel-administration.database_browser.pagination.default')
+            ?? config('wr-laravel-administration.browse.pagination.default', 20)));
+        if (!config('wr-laravel-administration.database_browser.filters.enable_all_fields', true)) {
+            $this->dynamicFilterInputs = [];
+        }
     }
 
     protected function getPageTitle(): ?string
@@ -42,9 +45,10 @@ class DatabaseTableBrowse extends DatabasePage
 
     public function openRecord(string $action, ?string $record = null): void
     {
+        abort_unless(WRLAHelper::databaseBrowserCan($action, $this->connection, $this->table), 403);
         abort_unless(in_array($action, ['create', 'view', 'edit'], true) && $this->model()->primaryKey !== null, 422);
         abort_unless($action === 'create' ? $record === null : $record !== null, 422);
-        $options = UpsertOptions::fromConfig();
+        $options = WRLAHelper::databaseBrowserUpsertOptions();
         $this->dispatch('openModal', 'wrla.dev-tools.database-record-modal', [
             'connection' => $this->connection,
             'table' => $this->table,
@@ -81,8 +85,8 @@ class DatabaseTableBrowse extends DatabasePage
 
     protected function pageSize(int $size): int
     {
-        $options = array_map('intval', config('wr-laravel-administration.browse.pagination.perPage', [20, 30, 50, 75, 100]));
-        return in_array($size, $options, true) ? $size : ($options[0] ?? 20);
+        $options = WRLAHelper::databaseBrowserPageSizes();
+        return in_array($size, $options, true) ? $size : $options[0];
     }
 
     public function reOrderAction(string $column): void
@@ -110,17 +114,22 @@ class DatabaseTableBrowse extends DatabasePage
 
     protected function filterRules(): array
     {
+        $columns = $this->model()->columnNames();
+        if (config('wr-laravel-administration.database_browser.filters.enable_all_fields', true)) {
+            $columns[] = '*';
+        }
+
         return [
-            'dynamicFilterInputs' => ['array', 'max:50'],
-            'dynamicFilterInputs.*.field' => ['required', \Illuminate\Validation\Rule::in(['*', ...$this->model()->columnNames()])],
+            'dynamicFilterInputs' => ['array', 'max:'.max(1, (int) config('wr-laravel-administration.database_browser.filters.max_filters', 50))],
+            'dynamicFilterInputs.*.field' => ['required', \Illuminate\Validation\Rule::in($columns)],
             'dynamicFilterInputs.*.operator' => ['required', \Illuminate\Validation\Rule::in(['contains', 'not contains', 'like', 'not like', '=', '!=', '>', '<', '>=', '<=', 'empty', 'not empty'])],
-            'dynamicFilterInputs.*.value' => ['nullable', 'string', 'max:10000'],
+            'dynamicFilterInputs.*.value' => ['nullable', 'string', 'max:'.max(1, (int) config('wr-laravel-administration.database_browser.filters.max_value_length', 10000))],
         ];
     }
 
     public function deleteRecord(): void
     {
-        abort_unless(WRLAHelper::userIsDev(), 403);
+        abort_unless(WRLAHelper::databaseBrowserCan('delete', $this->connection, $this->table), 403);
         abort_unless($this->pendingDelete !== null && $this->model()->primaryKey !== null, 422);
         try {
             $record = $this->model()->query()->findOrFail($this->pendingDelete);
@@ -140,7 +149,14 @@ class DatabaseTableBrowse extends DatabasePage
         return view(WRLAHelper::getViewPath('livewire.dev-tools.database-table-browse'), [
             'model' => $model,
             'models' => $models,
-            'useModals' => UpsertOptions::fromConfig()->isModal(),
+            'useModals' => WRLAHelper::databaseBrowserUpsertOptions()->isModal(),
+            'pageSizes' => WRLAHelper::databaseBrowserPageSizes(),
+            'enableAllFields' => (bool) config('wr-laravel-administration.database_browser.filters.enable_all_fields', true),
+            'valueMaxLength' => max(1, (int) config('wr-laravel-administration.database_browser.display.value_max_length', 300)),
+            'tooltipMaxLength' => max(1, (int) config('wr-laravel-administration.database_browser.display.tooltip_max_length', 1000)),
+            'canCreate' => WRLAHelper::databaseBrowserCan('create', $this->connection, $this->table),
+            'canEdit' => WRLAHelper::databaseBrowserCan('edit', $this->connection, $this->table),
+            'canDelete' => WRLAHelper::databaseBrowserCan('delete', $this->connection, $this->table),
         ]);
     }
 }

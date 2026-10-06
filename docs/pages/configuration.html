@@ -502,6 +502,68 @@
         </tbody>
     </table>
 
+    <h3 class="docs-subheading">Database Browser</h3>
+    <p class="docs-body">
+        Configure the connection, table and raw-record browser under <code class="docs-inline-code">database_browser</code>.
+        Access defaults to <code class="docs-inline-code">developer.enable</code>, independently of the schema diagram viewer.
+        Connection and table restrictions apply to direct URLs and Livewire actions, not just the pickers.
+        MySQL and MariaDB connections are restricted to their configured database.
+    </p>
+    <table class="docs-table mb-6">
+        <thead>
+            <tr><th style="width:35%">Key</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code class="docs-inline-code">database_browser.enabled</code></td><td>Boolean or callback receiving WRLA user data. Default: <code class="docs-inline-code">null</code>, inheriting developer access. Callbacks deny access when user data is unavailable.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.connections</code></td><td>Allowed connection names from Laravel's database config. <code class="docs-inline-code">null</code> allows all configured connections; <code class="docs-inline-code">[]</code> allows none. Only allowed connections are probed.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.default_connection</code></td><td>Initial connection. Default: <code class="docs-inline-code">null</code>, using Laravel's default connection or the first allowed, available connection.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.excluded_tables</code></td><td>Map of connection names to excluded table names or wildcard patterns. The <code class="docs-inline-code">*</code> entry applies globally; connection-specific exclusions are added to it. Matches bare and schema-qualified table names. Default: no exclusions.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.read_only</code></td><td>Disable all create, edit and delete operations while keeping browse and view access. Default: <code class="docs-inline-code">false</code>.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.read_only_connections</code></td><td>Connection names where writes must remain disabled. Default: <code class="docs-inline-code">[]</code>.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.permissions.create</code><br><code class="docs-inline-code">database_browser.permissions.edit</code><br><code class="docs-inline-code">database_browser.permissions.delete</code></td><td>Independent boolean or WRLA-user-data callback permissions. Each defaults to <code class="docs-inline-code">true</code>, but cannot override access restrictions or read-only mode. Permissions are rechecked before writes, including switching a viewed record into edit mode.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.pagination.default</code><br><code class="docs-inline-code">database_browser.pagination.perPage</code></td><td>Default page size and selectable sizes. Both default to <code class="docs-inline-code">null</code>, inheriting the corresponding <code class="docs-inline-code">browse.pagination</code> setting. Invalid sizes are discarded and client-supplied sizes must be in the permitted list.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.pagination.max_per_page</code></td><td>Upper bound for permitted page sizes. Default: <code class="docs-inline-code">1000</code>. If no configured sizes remain, a bounded fallback is used.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.filters.enable_all_fields</code></td><td>Allow the All columns filter and seed an empty all-column search. Default: <code class="docs-inline-code">true</code>. When disabled, wildcard filters are also rejected server-side.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.filters.max_filters</code><br><code class="docs-inline-code">database_browser.filters.max_value_length</code></td><td>Positive limits on filter count and characters per search value. Defaults: <code class="docs-inline-code">50</code> and <code class="docs-inline-code">10000</code>.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.display.value_max_length</code><br><code class="docs-inline-code">database_browser.display.tooltip_max_length</code></td><td>Positive character limits for cell previews and hover text. Defaults: <code class="docs-inline-code">300</code> and <code class="docs-inline-code">1000</code>. Record views retain full values; these limits do not hide sensitive data.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.upsert.mode</code></td><td><code class="docs-inline-code">page</code> or <code class="docs-inline-code">modal</code>. Default: <code class="docs-inline-code">null</code>, inheriting the general upsert mode.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.upsert.page.return_to_browse_after_save</code></td><td>Redirect back to the table after a page save. Default: <code class="docs-inline-code">true</code>, preserving existing browser behavior. Set <code class="docs-inline-code">false</code> to stay on the saved record, or <code class="docs-inline-code">null</code> to inherit the general page setting.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.upsert.modal.size</code><br><code class="docs-inline-code">database_browser.upsert.modal.return_to_browse_after_save</code></td><td>Modal width key (<code class="docs-inline-code">sm</code> through <code class="docs-inline-code">7xl</code>) and whether saving closes the modal. Both default to <code class="docs-inline-code">null</code>, inheriting general modal settings. Modal saves refresh the table whether or not the modal closes.</td></tr>
+        </tbody>
+    </table>
+    <p class="docs-body">
+        The browser operates on raw records, not application-specific Eloquent models. Application-model observers,
+        casts, soft deletes and business validation are not applied; deletions are permanent. Database constraints
+        still apply, and tables without a single-column primary key remain browse-only. Use read-only mode or a
+        database account with restricted grants when write access is not required.
+    </p>
+    <div class="docs-code-block mb-6">
+        <pre><code>'database_browser' => [
+    'enabled' => null,
+    'connections' => ['mysql', 'reporting'],
+    'default_connection' => 'mysql',
+    'excluded_tables' => [
+        '*' => ['password_reset_tokens', 'sessions'],
+        'mysql' => ['audit_*'],
+    ],
+    'read_only_connections' => ['reporting'],
+    'permissions' => [
+        'create' => false,
+        'edit' => fn($wrlaUserData) => $wrlaUserData?->isMaster() ?? false,
+        'delete' => false,
+    ],
+    'pagination' => [
+        'default' => 50,
+        'perPage' => [20, 50, 100],
+        'max_per_page' => 100,
+    ],
+    'upsert' => [
+        'mode' => 'modal',
+        'modal' => ['size' => '6xl', 'return_to_browse_after_save' => true],
+    ],
+]</code></pre>
+    </div>
+
     <!-- Log Viewer -->
     <h3 class="docs-subheading">Log Viewer</h3>
     <table class="docs-table">

@@ -22,11 +22,16 @@ class DatabaseRecordModal extends ModalComponent
 
     public function boot(): void
     {
-        abort_unless(WRLAHelper::userIsDev(), 403);
+        abort_unless(WRLAHelper::databaseBrowserEnabled(), 403);
+        if (isset($this->connection, $this->table)) {
+            abort_unless(WRLAHelper::databaseBrowserTableAllowed($this->connection, $this->table), 404);
+        }
     }
 
     public function mount(string $connection, string $table, ?string $record = null, bool $readOnly = false): void
     {
+        abort_unless(WRLAHelper::databaseBrowserTableAllowed($connection, $table), 404);
+        abort_unless(WRLAHelper::databaseBrowserCan($readOnly ? 'view' : ($record === null ? 'create' : 'edit'), $connection, $table), 403);
         $this->connection = $connection;
         $this->table = $table;
         $this->record = $record;
@@ -36,6 +41,7 @@ class DatabaseRecordModal extends ModalComponent
 
     public function render()
     {
+        abort_unless(WRLAHelper::databaseBrowserCan($this->readOnly ? 'view' : ($this->record === null ? 'create' : 'edit'), $this->connection, $this->table), 403);
         return view(WRLAHelper::getViewPath('livewire.dev-tools.database-record-modal'));
     }
 }
