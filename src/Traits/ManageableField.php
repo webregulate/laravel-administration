@@ -236,6 +236,10 @@ trait ManageableField
             $value = $manageableModel?->model()->{$column};
         }
 
+        if ($value instanceof \BackedEnum) {
+            $value = $value->value;
+        }
+
         $valueIsArray = is_array($value);
         if($valueIsArray) {
             $value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

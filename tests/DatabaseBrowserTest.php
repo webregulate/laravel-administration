@@ -73,6 +73,44 @@ class DatabaseBrowserTest extends TestCase
         }
     }
 
+    public function test_fields_accept_backed_enum_casts_and_tags_preserve_plain_values(): void
+    {
+        ManageableModelDynamic::register();
+        ManageableModelDynamic::setStaticOption('tableData', [
+            (object) ['Field' => 'notes', 'Default' => null],
+        ]);
+
+        foreach (\WebRegulate\LaravelAdministration\Enums\PageType::cases() as $status) {
+            foreach ([
+                \WebRegulate\LaravelAdministration\Classes\ManageableFields\Tags::class,
+                \WebRegulate\LaravelAdministration\Classes\ManageableFields\Text::class,
+            ] as $fieldClass) {
+                $manageableModel = new ManageableModelDynamic('browser_a', 'main.records');
+                $manageableModel->model()->mergeCasts(['notes' => \WebRegulate\LaravelAdministration\Enums\PageType::class]);
+                $manageableModel->model()->notes = $status;
+
+                $field = $fieldClass::make($manageableModel, 'notes');
+
+                $this->assertSame($status->value, $field->getValue());
+                $this->assertSame($status, $manageableModel->model()->notes);
+            }
+        }
+
+        foreach (['gocardless', null] as $value) {
+            $manageableModel = new ManageableModelDynamic('browser_a', 'main.records');
+            $manageableModel->model()->notes = $value;
+            $field = \WebRegulate\LaravelAdministration\Classes\ManageableFields\Tags::make(
+                $manageableModel,
+                'notes',
+                ['maxTags' => 1, 'commonTags' => ['gocardless']],
+            );
+
+            $this->assertSame($value ?? '', $field->getValue());
+            $this->assertSame(1, $field->options['maxTags']);
+            $this->assertSame(['gocardless'], $field->options['commonTags']);
+        }
+    }
+
     public function test_dynamic_model_preserves_keys_and_connection_when_hydrated(): void
     {
         $model = new ManageableModelDynamic('browser_a', 'main.records');

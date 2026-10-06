@@ -9,14 +9,16 @@ use WebRegulate\LaravelAdministration\Traits\ManageableField;
 
 class Tags
 {
-    use ManageableField;
+    use ManageableField {
+        make as protected makeBase;
+    }
 
     /**
      * Make method (can be used in any class that extends FormComponent).
      */
     public static function make(?ManageableModel $manageableModel = null, ?string $column = null, ?array $options = null): static
     {
-        $manageableField = new static($column, $manageableModel?->model()->{$column}, $manageableModel);
+        $manageableField = static::makeBase($manageableModel, $column);
 
         $manageableField->setOptions(array_merge([
             'commonTags' => [],
