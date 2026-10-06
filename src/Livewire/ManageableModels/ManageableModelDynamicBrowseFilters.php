@@ -4,6 +4,7 @@ namespace WebRegulate\LaravelAdministration\Livewire\ManageableModels;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use WebRegulate\LaravelAdministration\Classes\BrowseFilter;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\Text;
@@ -16,6 +17,12 @@ class ManageableModelDynamicBrowseFilters extends Component
      * Manageable model class
      */
     public string $manageableModelClass;
+
+    #[Locked]
+    public ?array $schemaColumns = null;
+
+    #[Locked]
+    public bool $enableAllFields = false;
 
     /**
      * Browse filter inputs
@@ -42,10 +49,14 @@ class ManageableModelDynamicBrowseFilters extends Component
     /**
      * Mount the browse filters for the passed manageable model class
      */
-    public function mount(string $manageableModelClass)
+    public function mount(string $manageableModelClass = '', ?array $schemaColumns = null, bool $enableAllFields = false, ?array $defaultDynamicFilters = null)
     {
         $this->manageableModelClass = $manageableModelClass;
-        $this->browseFilterInputs = ManageableModel::getStaticOption($manageableModelClass, 'browse.defaultDynamicFilters');
+        $this->schemaColumns = $schemaColumns;
+        $this->enableAllFields = $enableAllFields;
+        $this->browseFilterInputs = $defaultDynamicFilters ?? ($schemaColumns === null
+            ? ManageableModel::getStaticOption($manageableModelClass, 'browse.defaultDynamicFilters')
+            : []);
 
         // If type or operator missing from any filter, set default values
         foreach ($this->browseFilterInputs as $key => $item) {
@@ -64,8 +75,11 @@ class ManageableModelDynamicBrowseFilters extends Component
      */
     public function render()
     {
-        $tableColumns = $this->manageableModelClass::getTableColumns();
+        $tableColumns = $this->schemaColumns ?? $this->manageableModelClass::getTableColumns();
         $tableColumns = array_combine($tableColumns, $tableColumns);
+        if ($this->enableAllFields) {
+            $tableColumns = ['*' => 'All columns'] + $tableColumns;
+        }
 
         // Remember filters - Temporarily disabled
         // $rememberFilters = $this->manageableModelClass::getStaticOption($this->manageableModelClass, 'rememberFilters');
@@ -108,6 +122,8 @@ class ManageableModelDynamicBrowseFilters extends Component
             }
 
             $dynamicBrowseFilter->field->setAttribute('wire:model.live.debounce.400ms', "browseFilterInputs.$key.value");
+            $dynamicBrowseFilter->field->setAttribute('id', "wrla-filter-value-{$this->getId()}-$key");
+            $dynamicBrowseFilter->field->setAttribute('aria-label', 'Filter value');
             $items[] = $dynamicBrowseFilter;
         }
 
@@ -130,6 +146,30 @@ class ManageableModelDynamicBrowseFilters extends Component
                 'data-lpignore' => 'true',
             ])
             ->browseFilterApply(function (Builder $query, $table, $columns, $value) use ($item) {
+                if ($item['field'] === '*') {
+                    $boolean = in_array($item['operator'], ['not contains', 'not like', '!=', 'empty'], true) ? 'and' : 'or';
+                    return $query->where(function ($query) use ($table, $columns, $value, $item, $boolean): void {
+                        foreach (explode('|', $value) as $orValue) {
+                            $query->orWhere(function ($query) use ($table, $columns, $orValue, $item, $boolean): void {
+                                foreach (explode(',', $orValue) as $andValue) {
+                                    $andValue = trim($andValue);
+                                    if ($andValue === '' && ! in_array($item['operator'], ['empty', 'not empty'], true)) {
+                                        continue;
+                                    }
+                                    $query->where(function ($query) use ($table, $columns, $andValue, $item, $boolean): void {
+                                        foreach ($columns as $column) {
+                                            $query->where(function ($query) use ($table, $columns, $column, $andValue, $item): void {
+                                                static::buildBrowseFilter(array_replace($item, ['field' => $column]))
+                                                    ->apply($query, $table, $columns, $andValue);
+                                            }, null, null, $boolean);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+
                 // Split value by | for OR condition
                 $orValues = explode('|', $value);
 
@@ -142,7 +182,7 @@ class ManageableModelDynamicBrowseFilters extends Component
 
                         $query->orWhere(function ($query) use ($andValues, $table, $item): void {
                             // If $andValues is empty, pass array with empty string
-                            if (count($andValues) === 1 && empty($andValues[0])) {
+                            if (count($andValues) === 1 && $andValues[0] === '') {
                                 $andValues = [''];
                             }
 
@@ -183,7 +223,7 @@ class ManageableModelDynamicBrowseFilters extends Component
                                 }
 
                                 // If value empty, skip
-                                if (empty($andValue)) {
+                                if ($andValue === '') {
                                     return;
                                 }
 
@@ -197,7 +237,8 @@ class ManageableModelDynamicBrowseFilters extends Component
                                 // If operator is a comparison type, cast the column/field as float in the query
                                 if (in_array($operator, ['>', '<', '>=', '<='])) {
                                     // Use DB::raw to cast the field as float for numeric comparison
-                                    $query->where(DB::raw("CAST(`{$table}`.`{$item['field']}` AS DECIMAL(30,10))"), $operator, (float) $andValue);
+                                    $column = $query->getConnection()->getQueryGrammar()->wrap($table.'.'.$item['field']);
+                                    $query->where(DB::raw("CAST($column AS DECIMAL(30,10))"), $operator, (float) $andValue);
                                     return;
                                 }
 
@@ -227,7 +268,10 @@ class ManageableModelDynamicBrowseFilters extends Component
      */
     public function getNextAvailableColumn(): string
     {
-        $columns = $this->manageableModelClass::getTableColumns();
+        $columns = $this->schemaColumns ?? $this->manageableModelClass::getTableColumns();
+        if ($this->enableAllFields) {
+            array_unshift($columns, '*');
+        }
 
         $usedColumns = array_map(fn ($item) => $item['field'], $this->browseFilterInputs);
 
@@ -254,6 +298,7 @@ class ManageableModelDynamicBrowseFilters extends Component
             'operator' => 'contains',
             'value' => '',
         ];
+        $this->updatedBrowseFilterInputs();
     }
 
     /**
@@ -263,5 +308,6 @@ class ManageableModelDynamicBrowseFilters extends Component
     {
         unset($this->browseFilterInputs[$index]);
         $this->browseFilterInputs = array_values($this->browseFilterInputs);
+        $this->updatedBrowseFilterInputs();
     }
 }

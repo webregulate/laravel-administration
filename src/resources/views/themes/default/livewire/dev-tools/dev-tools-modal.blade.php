@@ -16,14 +16,21 @@
         $wrlaHelper = \WebRegulate\LaravelAdministration\Classes\WRLAHelper::class;
         $showDatabaseSchema = $wrlaHelper::databaseSchemaViewerEnabled() && \Illuminate\Support\Facades\Route::has('wrla.database-schema');
         $showScheduler = $wrlaHelper::schedulerEnabled() && \Illuminate\Support\Facades\Route::has('wrla.scheduler');
+        $showDatabaseBrowser = $wrlaHelper::userIsDev() && \Illuminate\Support\Facades\Route::has('wrla.database.tables');
     @endphp
 
-    @if($showDatabaseSchema || $showScheduler)
+    @if($showDatabaseSchema || $showScheduler || $showDatabaseBrowser)
         <div class="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4">
             <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2 mb-3">
                 <i class="fa-solid fa-window-restore text-sky-600"></i> Dev Pages
             </h3>
             <div class="flex flex-wrap gap-2">
+                @if($showDatabaseBrowser)
+                    <a href="{{ route('wrla.database.tables') }}"
+                        class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold px-3 py-1.5 rounded transition-colors">
+                        <i class="fa-solid fa-database text-xs"></i> Database Browser
+                    </a>
+                @endif
                 @if($showDatabaseSchema)
                     <a href="{{ route('wrla.database-schema') }}"
                         class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold px-3 py-1.5 rounded transition-colors">

@@ -284,6 +284,10 @@ class WRLAServiceProvider extends ServiceProvider
         Livewire::component('wrla.notifications-widget', NotificationsWidget::class);
         Livewire::component('wrla.import-data-modal', ImportDataModal::class);
         Livewire::component('wrla.dev-tools.dev-tools-modal', DevToolsModal::class);
+        Livewire::component('wrla.dev-tools.database-tables', \WebRegulate\LaravelAdministration\Livewire\DevTools\DatabaseTables::class);
+        Livewire::component('wrla.dev-tools.database-table-browse', \WebRegulate\LaravelAdministration\Livewire\DevTools\DatabaseTableBrowse::class);
+        Livewire::component('wrla.dev-tools.database-record-upsert', \WebRegulate\LaravelAdministration\Livewire\DevTools\DatabaseRecordUpsert::class);
+        Livewire::component('wrla.dev-tools.database-record-modal', \WebRegulate\LaravelAdministration\Livewire\DevTools\DatabaseRecordModal::class);
         Livewire::component('wrla.wire-elements-modal', WireElementsModal::class);
         Livewire::component('wrla.manageable-fields.searchable-value', SearchableValue::class);
         Livewire::component('wrla.manageable-fields.search-select', SearchSelect::class);

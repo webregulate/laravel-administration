@@ -83,6 +83,12 @@ Route::prefix(config('wr-laravel-administration.base_url', 'wr-admin'))
         // Manage account
         Route::get('manage-account', ManageAccount::class)->name('manage-account');
 
+        Route::get('dev-tools/database', \WebRegulate\LaravelAdministration\Livewire\DevTools\DatabaseTables::class)->name('database.tables');
+        Route::get('dev-tools/database/{connection}/{table}', \WebRegulate\LaravelAdministration\Livewire\DevTools\DatabaseTableBrowse::class)->name('database.table');
+        Route::get('dev-tools/database/{connection}/{table}/create', \WebRegulate\LaravelAdministration\Livewire\DevTools\DatabaseRecordUpsert::class)->name('database.record.create');
+        Route::get('dev-tools/database/{connection}/{table}/view/{record}', \WebRegulate\LaravelAdministration\Livewire\DevTools\DatabaseRecordUpsert::class)->name('database.record.view');
+        Route::get('dev-tools/database/{connection}/{table}/edit/{record}', \WebRegulate\LaravelAdministration\Livewire\DevTools\DatabaseRecordUpsert::class)->name('database.record.edit');
+
         // Manageable model browse & upsert
         Route::get('browse/{modelUrlAlias}', ManageableModelBrowse::class)->name('manageable-models.browse');
         Route::get('reorder/{modelUrlAlias}', ManageableModelReorder::class)->name('manageable-models.reorder');

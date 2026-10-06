@@ -137,6 +137,16 @@
         }));
     };
 
+    window.wrlaOpenDatabaseRecordModal = function(buttonElement, openRecord) {
+        window.buttonSignifyLoading(buttonElement, () => new Promise((resolve) => {
+            const stopListening = Livewire.on('dev-tools.database-record-modal.opened', () => {
+                stopListening();
+                resolve();
+            });
+            openRecord();
+        }));
+    };
+
     window.wrlaOpenReorderModal = function(buttonElement, data) {
         window.buttonSignifyLoading(buttonElement, () => new Promise((resolve) => {
             Livewire.dispatch('openModal', {

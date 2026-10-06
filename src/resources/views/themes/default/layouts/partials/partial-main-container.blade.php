@@ -69,7 +69,7 @@
     {{-- Content container --}}
     <div class="flex flex-row w-full h-full">
         {{-- Yield content --}}
-        <div class="relative w-full h-full flex flex-col pt-8 pl-3 pr-2 lg:pl-14 lg:pr-10">
+        <div class="relative w-full h-full flex flex-col pt-8 px-2 md:px-3 lg:pl-8 lg:pr-6">
             @yield('content')
         </div>
     </div>
