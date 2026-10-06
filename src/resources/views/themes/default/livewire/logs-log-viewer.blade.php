@@ -1,13 +1,7 @@
-<div class="h-full">
+<div class="h-full -mt-7 -mx-1 md:-mx-2 lg:-ml-7 lg:-mr-5">
     <iframe
         wire:ignore
         src="{{ $src }}"
-        class="relative border-0"
-        style="
-            left: -50px;
-            top: -30px;
-            width: calc(100% + 87px);
-            height: calc(100% + 0px);
-        "
+        class="block w-full h-full border-0"
     ></iframe>
 </div>
