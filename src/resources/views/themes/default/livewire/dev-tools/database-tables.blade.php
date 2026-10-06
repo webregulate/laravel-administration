@@ -57,12 +57,12 @@
             </tr></thead>
             <tbody>
                 @forelse($tables as $table)
-                    <tr wire:key="database-table-{{ $connection }}-{{ $table['schema_qualified_name'] }}" class="odd:bg-slate-100 dark:odd:bg-slate-800 text-sm">
+                    <tr wire:key="database-table-{{ $connection }}-{{ $table['schema_qualified_name'] }}" class="bg-white dark:bg-slate-900 odd:bg-slate-100 dark:odd:bg-slate-800 text-sm">
                         <td class="px-3 py-2 break-all">
                             <a class="hover:underline text-primary-600 font-semibold" href="{{ route('wrla.database.table', ['connection' => $connection, 'table' => $table['schema_qualified_name']]) }}">{{ $table['schema_qualified_name'] }}</a>
                         </td>
                         <td class="px-3 py-2 whitespace-nowrap">{{ $table['size'] === null ? '-' : number_format($table['size'] / 1024, 1).' KB' }}</td>
-                        <td class="sticky right-0 z-10 px-3 py-2 text-right {{ $loop->odd ? 'bg-slate-100 dark:bg-slate-800' : 'bg-white dark:bg-slate-900' }}">
+                        <td class="sticky right-0 z-10 px-3 py-2 text-right" style="background-color: inherit;">
                             <a href="{{ route('wrla.database.table', ['connection' => $connection, 'table' => $table['schema_qualified_name']]) }}" title="Browse {{ $table['schema_qualified_name'] }}" aria-label="Browse {{ $table['schema_qualified_name'] }}" class="inline-flex w-8 h-8 items-center justify-center text-primary-600 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md"><i class="fa-solid fa-arrow-right"></i></a>
                         </td>
                     </tr>
