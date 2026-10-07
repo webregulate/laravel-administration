@@ -263,6 +263,17 @@
                     </ul>
                 </td>
             </tr>
+            <tr>
+                <td><code class="docs-inline-code">developer.commands</code></td>
+                <td>
+                    Commands shown in the developer tools modal. Each entry accepts <code class="docs-inline-code">command</code>,
+                    <code class="docs-inline-code">label</code>, and a boolean or callback <code class="docs-inline-code">condition</code>.
+                    Set <code class="docs-inline-code">refresh</code> to <code class="docs-inline-code">true</code> to offer a page refresh after completion.
+                    Defaults include clearing caches and <code class="docs-inline-code">php artisan wrla:update --no-interaction</code>,
+                    which automatically runs <code class="docs-inline-code">php artisan optimize:clear</code> after a successful Composer update.
+                    Publishing a custom command list replaces the defaults.
+                </td>
+            </tr>
         </tbody>
     </table>
 

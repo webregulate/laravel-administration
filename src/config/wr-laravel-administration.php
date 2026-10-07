@@ -127,6 +127,12 @@ return [
         // Commands that can be run from the developer tools modal, with optional arguments.
         'commands' => [
             [
+                'command' => 'php artisan wrla:update --no-interaction',
+                'label' => 'Update WRLA',
+                'condition' => true,
+                'refresh' => true,
+            ],
+            [
                 'command' => 'php artisan optimize:clear',
                 'label' => 'Clear All Cache',
                 'condition' => true,

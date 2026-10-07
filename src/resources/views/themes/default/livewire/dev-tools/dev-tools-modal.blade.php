@@ -11,7 +11,6 @@
         <div wire:poll.1000ms="pollOutput"></div>
     @endif
 
-    {{-- Dev pages: quick links to full-page dev tools (schema viewer, scheduler, ...) --}}
     @php
         $wrlaHelper = \WebRegulate\LaravelAdministration\Classes\WRLAHelper::class;
         $showDatabaseSchema = $wrlaHelper::databaseSchemaViewerEnabled() && \Illuminate\Support\Facades\Route::has('wrla.database-schema');
@@ -19,146 +18,117 @@
         $showDatabaseBrowser = $wrlaHelper::databaseBrowserEnabled() && \Illuminate\Support\Facades\Route::has('wrla.database.tables');
     @endphp
 
+    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-3 min-w-0">
+            <i class="fa-solid fa-box text-emerald-600 dark:text-emerald-400" aria-hidden="true"></i>
+            <div class="min-w-0">
+                <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span>WRLA Package</span>
+                    @if($composerUpdateAvailable === true)
+                        <span class="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400" role="status">
+                            <i class="fa-solid fa-circle-arrow-up" aria-hidden="true"></i> Update available
+                        </span>
+                    @elseif($composerUpdateAvailable === false)
+                        <span class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400" role="status">
+                            <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Up to date
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400" role="status">
+                            <i class="fa-solid fa-circle-question" aria-hidden="true"></i> Unable to check updates
+                        </span>
+                    @endif
+                </h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">
+                    Installed version <span class="font-mono text-slate-700 dark:text-slate-200 break-all">{{ $currentVersion ?? 'Unknown' }}</span>
+                </p>
+            </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+            <a href="https://webregulate.github.io/laravel-administration/" target="_blank" rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 text-sky-600 dark:text-sky-400 hover:underline">
+                <i class="fa-solid fa-book-open text-xs" aria-hidden="true"></i> Documentation
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
+            </a>
+            <a href="https://webregulate.github.io/laravel-administration/#versions/versions.html" target="_blank" rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 text-sky-600 dark:text-sky-400 hover:underline">
+                <i class="fa-solid fa-clock-rotate-left text-xs" aria-hidden="true"></i> Version History
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
+            </a>
+        </div>
+    </div>
+
     @if($showDatabaseSchema || $showScheduler || $showDatabaseBrowser)
-        <div class="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4">
+        <div class="mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">
             <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2 mb-3">
-                <i class="fa-solid fa-window-restore text-sky-600"></i> Dev Pages
+                <i class="fa-solid fa-magnifying-glass text-sky-600" aria-hidden="true"></i> Inspect &amp; Monitor
             </h3>
             <div class="flex flex-wrap gap-2">
                 @if($showDatabaseBrowser)
                     <a href="{{ route('wrla.database.tables') }}"
-                        class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold px-3 py-1.5 rounded transition-colors">
-                        <i class="fa-solid fa-database text-xs"></i> Database Browser
+                        class="inline-flex items-center gap-2 border border-primary-500 bg-transparent hover:border-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 text-slate-700 dark:text-slate-200 text-sm font-medium px-3 py-1.5 rounded transition-colors">
+                        <i class="fa-solid fa-database text-xs text-primary-500" aria-hidden="true"></i> Database Browser
                     </a>
                 @endif
                 @if($showDatabaseSchema)
                     <a href="{{ route('wrla.database-schema') }}"
-                        class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold px-3 py-1.5 rounded transition-colors">
-                        <i class="fa-solid fa-diagram-project text-xs"></i> Database Schema
+                        class="inline-flex items-center gap-2 border border-primary-500 bg-transparent hover:border-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 text-slate-700 dark:text-slate-200 text-sm font-medium px-3 py-1.5 rounded transition-colors">
+                        <i class="fa-solid fa-diagram-project text-xs text-primary-500" aria-hidden="true"></i> Database Schema
                     </a>
                 @endif
                 @if($showScheduler)
                     <a href="{{ route('wrla.scheduler') }}"
-                        class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold px-3 py-1.5 rounded transition-colors">
-                        <i class="fa-solid fa-clock-rotate-left text-xs"></i> Scheduler &amp; Jobs
+                        class="inline-flex items-center gap-2 border border-primary-500 bg-transparent hover:border-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 text-slate-700 dark:text-slate-200 text-sm font-medium px-3 py-1.5 rounded transition-colors">
+                        <i class="fa-solid fa-clock-rotate-left text-xs text-primary-500" aria-hidden="true"></i> Scheduler &amp; Jobs
                     </a>
                 @endif
             </div>
         </div>
     @endif
 
-    {{-- Actions: two panels side-by-side (WRLA updates + commands) --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        {{-- WRLA package updates --}}
-        <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4 flex flex-col">
-            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2 mb-1">
-                <i class="fa-solid fa-bolt text-sky-600"></i> WRLA Package Updates
-            </h3>
-            <p class="text-sm text-slate-600 dark:text-slate-300 mb-3">Keep the administration package up to date.</p>
-
-            <div>
-                @if($composerUpdateAvailable === true || $running)
-                    @if($running && $runType === 'update')
-                        <span class="inline-flex items-center gap-2 text-sky-500 text-sm">
-                            <i class="fa-solid fa-hourglass animate-spin"></i>
-                            <span class="font-medium">Update running...</span>
-                        </span>
-                    @elseif($composerUpdateAvailable === true)
-                        <div class="flex flex-col gap-1">
-                            <span class="text-slate-700 dark:text-white font-semibold text-sm">WRLA Update Available</span>
-                            @if($latestVersion)
-                                <span class="text-sky-600 dark:text-sky-400 text-sm">
-                                    <span class="text-slate-700 dark:text-white">v{{ $latestVersion }} &mdash; </span>
-                                    <a href="https://webregulate.github.io/laravel-administration/#versions/v{{ $latestVersion }}.html"
-                                        target="_blank"
-                                        class="inline-flex items-center gap-1 underline hover:text-sky-500">
-                                        <i class="fa-solid fa-arrow-up-right-from-square text-xs mr-1"></i>
-                                        <span>Review changes before updating</span>
-                                    </a>
-                                </span>
-                            @endif
-                            <button wire:click="runComposerOnly" wire:loading.attr="disabled" wire:target="runComposerOnly"
-                                @disabled($running)
-                                class="mt-2 self-start whitespace-nowrap disabled:opacity-50 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-3 py-1.5 rounded transition-colors">
-                                <span wire:loading.remove wire:target="runComposerOnly" class="inline-flex items-center gap-2">
-                                    <i class="fa-solid fa-box"></i> Click to update WRLA
-                                </span>
-                                <span wire:loading wire:target="runComposerOnly" class="inline-flex items-center gap-2">
-                                    <i class="fa-solid fa-hourglass animate-spin"></i>
-                                    <span class="font-medium">Update running...</span>
-                                </span>
-                            </button>
-                        </div>
-                    @endif
-                @elseif($composerUpdateAvailable === false)
-                    <div class="flex flex-col gap-1">
-                        <span class="inline-flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
-                            <i class="fa-solid fa-circle-check"></i>
-                            WRLA package is up to date.
-                        </span>
-                        @if($currentVersion)
-                            <a href="https://webregulate.github.io/laravel-administration/#versions/v{{ $currentVersion }}.html"
-                                target="_blank"
-                                class="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400 text-sm underline hover:text-sky-500">
-                                <i class="fa-solid fa-arrow-up-right-from-square text-xs mr-1"></i>
-                                <span>View documentation for v{{ $currentVersion }}</span>
-                            </a>
-                        @endif
-                    </div>
-                @else
-                    <span class="inline-flex items-center gap-2 text-slate-400 text-sm"><i class="fa-solid fa-circle-question"></i> Could not check composer status.</span>
-                @endif
-            </div>
-        </div>
-
-        {{-- Developer commands --}}
-        <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4">
-            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2 mb-1">
-                <i class="fa-solid fa-terminal text-sky-600"></i> Commands
-            </h3>
-            <p class="text-sm text-slate-600 dark:text-slate-300 mb-3">
-                Configured commands: <code class="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs">wr-laravel-administration.developer.commands</code>.
-            </p>
-
-            @if(count($commands) === 0)
-                <p class="text-sm text-slate-500 dark:text-slate-400 italic">No developer commands configured.</p>
-            @else
-                <div class="flex flex-col gap-2">
-                    @foreach($commands as $cmd)
-                        <button
-                            wire:click="runCommand({{ $cmd['index'] }})"
-                            wire:loading.attr="disabled"
-                            @disabled($running)
-                            class="group text-left w-full rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:border-sky-500 hover:bg-sky-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:pointer-events-none transition-colors px-3 py-2"
-                        >
-                            <span class="flex items-center justify-between gap-2">
-                                <span class="inline-flex items-center gap-2 font-medium text-sm text-slate-700 dark:text-slate-100">
-                                    <i class="fa-solid fa-play text-xs text-sky-600 group-hover:text-sky-500"></i>
-                                    {{ $cmd['label'] }}
-                                </span>
-                                <span wire:loading wire:target="runCommand({{ $cmd['index'] }})">
-                                    <i class="fa-solid fa-hourglass animate-spin text-sky-500 text-xs"></i>
-                                </span>
+    <div class="mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">
+        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2 mb-3">
+            <i class="fa-solid fa-terminal text-sky-600" aria-hidden="true"></i> Commands
+        </h3>
+        @if(count($commands) === 0)
+            <p class="text-sm text-slate-500 dark:text-slate-400">No developer commands configured.</p>
+        @else
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                @foreach($commands as $cmd)
+                    <button type="button"
+                        wire:key="dev-command-{{ $cmd['index'] }}"
+                        wire:click="runCommand({{ $cmd['index'] }})"
+                        wire:loading.attr="disabled"
+                        @disabled($running)
+                        class="group min-w-0 text-left w-full rounded-md border border-primary-500 bg-transparent hover:border-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 disabled:opacity-50 disabled:pointer-events-none transition-colors px-3 py-3"
+                    >
+                        <span class="flex items-center justify-between gap-2">
+                            <span class="flex items-center gap-2 min-w-0 font-medium text-sm text-slate-700 dark:text-slate-100">
+                                @if($running && $runningLabel === $cmd['label'])
+                                    <i class="fa-solid fa-spinner animate-spin text-xs text-primary-500 shrink-0" aria-hidden="true"></i>
+                                @else
+                                    <i class="fa-solid fa-play text-xs text-primary-500 group-hover:text-primary-700 shrink-0" aria-hidden="true"></i>
+                                @endif
+                                <span class="break-words min-w-0">{{ $cmd['label'] }}</span>
                             </span>
-                            <code class="block text-xs text-slate-500 dark:text-slate-400 truncate">
-                                {{ $cmd['command'] }}
-                            </code>
-                        </button>
-                    @endforeach
-                </div>
-            @endif
-        </div>
+                            <span wire:loading wire:target="runCommand({{ $cmd['index'] }})" class="shrink-0">
+                                <i class="fa-solid fa-spinner animate-spin text-primary-500 text-xs" aria-hidden="true"></i>
+                            </span>
+                        </span>
+                        <code class="block mt-1 text-xs text-slate-500 dark:text-slate-400 break-all">{{ $cmd['command'] }}</code>
+                    </button>
+                @endforeach
+            </div>
+        @endif
     </div>
 
     {{-- Console output --}}
     <div class="bg-slate-900 text-slate-200 p-4 rounded-lg mt-4">
-        <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
-            Console Output:
+        <h3 class="text-sm font-semibold mb-3 flex flex-wrap items-center justify-between gap-2">
+            <span class="inline-flex items-center gap-2"><i class="fa-solid fa-terminal text-slate-400" aria-hidden="true"></i> Console Output</span>
             @if($running)
-                <span class="inline-flex items-center text-sky-400 text-sm font-normal">
-                    <span class="mr-2"><i class="fa-solid fa-hourglass animate-spin"></i></span>
-                    <span class="font-medium">{{ $runningLabel ? $runningLabel . ' running...' : 'Running...' }}</span>
+                <span class="inline-flex items-center gap-2 min-w-0 text-sky-400 text-xs font-normal">
+                    <i class="fa-solid fa-spinner animate-spin shrink-0" aria-hidden="true"></i>
+                    <span class="break-words min-w-0">{{ $runningLabel ? $runningLabel . ' running...' : 'Running...' }}</span>
                 </span>
             @endif
         </h3>
@@ -172,26 +142,26 @@
                 new MutationObserver(() => scrollToBottom()).observe($el, { childList: true, subtree: true, characterData: true });
             "
             class="w-full max-h-96 overflow-auto">
-            <pre class="whitespace-pre-wrap">{{ $consoleOutput }}</pre>
+            <pre class="whitespace-pre-wrap break-all text-xs sm:text-sm min-h-[3rem]" role="log" aria-live="polite">{{ $consoleOutput }}</pre>
         </div>
 
         {{-- Once an update has finished, prompt the user to refresh the page behind the modal --}}
         @if($updateCompleted && !$running)
-            <div class="mt-4 p-3 rounded-lg bg-emerald-900/40 border border-emerald-700 flex items-center justify-between gap-4">
-                <span class="inline-flex items-center gap-2 text-emerald-300 text-sm"><i class="fa-solid fa-circle-check"></i>
-                    Update completed — refresh the page to load the latest changes.
+            <div class="mt-4 pt-3 border-t border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <span class="inline-flex items-center gap-2 text-emerald-300 text-sm"><i class="fa-solid fa-rotate-right shrink-0" aria-hidden="true"></i>
+                    Update finished. Refresh the page to load any changes.
                 </span>
                 <button type="button" x-on:click="window.location.reload()"
-                    class="inline-flex items-center gap-2 whitespace-nowrap bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-3 py-1.5 rounded transition-colors">
-                    <i class="fa-solid fa-rotate-right"></i> Refresh page
+                    class="self-start shrink-0 inline-flex items-center gap-2 whitespace-nowrap border border-primary-500 bg-transparent hover:border-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 text-white text-sm font-semibold px-3 py-1.5 rounded transition-colors">
+                    <i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Refresh page
                 </button>
             </div>
         @endif
 
         {{-- Command finished notice --}}
         @if($commandCompleted && !$running)
-            <div class="mt-4 p-3 rounded-lg bg-sky-900/40 border border-sky-700 flex items-center gap-2 text-sky-300 text-sm">
-                <i class="fa-solid fa-circle-check"></i> Command finished.
+            <div class="mt-4 pt-3 border-t border-slate-700 flex items-center gap-2 text-sky-300 text-sm">
+                <i class="fa-solid fa-flag-checkered" aria-hidden="true"></i> Command finished.
             </div>
         @endif
     </div>

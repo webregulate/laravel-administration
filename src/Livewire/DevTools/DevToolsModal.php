@@ -6,7 +6,6 @@ use LivewireUI\Modal\ModalComponent;
 use Symfony\Component\Process\Process;
 use WebRegulate\LaravelAdministration\Classes\VersionHandler\BackgroundUpdateProcess;
 use WebRegulate\LaravelAdministration\Classes\VersionHandler\VersionHandler;
-use WebRegulate\LaravelAdministration\Classes\VersionHandler\WebVersionUpdateContext;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use Throwable;
 
@@ -21,9 +20,8 @@ class DevToolsModal extends ModalComponent
     public bool $updateCompleted = false;
     public bool $commandCompleted = false;
     public ?string $runningLabel = null;
-    public ?bool $composerUpdateAvailable = null;
-    public ?string $latestVersion = null;
     public ?string $currentVersion = null;
+    public ?bool $composerUpdateAvailable = null;
 
     /** Whatever is currently running, so polling knows how to finish: 'update' | 'command' | null. */
     public ?string $runType = null;
@@ -52,22 +50,10 @@ class DevToolsModal extends ModalComponent
 
         $this->commands = $this->resolveCommands();
 
+        $this->currentVersion = VersionHandler::getLocalVersion();
         $this->composerUpdateAvailable = VersionHandler::isComposerUpdateAvailable();
-
-        $latest = VersionHandler::getLatestWrlaVersion();
-        $this->latestVersion = $latest['version'] ?? null;
-        $this->currentVersion = VersionHandler::$localPackageCurrentVersion;
-
-        $version = VersionHandler::$localPackageCurrentVersion ?? 'unknown';
+        $version = $this->currentVersion ?? 'unknown';
         $this->consoleOutput = 'Installed package version: ' . $version . PHP_EOL;
-
-        if ($this->composerUpdateAvailable === true) {
-            $this->consoleOutput .= 'A composer update is available - press "Click to update WRLA" to apply it.' . PHP_EOL;
-        } elseif ($this->composerUpdateAvailable === false) {
-            $this->consoleOutput .= 'You are on the latest version, no updates required.' . PHP_EOL;
-        } else {
-            $this->consoleOutput .= 'Could not determine update status.' . PHP_EOL;
-        }
 
         $this->dispatch('dev-tools.dev-tools-modal.opened');
     }
@@ -108,31 +94,11 @@ class DevToolsModal extends ModalComponent
                 'index' => $index,
                 'command' => $command,
                 'label' => (string) ($item['label'] ?? $command),
+                'refresh' => (bool) ($item['refresh'] ?? false),
             ];
         }
 
         return $resolved;
-    }
-
-    public function runComposerOnly(): void
-    {
-        if (!WRLAHelper::showVersionUpdateBar()) {
-            $this->authorised = false;
-            $this->consoleOutput = 'You do not have permission to run updates.' . PHP_EOL;
-            return;
-        }
-
-        if ($this->running) {
-            return;
-        }
-
-        $this->updateCompleted = false;
-        $this->commandCompleted = false;
-        $this->runType = 'update';
-
-        $this->mode === 'blocking'
-            ? $this->runBlockingComposerOnly()
-            : $this->runLive('wrla:update --no-interaction');
     }
 
     /**
@@ -164,31 +130,12 @@ class DevToolsModal extends ModalComponent
 
         $this->updateCompleted = false;
         $this->commandCompleted = false;
-        $this->runType = 'command';
+        $this->runType = $resolved[$index]['refresh'] ? 'update' : 'command';
         $this->runningLabel = $label;
 
         $this->mode === 'blocking'
             ? $this->runBlockingCommand($command, $label)
             : $this->runLiveCommand($command, $label);
-    }
-
-    protected function runLive(string $artisanArgs): void
-    {
-        try {
-            (new BackgroundUpdateProcess())->start(
-                $this->logPath(),
-                self::DONE_MARKER,
-                $artisanArgs
-            );
-
-            $this->running = true;
-            $this->consoleOutput = 'Starting update...' . PHP_EOL;
-        } catch (Throwable $e) {
-            $this->consoleOutput = 'Could not start background update (' . $e->getMessage() . ')' . PHP_EOL
-                . 'Falling back to blocking mode...' . PHP_EOL;
-
-            $this->runBlockingComposerOnly();
-        }
     }
 
     protected function runLiveCommand(string $command, string $label): void
@@ -208,32 +155,6 @@ class DevToolsModal extends ModalComponent
 
             $this->runBlockingCommand($command, $label);
         }
-    }
-
-    protected function runBlockingComposerOnly(): void
-    {
-        @set_time_limit(0);
-
-        $this->running = true;
-
-        $context = new WebVersionUpdateContext();
-
-        try {
-            $versionHandler = new VersionHandler($context);
-            if ($versionHandler->runComposerUpdate()) {
-                $versionHandler->runOptimizeClear();
-                $context->info('Composer update completed successfully.');
-            }
-        } catch (Throwable $e) {
-            $context->error($e->getMessage());
-        }
-
-        $this->consoleOutput .= $this->stripAnsi($context->getOutput());
-        $this->running = false;
-        $this->updateCompleted = true;
-        $this->runType = null;
-
-        $this->composerUpdateAvailable = VersionHandler::isComposerUpdateAvailable();
     }
 
     protected function runBlockingCommand(string $command, string $label): void
@@ -256,9 +177,7 @@ class DevToolsModal extends ModalComponent
             $this->consoleOutput .= $e->getMessage() . PHP_EOL;
         }
 
-        $this->running = false;
-        $this->commandCompleted = true;
-        $this->runType = null;
+        $this->completeRun();
     }
 
     public function pollOutput(): void
@@ -276,19 +195,25 @@ class DevToolsModal extends ModalComponent
 
         if (str_contains($output, self::DONE_MARKER)) {
             $output = trim(str_replace(self::DONE_MARKER, '', $output));
-            $this->running = false;
-
-            if ($this->runType === 'update') {
-                $this->updateCompleted = true;
-                $this->composerUpdateAvailable = VersionHandler::isComposerUpdateAvailable();
-            } else {
-                $this->commandCompleted = true;
-            }
-
-            $this->runType = null;
+            $this->completeRun();
         }
 
         $this->consoleOutput = $this->stripAnsi($output);
+    }
+
+    protected function completeRun(): void
+    {
+        $this->running = false;
+        $this->updateCompleted = $this->runType === 'update';
+        $this->commandCompleted = !$this->updateCompleted;
+        $this->runType = null;
+
+        if ($this->updateCompleted) {
+            VersionHandler::clearComposerUpdateAvailableCache();
+            VersionHandler::$localPackageCurrentVersion = null;
+            $this->currentVersion = VersionHandler::getLocalVersion();
+            $this->composerUpdateAvailable = VersionHandler::isComposerUpdateAvailable();
+        }
     }
 
     protected function stripAnsi(string $output): string

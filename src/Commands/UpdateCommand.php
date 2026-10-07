@@ -16,10 +16,8 @@ class UpdateCommand extends Command
     {
         $versionHandler = new VersionHandler(new ConsoleVersionUpdateContext($this));
 
-        if ($versionHandler->runComposerUpdate()) {
-            $versionHandler->runOptimizeClear();
-        }
-
-        return 0;
+        return $versionHandler->runComposerUpdate() && $versionHandler->runOptimizeClear()
+            ? self::SUCCESS
+            : self::FAILURE;
     }
 }
