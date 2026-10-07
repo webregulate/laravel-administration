@@ -583,6 +583,15 @@ class WRLAServiceProvider extends ServiceProvider
             return;
         }
 
+        $this->app->bind(
+            \AlbertoArena\Truss\Introspection\SnapshotBuilder::class,
+            \WebRegulate\LaravelAdministration\Classes\DatabaseSchema\SnapshotBuilder::class,
+        );
+        $this->app->extend(
+            \AlbertoArena\Truss\Http\Controllers\AssetController::class,
+            fn ($controller) => new \WebRegulate\LaravelAdministration\Classes\DatabaseSchema\AssetController($controller),
+        );
+
         // Gate Truss behind WRLA's viewer access check. Defined unconditionally so it
         // wins over Truss's shipped email allow-list gate regardless of boot order.
         Gate::define('viewTruss', fn($user = null) => WRLAHelper::databaseSchemaViewerEnabled());
