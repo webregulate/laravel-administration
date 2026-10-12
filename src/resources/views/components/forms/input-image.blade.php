@@ -53,7 +53,7 @@
                 'accept' => 'image/*',
                 'class' => 'wrla_image_input text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 dark:focus:ring-primary-500 placeholder-slate-400 dark:placeholder-slate-600'
             ]) }}
-                onchange="wrla_setPreviewImage(this)"
+                onchange="wrla_image_setPreviewImage(this)"
             />
 
             {{-- Remove button (if image does not yet exist anyway, or options has allowRemove true) --}}
@@ -67,7 +67,7 @@
                         'type' => 'button',
                         'title' => 'Remove',
                         'class' => 'text-sm',
-                        'onclick' => 'wrla_removeImage(this)',
+                        'onclick' => 'wrla_image_removeImage(this)',
                         'style' => $fileSystemImageExists ? 'display: block;' : 'display: none;'
                     ])
                 ])
@@ -95,11 +95,11 @@
         {{-- Rotation controls (if allowed) --}}
         @if($options['allowRotation'] ?? true)
             <div class="wrla_rotation_controls w-full flex items-center gap-1.5 mt-3" style="{{ $fileSystemImageExists ? '' : 'display: none;' }}">
-                <button type="button" title="Rotate left" onclick="wrla_rotateImage(this, -90)"
+                <button type="button" title="Rotate left" onclick="wrla_image_rotateImage(this, -90)"
                     class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-500 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
                     <i class="fa fa-rotate-left text-xs"></i>
                 </button>
-                <button type="button" title="Rotate right" onclick="wrla_rotateImage(this, 90)"
+                <button type="button" title="Rotate right" onclick="wrla_image_rotateImage(this, 90)"
                     class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-500 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
                     <i class="fa fa-rotate-right text-xs"></i>
                 </button>
@@ -111,7 +111,7 @@
     </div>
 </div>
 
-@once
+@script
 <script>
     function wrla_getImageFieldRoot(el) {
         return el.closest('.wrla_image_field');
@@ -190,7 +190,7 @@
         }
     }
 
-    function wrla_rotateImage(button, amount) {
+    window.wrla_image_rotateImage = function (button, amount) {
         var root = wrla_getImageFieldRoot(button);
         var rotationInput = root.querySelector('.wrla_rotation_input');
         if (!rotationInput) {
@@ -203,9 +203,9 @@
 
         wrla_applyRotationPreview(root);
         wrla_syncImageRotation(button, degrees);
-    }
+    };
 
-    function wrla_setPreviewImage(input) {
+    window.wrla_image_setPreviewImage = function (input) {
         if (input.files && input.files[0]) {
             var root = wrla_getImageFieldRoot(input);
             var previewImageElement = input.parentElement.parentElement.parentElement.querySelector('.wrla_image_preview');
@@ -233,9 +233,9 @@
             // Push the selected file into livewire
             wrla_syncImageUpload(input, input.files[0]);
         }
-    }
+    };
 
-    function wrla_removeImage(button) {
+    window.wrla_image_removeImage = function (button) {
         var root = wrla_getImageFieldRoot(button);
         var input = button.parentElement.parentElement.querySelector('.wrla_image_input');
         var previewImageElement = input.parentElement.parentElement.parentElement.querySelector('.wrla_image_preview');
@@ -260,9 +260,9 @@
 
         // Mirror the removal into livewire state (clears any pending upload too)
         wrla_syncImageRemove(button, imageExists);
-    }
+    };
 </script>
-@endonce
+@endscript
 
 @error($name)
     @themeComponent('alert', ['type' => 'error', 'message' => $message, 'class' => 'mt-2'])

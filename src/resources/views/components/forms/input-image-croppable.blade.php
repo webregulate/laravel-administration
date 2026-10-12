@@ -59,7 +59,7 @@
                 'accept' => 'image/*',
                 'class' => 'wrla_image_input text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 dark:focus:ring-primary-500 placeholder-slate-400 dark:placeholder-slate-600',
             ]) }}
-                onchange="wrla_setPreviewImage(this)"
+                onchange="wrla_croppable_setPreviewImage(this)"
             />
 
             {{-- Remove button (if image does not yet exist anyway, or options has allowRemove true) --}}
@@ -73,7 +73,7 @@
                         'type' => 'button',
                         'title' => 'Remove',
                         'class' => 'text-sm',
-                        'onclick' => 'wrla_removeImage(this)',
+                        'onclick' => 'wrla_croppable_removeImage(this)',
                         'style' => $fileSystemImageExists ? 'display: block;' : 'display: none;'
                     ])
                 ])
@@ -138,7 +138,7 @@
         return root ? root.getAttribute('data-wrla-field-name') : null;
     }
 
-    window.wrla_setPreviewImage = function (input) {
+    window.wrla_croppable_setPreviewImage = function (input) {
         if (input.files && input.files[0]) {
             var previewImageElement = input.parentElement.parentElement.parentElement.querySelector('.wrla_image_preview');
 
@@ -167,7 +167,7 @@
         }
     };
 
-    window.wrla_removeImage = function (button) {
+    window.wrla_croppable_removeImage = function (button) {
         var input = button.parentElement.parentElement.querySelector('.wrla_image_input');
         var previewImageElement = input.parentElement.parentElement.parentElement.querySelector('.wrla_image_preview');
         var removeInput = button.parentElement.querySelector('.wrla_remove_input');
