@@ -3,7 +3,9 @@
 namespace WebRegulate\LaravelAdministration\Livewire;
 
 use Exception;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\WithFileUploads;
 use Symfony\Component\Mime\MimeTypes;
@@ -16,6 +18,7 @@ class FileManager extends WRLAPageComponent
 
     /* Properties
     --------------------------------------------------------------------------*/
+    #[Locked]
     public ?string $currentFileSystemName = null; // Set on mount
 
     public string $viewingDirectory = '';
@@ -54,35 +57,9 @@ class FileManager extends WRLAPageComponent
     --------------------------------------------------------------------------*/
     public function updatedUploadFile($value)
     {
-        if(config('wr-laravel-administration.file_manager.enabled', false) !== true) {
-            abort(403, 'Access to file manager permission denied.');
-            return;
-        }
-
-        if ($value && $this->uploadFilePath !== null) {#
-            // Get can uplpoad mime types from config
-            $canUploadMimeTypes = config('wr-laravel-administration.file_manager.can_upload_mime_types', []);
-
-            // Use config can_upload_mime_types to check if the file type is allowed
-            if (!in_array($value->getMimeType(), $canUploadMimeTypes)) {
-                $this->addError('uploadFile', 'Can only upload files of type: '.implode(', ', $canUploadMimeTypes));
-                return;
-            }
-
-            // Get allowed extensions from the mime types
-            $allowedExtensions = [];
-            $mimeTypes = new MimeTypes();
-            foreach ($canUploadMimeTypes as $mimeType) {
-                $extensions = $mimeTypes->getExtensions($mimeType);
-                if (!empty($extensions)) {
-                    $allowedExtensions = array_merge($allowedExtensions, $extensions);
-                }
-            }
-            
-            // Check if the file has an allowed extension
-            $fileExtension = $value->getClientOriginalExtension();
-            if (!in_array($fileExtension, $allowedExtensions)) {
-                $this->addError('uploadFile', 'Can only upload files with extensions: '.implode(', ', $allowedExtensions));
+        if ($value && $this->uploadFilePath !== null) {
+            $fileSystem = $this->getCurrentFileSystem();
+            if (! $this->validateUpload($value, 'uploadFile', $value->getClientOriginalName())) {
                 return;
             }
 
@@ -93,7 +70,7 @@ class FileManager extends WRLAPageComponent
             $fileSystemPath = str_replace('//', '/', str_replace('.', '/', $this->viewingDirectory).'/'.$fileName);
 
             // Store the new file
-            $this->getCurrentFileSystem()->put($fileSystemPath, $value->get());
+            $fileSystem->put($fileSystemPath, $value->get());
 
             // Reset uploadFilePath
             $this->uploadFilePath = null;
@@ -109,14 +86,26 @@ class FileManager extends WRLAPageComponent
     public function updatedReplaceFile($value)
     {
         if ($value && $this->replaceFilePath) {
+            $fileSystem = $this->getCurrentFileSystem();
+
             // Get last part of absolute file path
             $fileName = str($this->replaceFilePath)->afterLast('/')->toString();
+
+            if (! $this->validateUpload($value, 'replaceFile', $fileName)) {
+                return;
+            }
 
             // Get filesystem path
             $fileSystemPath = str_replace('//', '/', str_replace('.', '/', $this->viewingDirectory).'/'.$fileName);
 
+            if (! $fileSystem->fileExists($fileSystemPath)) {
+                $this->addError('replaceFile', 'The file to replace does not exist.');
+
+                return;
+            }
+
             // Store the new file
-            $this->getCurrentFileSystem()->put($fileSystemPath, $value->get());
+            $fileSystem->put($fileSystemPath, $value->get());
 
             // Reset replaceFilePath
             $this->replaceFilePath = null;
@@ -127,6 +116,29 @@ class FileManager extends WRLAPageComponent
             // View the new file
             $this->viewFile($this->viewingDirectory, $fileName);
         }
+    }
+
+    private function validateUpload(UploadedFile $file, string $errorKey, string $destinationName): bool
+    {
+        $allowedMimeTypes = config('wr-laravel-administration.file_manager.can_upload_mime_types', []);
+        $mimeType = $file->getMimeType();
+
+        if (! in_array($mimeType, $allowedMimeTypes, true)) {
+            $this->addError($errorKey, 'Can only upload files of type: '.implode(', ', $allowedMimeTypes));
+
+            return false;
+        }
+
+        $allowedExtensions = (new MimeTypes())->getExtensions($mimeType);
+        foreach ([$file->getClientOriginalName(), $destinationName] as $name) {
+            if (! in_array(strtolower(pathinfo($name, PATHINFO_EXTENSION)), $allowedExtensions, true)) {
+                $this->addError($errorKey, 'Can only upload files with extensions: '.implode(', ', $allowedExtensions));
+
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /* Livewire Methods / Hooks
@@ -196,7 +208,7 @@ class FileManager extends WRLAPageComponent
     private function setCurrentDirectoriesAndFiles()
     {
         // If no file system is set, return
-        if ($this->currentFileSystemName === null) {
+        if ($this->currentFileSystemName === null || $this->currentFileSystemName === '') {
             $this->currentDirectories = [];
             $this->currentFiles = [];
 
@@ -332,9 +344,10 @@ class FileManager extends WRLAPageComponent
     public function deleteFile(string $directoryPath, string $name)
     {
         $diskPath = rtrim(str_replace('.', '/', $directoryPath).'/'.$name, '/');
+        $fileSystem = $this->getCurrentFileSystem();
 
         try {
-            $deleted = $this->getCurrentFileSystem()->delete($diskPath);
+            $deleted = $fileSystem->delete($diskPath);
         } catch (Exception) {
             $deleted = false;
         }
@@ -354,9 +367,10 @@ class FileManager extends WRLAPageComponent
     public function deleteDirectory(string $directoryPath, string $name)
     {
         $diskPath = rtrim(str_replace('.', '/', $directoryPath).'/'.$name, '/');
+        $fileSystem = $this->getCurrentFileSystem();
 
         try {
-            $deleted = $this->getCurrentFileSystem()->deleteDirectory($diskPath);
+            $deleted = $fileSystem->deleteDirectory($diskPath);
         } catch (Exception) {
             $deleted = false;
         }
@@ -454,6 +468,17 @@ class FileManager extends WRLAPageComponent
 
     private function getCurrentFileSystem()
     {
+        abort_unless(
+            config('wr-laravel-administration.file_manager.enabled', false) === true,
+            403,
+            'Access to file manager permission denied.',
+        );
+        abort_unless(
+            in_array($this->currentFileSystemName, $this->getAvailableFileSystemNames(), true),
+            403,
+            'File system not available or enabled in file manager config.',
+        );
+
         return Storage::disk($this->currentFileSystemName);
     }
 
