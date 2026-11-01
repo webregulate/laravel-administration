@@ -1,0 +1,27 @@
+<p class="docs-lead">
+    Fixes the missing <code class="docs-inline-code">UpsertOptions</code> import in the generated User manageable model.
+</p>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Fixes</h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>New installations correctly resolve <code class="docs-inline-code">UpsertOptions::default()</code>.</li>
+        <li>Includes the restored WRLAUserData stub docblock and documentation.</li>
+    </ul>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Upgrade Steps</h2>
+    <p class="text-gray-600">
+        Run <code class="docs-inline-code">composer update webregulate/laravel-administration</code>.
+        Existing generated User manageable models that call <code class="docs-inline-code">UpsertOptions::default()</code>
+        need this import if it is missing:
+    </p>
+    <div class="docs-code-block mt-2">
+        <pre><code>use WebRegulate\LaravelAdministration\Classes\UpsertOptions;</code></pre>
+    </div>
+    <p class="text-gray-600 mt-2">
+        Use 0.9.1 rather than the re-tagged 0.9.0: Packagist keeps stable version references immutable,
+        so the original 0.9.0 snapshot does not contain these fixes.
+    </p>
+</div>

@@ -162,6 +162,7 @@ class DocumentationApp {
             { version: '0.8.50', date: '2026-10-02' },
             { version: '0.8.56', date: '2026-10-06' },
             { version: '0.9.0', date: '2026-11-01' },
+            { version: '0.9.1', date: '2026-11-01' },
         ];
     }
 
