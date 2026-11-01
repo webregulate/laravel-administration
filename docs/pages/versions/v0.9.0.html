@@ -79,5 +79,17 @@ php artisan optimize:clear</code></pre>
         <li>Inherited static calls honour application overrides, and WRLA resolves the configured application model rather than a hard-coded class.</li>
         <li>The installer and uninstaller use the renamed application model while recognising configured legacy models.</li>
         <li>User creation and password checks honour model helpers. Connection priority: model, config, Laravel default; review this order if using custom connections.</li>
+        <li>
+            The generated <code class="docs-inline-code">User</code> model's
+            <code class="docs-inline-code">ENABLED</code> and <code class="docs-inline-code">DELETE</code>
+            defaults now use <code class="docs-inline-code">belongsToUser()</code> to check the active model
+            against the current user's data. Masters can manage users, and other users can access their own
+            profile; deletion requires a master and excludes their own account.
+            <div class="docs-code-block mt-2">
+                <pre><code>static::setPermission(ManageableModelPermissions::ENABLED, fn($wrlaUserData) => $wrlaUserData->isMaster() || $wrlaUserData->belongsToUser(WRLAHelper::getActiveModelInstance()));
+static::setPermission(ManageableModelPermissions::DELETE, fn($wrlaUserData) => $wrlaUserData->isMaster() &amp;&amp; !$wrlaUserData->belongsToUser(WRLAHelper::getActiveModelInstance()));</code></pre>
+            </div>
+            Existing applications must update these permissions manually, preserving any custom restrictions.
+        </li>
     </ul>
 </div>
