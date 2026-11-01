@@ -453,6 +453,14 @@
         </tbody>
     </table>
 
+    <p class="docs-paragraph">
+        Use <code class="docs-inline-code">$wrlaUserData->belongsToUser($user)</code> to check whether a user data record
+        belongs to a given User model. It respects <code class="docs-inline-code">build_wrla_user_data_id</code>,
+        compares IDs as strings, and returns <code class="docs-inline-code">false</code> when either ID is null.
+        For the active user record, pass <code class="docs-inline-code">WRLAHelper::getActiveModelInstance()</code>.
+        Existing installations must add this method to their generated UserData model before using it.
+    </p>
+
     <!-- Misc -->
     <h3 class="docs-subheading">Misc</h3>
     <table class="docs-table mb-6">
