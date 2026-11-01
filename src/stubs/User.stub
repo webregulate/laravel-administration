@@ -2,32 +2,33 @@
 
 namespace App\WRLA;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Builder;
-use WebRegulate\LaravelAdministration\Classes\ManageableModel;
-use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
-use WebRegulate\LaravelAdministration\Enums\PageType;
-use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
-use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumn;
-use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumnImage;
-use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumnCheck;
-use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionRestore;
-use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionEdit;
-use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionDelete;
-use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItemBrowse;
-use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItemCreate;
-use WebRegulate\LaravelAdministration\Classes\ManageableFields\Heading;
-use WebRegulate\LaravelAdministration\Classes\ManageableFields\Text;
-use WebRegulate\LaravelAdministration\Classes\ManageableFields\Password;
-use WebRegulate\LaravelAdministration\Classes\ManageableFields\ImageCroppable;
-use WebRegulate\LaravelAdministration\Classes\ManageableFields\JsonUI;
-use WebRegulate\LaravelAdministration\Classes\ManageableFields\Select;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionCreate;
 use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionExportCSV;
-use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSelect;
+use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumn;
+use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumnCheck;
+use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumnImage;
 use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSearch;
+use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSelect;
 use WebRegulate\LaravelAdministration\Classes\BrowseFilters\BrowseFilterSoftDeleted;
+use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionDelete;
+use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionEdit;
+use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionRestore;
+use WebRegulate\LaravelAdministration\Classes\ManageableFields\Heading;
+use WebRegulate\LaravelAdministration\Classes\ManageableFields\ImageCroppable;
+use WebRegulate\LaravelAdministration\Classes\ManageableFields\JsonUI;
+use WebRegulate\LaravelAdministration\Classes\ManageableFields\Password;
+use WebRegulate\LaravelAdministration\Classes\ManageableFields\Select;
+use WebRegulate\LaravelAdministration\Classes\ManageableFields\Text;
+use WebRegulate\LaravelAdministration\Classes\ManageableModel;
+use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItemBrowse;
+use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItemCreate;
+use WebRegulate\LaravelAdministration\Classes\UpsertOptions;
+use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
+use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
+use WebRegulate\LaravelAdministration\Enums\PageType;
 
 class User extends ManageableModel
 {
