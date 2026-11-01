@@ -17,7 +17,12 @@ return [
     // Model definitions
     'models' => [
         'user' => \App\Models\User::class,
-        'wrla_user_data' => \App\Models\UserData::class,
+        'wrla_user_data' => \App\Models\WRLAUserData::class, // Application subclass of WRLABaseUserData.
+    ],
+
+    // WRLAUserData connection, null uses Laravel's default connection. An explicit model connection takes precedence.
+    'wrla_user_data' => [
+        'connection' => null,
     ],
 
     // Middleware to prepend or append to each request within WRLA. Use array of class strings such as Middleware::class

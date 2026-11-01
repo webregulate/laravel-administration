@@ -42,8 +42,11 @@ class UninstallCommand extends Command
         // Remove app/WRLA directory
         $this->confirmAndRemove('Remove WRLA related directories and files?', ['app/WRLA', 'app/Mail/WRLA', 'resources/views/email/wrla', 'public/vendor/wr-laravel-administration']);
 
-        // Remove app/Models/UserData.php
-        $this->confirmAndRemove('Remove the UserData model?', ['app/Models/UserData.php']);
+        $userDataModelPaths = ['app/Models/WRLAUserData.php'];
+        if (ltrim(WRLAHelper::getUserDataModelClass(), '\\') === 'App\\Models\\UserData') {
+            $userDataModelPaths[] = 'app/Models/UserData.php';
+        }
+        $this->confirmAndRemove('Remove the WRLAUserData model (including the configured legacy model, if applicable)?', $userDataModelPaths);
 
         // Remove app/config/wr-laravel-administration.php
         $this->confirmAndRemove('Remove the WRLA configuration file?', ['config/wr-laravel-administration.php'], function() {
@@ -94,7 +97,7 @@ class UninstallCommand extends Command
      * Confirm and remove the provided pattern from the application.
      * 
      * @param string $question
-     * @param array $patterns Array of strings using glob pattern syntax, allowing wildcard eg. `app/WRLA/*` or `app/Models/UserData.php`
+     * @param array $patterns Array of strings using glob pattern syntax, allowing wildcard eg. `app/WRLA/*` or `app/Models/WRLAUserData.php`
      * @param ?callable $callback Only calls back if the user confirms the removal.
      * @return bool
      */

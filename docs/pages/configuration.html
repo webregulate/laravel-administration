@@ -28,7 +28,11 @@
             </tr>
             <tr>
                 <td><code class="docs-inline-code">models.wrla_user_data</code></td>
-                <td>Eloquent UserData model class that stores WRLA-specific user meta.</td>
+                <td>Application model class that stores WRLA-specific user meta. Default: <code class="docs-inline-code">App\Models\WRLAUserData</code>, extending <code class="docs-inline-code">WebRegulate\LaravelAdministration\Models\WRLABaseUserData</code>. Keep this setting pointed at your application subclass.</td>
+            </tr>
+            <tr>
+                <td><code class="docs-inline-code">wrla_user_data.connection</code></td>
+                <td>Laravel connection name for the inherited WRLAUserData model and new user-data table migrations. Default: <code class="docs-inline-code">null</code> (Laravel's default connection). A model's explicit <code class="docs-inline-code">$connection</code> or <code class="docs-inline-code">setConnection()</code> takes precedence for model operations. Existing tables are not moved automatically.</td>
             </tr>
             <tr>
                 <td><code class="docs-inline-code">middleware.prepend</code></td>
@@ -44,6 +48,38 @@
             </tr>
         </tbody>
     </table>
+
+    <h3 class="docs-subheading">Customizing WRLAUserData</h3>
+    <p class="docs-body">
+        WRLA owns the default implementation. The generated application model is an empty subclass;
+        override only the methods or properties that differ for your project. Leave unchanged methods
+        inherited so package fixes reach your application without copying updated stubs.
+    </p>
+    <div class="docs-code-block mb-4">
+        <pre><code>&lt;?php
+
+namespace App\Models;
+
+use WebRegulate\LaravelAdministration\Models\WRLABaseUserData;
+
+class WRLAUserData extends WRLABaseUserData
+{
+    public function getFullName(): string
+    {
+        return $this-&gt;user?-&gt;display_name ?? parent::getFullName();
+    }
+}</code></pre>
+    </div>
+    <p class="docs-body">
+        Keep overridden methods compatible with the base model's visibility, static/instance declaration,
+        parameters and return types. Use <code class="docs-inline-code">parent::methodName()</code> when
+        extending a default, and <code class="docs-inline-code">static::methodName()</code> when calling
+        another overridable static helper. Application code should use its configured subclass or
+        <code class="docs-inline-code">WRLAHelper::getUserDataModelClass()</code>, not instantiate the
+        package base directly. See the <a href="versions/v0.9.0.html" class="docs-link">v0.9.0 migration notes</a>
+        before renaming an existing <code class="docs-inline-code">UserData</code> model to
+        <code class="docs-inline-code">WRLAUserData</code> and converting it to the new base.
+    </p>
 </div>
 
 <!-- ── 2. Security ───────────────────────────────────────────────────────── -->
@@ -448,7 +484,7 @@
             </tr>
             <tr>
                 <td><code class="docs-inline-code">build_wrla_user_data_id</code></td>
-                <td>Closure receiving the User model; returns the identifier used to link a user to their UserData record. Defaults to <code class="docs-inline-code">$user->id</code>.</td>
+                <td>Closure receiving the User model; returns the identifier used to link a user to their WRLAUserData record. Defaults to <code class="docs-inline-code">$user->id</code>.</td>
             </tr>
         </tbody>
     </table>
@@ -458,7 +494,8 @@
         belongs to a given User model. It respects <code class="docs-inline-code">build_wrla_user_data_id</code>,
         compares IDs as strings, and returns <code class="docs-inline-code">false</code> when either ID is null.
         For the active user record, pass <code class="docs-inline-code">WRLAHelper::getActiveModelInstance()</code>.
-        Existing installations must add this method to their generated UserData model before using it.
+        This method is inherited by the v0.9.0 application subclass. Older standalone models must either
+        migrate to the base model or implement this method before using it.
     </p>
 
     <!-- Misc -->

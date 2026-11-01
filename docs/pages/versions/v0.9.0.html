@@ -1,0 +1,155 @@
+<p class="docs-lead">
+    Introduces the package-owned <code class="docs-inline-code">WRLABaseUserData</code> model and
+    the generated application model <code class="docs-inline-code">WRLAUserData</code>. Applications
+    inherit maintained defaults and override only their custom behaviour, rather than keeping a
+    full copy of a generated model that can drift between releases.
+</p>
+
+<!-- Breaking Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        Breaking Changes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li><strong>Composer constraint:</strong> <code class="docs-inline-code">^0.8</code> does not allow <code class="docs-inline-code">0.9.0</code>. Deliberately update your constraint to <code class="docs-inline-code">^0.9.0</code> when upgrading.</li>
+        <li><strong>Model names:</strong> the generated application model is now <code class="docs-inline-code">App\Models\WRLAUserData</code> in <code class="docs-inline-code">app/Models/WRLAUserData.php</code>, replacing <code class="docs-inline-code">App\Models\UserData</code>. Its package base is <code class="docs-inline-code">WebRegulate\LaravelAdministration\Models\WRLABaseUserData</code> in <code class="docs-inline-code">src/Models/WRLABaseUserData.php</code>. Update model filenames, class declarations, imports, static calls, type hints and the published <code class="docs-inline-code">models.wrla_user_data</code> configuration together. There is no automatic class alias or project-wide rename.</li>
+        <li><strong>Model inheritance:</strong> new installations generate an empty <code class="docs-inline-code">WRLAUserData</code> subclass of <code class="docs-inline-code">WRLABaseUserData</code>. Existing models are not overwritten or automatically converted; standalone models continue to work while configured, but do not inherit future fixes. Migrate explicitly to adopt the maintained implementation and new naming convention.</li>
+        <li><strong>Override signatures:</strong> when converting an old generated model, retained overrides must be compatible with the base model. Missing or incompatible return types can cause a PHP fatal error when loading the subclass. Do not simply change the parent while leaving the entire old implementation in place.</li>
+        <li><strong>Database connection:</strong> the new base no longer contains a connection name copied from <code class="docs-inline-code">DB_CONNECTION</code> at installation time. It uses an explicit model connection first, then <code class="docs-inline-code">wrla_user_data.connection</code>, then Laravel's default connection. Preserve your old connection explicitly if it differs from the current default. User creation no longer replaces an explicit model connection with a configuration value.</li>
+        <li><strong>Custom helper behaviour:</strong> inherited password checking now honours <code class="docs-inline-code">getUserByEmail()</code> and <code class="docs-inline-code">getPasswordField()</code> overrides. The <code class="docs-inline-code">getByEmail()</code> alias delegates to <code class="docs-inline-code">getUserByEmail()</code>. User creation now uses the configured model's password-field and password-hashing methods; inherited models also use <code class="docs-inline-code">attachUser()</code> instead of hard-coded attachment.</li>
+        <li><strong>Navigation conditions:</strong> enabled-condition callbacks now receive user data from the configured model rather than always using <code class="docs-inline-code">App\Models\UserData</code>. Applications using a different configured class should review these callbacks.</li>
+    </ul>
+
+    <h3 class="docs-subheading mt-6">Recommended Model Migration</h3>
+    <ol class="list-decimal list-outside space-y-2 text-gray-600 ml-5">
+        <li>Install v0.9.0 before referencing <code class="docs-inline-code">WRLABaseUserData</code>. Review and back up your existing application <code class="docs-inline-code">UserData</code> model and published configuration.</li>
+        <li>Compare your current methods and properties with the package base. Identify intentional customisations, including connection, avatar URLs, authentication, names and permissions. Remove unchanged copied defaults, not project-specific behaviour.</li>
+        <li>Rename <code class="docs-inline-code">app/Models/UserData.php</code> to <code class="docs-inline-code">app/Models/WRLAUserData.php</code>, rename its class to <code class="docs-inline-code">WRLAUserData</code>, and extend <code class="docs-inline-code">WRLABaseUserData</code> as shown below. Preserve the application namespace, or update the configuration to match a custom namespace.</li>
+        <li>Replace all application references to <code class="docs-inline-code">App\Models\UserData</code> and <code class="docs-inline-code">UserData::</code> with the new application class, including imports, type hints, callbacks, tests and custom relationships. Update any old <code class="docs-inline-code">BaseUserData</code> import alias or parent declaration to the actual package class <code class="docs-inline-code">WRLABaseUserData</code>.</li>
+        <li>Change only the <code class="docs-inline-code">wrla_user_data</code> entry inside your published <code class="docs-inline-code">models</code> array to <code class="docs-inline-code">App\Models\WRLAUserData::class</code>. Do not force-republish the configuration or replace its custom User model and other settings.</li>
+        <li>Retain only custom overrides, matching the base signatures. Preserve custom table, connection, fillable fields, casts, scopes, traits, boot hooks and relationships where needed. If you override a boot method, call the parent where required by Eloquent.</li>
+        <li>Run <code class="docs-inline-code">composer dump-autoload</code> and <code class="docs-inline-code">php artisan optimize:clear</code> after the rename to refresh autoloading and cached configuration. Validate login, MFA, user creation/editing, permissions, settings/data, profile avatars, navigation and any project-specific overrides before deploying. Inherited defaults will then receive future package fixes automatically.</li>
+    </ol>
+    <div class="docs-code-block mt-4 mb-6">
+        <pre><code>&lt;?php
+
+namespace App\Models;
+
+use WebRegulate\LaravelAdministration\Models\WRLABaseUserData;
+
+class WRLAUserData extends WRLABaseUserData
+{
+}</code></pre>
+    </div>
+    <p class="docs-body">
+        Do not delete your customised model and rerun the installer as a migration shortcut. The installer
+        preserves an existing <code class="docs-inline-code">WRLAUserData</code> model. If the configuration
+        still points at an existing legacy <code class="docs-inline-code">App\Models\UserData</code>,
+        it leaves that model intact and reports the required migration rather than generating an unused replacement.
+        The table <code class="docs-inline-code">wrla_user_data</code>, relation
+        <code class="docs-inline-code">wrlaUserData</code>, configuration keys and
+        <code class="docs-inline-code">WRLAHelper::getUserDataModelClass()</code> remain unchanged.
+        There is no schema change or data migration required for the class rename or inheritance itself.
+    </p>
+
+    <h3 class="docs-subheading mt-6">Signature Compatibility</h3>
+    <p class="docs-body">
+        Check every retained override against the package model, not just the examples below. Preserve
+        public visibility and static/instance status. Parameters must not be more restrictive, and
+        return types must be compatible; more specific return types are allowed where PHP permits them.
+    </p>
+    <table class="docs-table">
+        <thead>
+            <tr><th>Method</th><th>Base signature</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Current user</td><td><code class="docs-inline-code">public static function getCurrentUser(): mixed</code></td></tr>
+            <tr><td>Current user data</td><td><code class="docs-inline-code">public static function getCurrentUserData(): ?self</code> (<code class="docs-inline-code">self</code> is <code class="docs-inline-code">WRLABaseUserData</code>; your subclass may return <code class="docs-inline-code">?self</code> or <code class="docs-inline-code">?WRLABaseUserData</code>).</td></tr>
+            <tr><td>Login</td><td><code class="docs-inline-code">public static function attemptLogin(string $identifier, string $password, bool $remember = true): bool</code></td></tr>
+            <tr><td>Reset notification</td><td><code class="docs-inline-code">public function sendPasswordResetNotification(string $token): void</code></td></tr>
+            <tr><td>Connection</td><td><code class="docs-inline-code">public function getConnectionName(): ?string</code></td></tr>
+            <tr><td>Attach user</td><td><code class="docs-inline-code">public function attachUser(mixed $user): static</code></td></tr>
+            <tr><td>Avatar</td><td><code class="docs-inline-code">public static function getAvatarStatic(?string $avatar, ?string $fullName = null): string</code></td></tr>
+        </tbody>
+    </table>
+
+    <h3 class="docs-subheading mt-6">Preserving Custom Avatar URLs</h3>
+    <p class="docs-body">
+        The package default retains the current stub's root-relative stored-avatar URL. If your
+        application uses Laravel's <code class="docs-inline-code">asset()</code> helper for a CDN or
+        <code class="docs-inline-code">ASSET_URL</code>, retain that difference as a small override.
+        Delegating the placeholder to the parent keeps future default improvements.
+    </p>
+    <div class="docs-code-block mb-6">
+        <pre><code>public static function getAvatarStatic(?string $avatar, ?string $fullName = null): string
+{
+    if (!empty($avatar)) {
+        return asset("storage/images/avatars/$avatar");
+    }
+
+    return parent::getAvatarStatic($avatar, $fullName);
+}</code></pre>
+    </div>
+    <p class="docs-body">
+        The inherited <code class="docs-inline-code">getProfileAvatar()</code> calls this override.
+        It retains the current stub's rule that the configured <code class="docs-inline-code">user_avatar</code>
+        callback runs only when a related user exists. Preserve a custom
+        <code class="docs-inline-code">getProfileAvatar()</code> override if your application intentionally differs.
+    </p>
+
+    <h3 class="docs-subheading mt-6">Connection Configuration</h3>
+    <p class="docs-body">
+        Merge this optional block into your published configuration without force-republishing it.
+        Leave it null to use Laravel's default connection, or set a configured Laravel connection name
+        before a fresh installation's migrations. Models and fresh user-data migrations use this setting.
+    </p>
+    <div class="docs-code-block mb-4">
+        <pre><code>'wrla_user_data' => [
+    'connection' => null,
+],</code></pre>
+    </div>
+    <p class="docs-body">
+        To preserve an old model's fixed connection, retain its property in your application subclass,
+        for example <code class="docs-inline-code">protected $connection = 'mysql';</code>.
+        This property and <code class="docs-inline-code">setConnection()</code> take precedence for model
+        operations; the migration uses the configuration setting instead. Ensure the table exists on
+        the connection you choose. Existing tables and previously published migrations are not rewritten,
+        moved or rerun; coordinate any database move separately and preserve the migration connection
+        when rolling back.
+    </p>
+</div>
+
+<!-- Features -->
+<div class="docs-section">
+    <h2 class="docs-heading">New Features</h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>Added the package-owned <code class="docs-inline-code">WRLABaseUserData</code> Eloquent model containing the existing stub's permissions, settings/data, MFA, authentication, avatar, identity and relationship defaults.</li>
+        <li>The renamed <code class="docs-inline-code">WRLAUserData.stub</code> generates an empty <code class="docs-inline-code">WRLAUserData</code> application subclass, leaving all default behaviour maintained by WRLA.</li>
+        <li>Added consistent runtime connection selection for the inherited model, relationships, commands and fresh user-data migrations.</li>
+    </ul>
+</div>
+
+<!-- Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">Changes &amp; Improvements</h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>Replaced fixed-class calls with late static binding for current-user lookup, avatar generation and password/email helpers, so application overrides are honoured by inherited methods.</li>
+        <li>Removed the application-specific <code class="docs-inline-code">?User</code> return type from the package implementation. The default still uses Laravel authentication, while overrides may support other user implementations.</li>
+        <li>Kept the application model configurable throughout WRLA, including navigation enabled conditions. No inheritance requirement is enforced against legacy standalone models.</li>
+        <li>The installer reports successful generation or preservation of an existing model and points existing installations to these migration notes. Uninstallation targets <code class="docs-inline-code">WRLAUserData.php</code>; the old <code class="docs-inline-code">UserData.php</code> is included only when it is still the configured WRLA model, avoiding removal of unrelated application models.</li>
+        <li>User creation respects configured password helpers and, for base-model subclasses, <code class="docs-inline-code">attachUser()</code>. Legacy standalone models retain direct user-ID assignment; both paths use the configured user-ID builder.</li>
+        <li>The base model's <code class="docs-inline-code">attachUser()</code> stores the user as an Eloquent relation rather than a database attribute, so attaching a user before saving does not attempt to insert a nonexistent <code class="docs-inline-code">user</code> column.</li>
+    </ul>
+
+    <h3 class="docs-subheading mt-6">Keeping Customisations Compatible with Future Updates</h3>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>Do not edit vendor files or copy the base implementation into the application. Inherit unchanged defaults and keep overrides narrowly focused.</li>
+        <li>Call <code class="docs-inline-code">parent::methodName()</code> to extend default behaviour, and use <code class="docs-inline-code">static::methodName()</code> for overridable static calls inside custom code.</li>
+        <li>Use your configured application class or <code class="docs-inline-code">WRLAHelper</code> for application calls; do not replace the configured subclass with the package base and bypass customisations.</li>
+        <li>Treat overridable signatures as the extension contract. Review release notes and validate retained overrides whenever upgrading; an override replaces its parent implementation and does not automatically receive changes to that method.</li>
+        <li>Custom authentication still requires compatible Laravel user/guard configuration or an <code class="docs-inline-code">attemptLogin()</code> override. Changing <code class="docs-inline-code">getPasswordField()</code> alone does not reconfigure Laravel's login provider or password-reset flow; those continue to use the configured user model and existing routes.</li>
+    </ul>
+</div>

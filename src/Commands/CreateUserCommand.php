@@ -3,8 +3,8 @@
 namespace WebRegulate\LaravelAdministration\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Hash;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
+use WebRegulate\LaravelAdministration\Models\WRLABaseUserData;
 use Faker;
 
 class CreateUserCommand extends Command
@@ -89,16 +89,20 @@ class CreateUserCommand extends Command
         $password = $this->ask('Enter the password for the '.$userText->lower(), $defaultPassword);
 
         // Create a standard user
+        $userDataClass = WRLAHelper::getUserDataModelClass();
         $user = new $userModel;
         $user->name = $name;
         $user->email = $email;
-        $user->password = Hash::make($password);
+        $user->{$userDataClass::getPasswordField()} = $userDataClass::hashPassword($password);
         $user->save();
 
-        // Create WRLA user data record, set connection to config
-        $wrlaUserData = new (WRLAHelper::getUserDataModelClass());
-        $wrlaUserData->setConnection(config('wr-laravel-administration.wrla_user_data.connection'));
-        $wrlaUserData->user_id = $user->id;
+        // Create WRLA user data record
+        $wrlaUserData = new $userDataClass;
+        if ($wrlaUserData instanceof WRLABaseUserData) {
+            $wrlaUserData->attachUser($user);
+        } else {
+            $wrlaUserData->user_id = WRLAHelper::buildUserId($user);
+        }
         $wrlaUserData->permissions = json_encode([
             'master' => $master,
             'admin' => $admin,

@@ -162,7 +162,7 @@ static::setDisplayName('Article', 'All Articles'); // fully explicit</code></pre
         <pre><code>// Boolean
 static::setPermission(ManageableModelPermissions::DELETE, false);
 
-// Callable - See UserData class for available methods
+// Callable - See WRLAUserData class for available methods
 static::setPermission(ManageableModelPermissions::DELETE, fn($userData) => $userData->isMaster());
 </code></pre>
     </div>

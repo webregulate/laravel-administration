@@ -1,27 +1,24 @@
 <?php
-namespace {{ NAMESPACE }};
 
-use Illuminate\Support\Facades\Auth;
+namespace WebRegulate\LaravelAdministration\Models;
+
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 
 /**
- * Model: UserData
- * 
- * @property int $id bigint unsigned
- * @property string $user_id varchar(255)
- * @property string $avatar varchar(255)
- * @property string $permissions json
- * @property string $settings json
- * @property string $data json
- * @property string $mfa_secret varchar(255)
+ * @property int $id
+ * @property string $user_id
+ * @property string|null $avatar
+ * @property string|null $permissions
+ * @property string|null $settings
+ * @property string|null $data
+ * @property string|null $mfa_secret
  */
-class UserData extends Model
+class WRLABaseUserData extends Model
 {
-    protected $connection = {{ CONNECTION }};
-
     protected $table = 'wrla_user_data';
 
     public $timestamps = false;
@@ -33,23 +30,30 @@ class UserData extends Model
         'data',
     ];
 
-    /** Get current logged in user */
-    public static function getCurrentUser(): ?User
+    public function getConnectionName(): ?string
+    {
+        return parent::getConnectionName()
+            ?? config('wr-laravel-administration.wrla_user_data.connection');
+    }
+
+    /** Get current logged in user. */
+    public static function getCurrentUser(): mixed
     {
         return Auth::user();
     }
 
-    /** Get current logged in user -> user data */
-    public static function getCurrentUserData(): ?UserData
+    /** Get current logged in user's data. */
+    public static function getCurrentUserData(): ?self
     {
-        return once(fn() => UserData::getCurrentUser()?->wrlaUserData);
+        return once(fn() => static::getCurrentUser()?->wrlaUserData);
     }
 
-    /** Attach user to the model */
+    /** Attach user to the model. */
     public function attachUser(mixed $user): static
     {
-        $this->user = $user;
+        $this->setRelation('user', $user);
         $this->user_id = WRLAHelper::buildUserId($user);
+
         return $this;
     }
 
@@ -63,63 +67,63 @@ class UserData extends Model
             && (string) $this->user_id === (string) $userId;
     }
 
-    /** Get User model by email */
+    /** Get user model by email. */
     public static function getUserByEmail(string $email): mixed
     {
         return WRLAHelper::getUserModelClass()::where('email', $email)->first();
     }
 
-    /** Requires MFA */
+    /** Requires MFA. */
     public function requiresMFA(): bool
     {
         return $this->getSetting('mfa.require') ?? false;
     }
 
-    /** Set MFA secret key */
+    /** Set MFA secret key. */
     public function setMFASecretKey(string $secretKey): ?string
     {
         return $this->mfa_secret = $secretKey;
     }
 
-    /** Get MFA secret key */
+    /** Get MFA secret key. */
     public function getMFASecretKey(): ?string
     {
         return $this->mfa_secret;
     }
 
-    /** Check password */
+    /** Check password. */
     public static function checkPassword(string $identifier, string $password): bool
     {
-        $user = self::getUserByEmail($identifier);
-        if (!$user) return false;
+        $user = static::getUserByEmail($identifier);
+        if (!$user) {
+            return false;
+        }
 
-        return Hash::check($password, $user->password);
+        return Hash::check($password, $user->{static::getPasswordField()});
     }
 
-    /** Generate password */
+    /** Generate password. */
     public static function hashPassword(string $password): string
     {
         return Hash::make($password);
     }
 
-    /** Password field */
+    /** Password field on the user model. */
     public static function getPasswordField(): string
     {
         return 'password';
     }
 
-    /** Attempt login */
+    /** Attempt login. */
     public static function attemptLogin(string $identifier, string $password, bool $remember = true): bool
     {
-        $success = Auth::attempt([
+        return Auth::attempt([
             'email' => $identifier,
-            'password' => $password
+            'password' => $password,
         ], $remember);
-
-        return $success;
     }
 
-    /** Implement method 'getEmailForPasswordReset' from 'CanResetPassword' interface */
+    /** Implement method from the CanResetPassword interface. */
     public function getEmailForPasswordReset(): string
     {
         return $this->email;
@@ -131,71 +135,61 @@ class UserData extends Model
         $this->notify(new \WebRegulate\LaravelAdministration\Classes\WRLAResetPasswordNotification($this->email, $token));
     }
 
-    /** Get profile image */
+    /** Get profile image. */
     public function getProfileAvatar(): string
     {
-        // Get related user
         $user = $this->user;
-
-        // If user_avatar callback is set in config, use that
         $userAvatarConfig = config('wr-laravel-administration.user_avatar');
         if ($user != null && $userAvatarConfig != null && is_callable($userAvatarConfig)) {
             return $userAvatarConfig($user);
         }
 
-        // Use static avatar method
-        return self::getAvatarStatic($this->avatar, $this->getFullName());
+        return static::getAvatarStatic($this->avatar, $this->getFullName());
     }
 
-    /** Get full name */
+    /** Get full name. */
     public function getFullName(): string
     {
         return $this->user?->name ?? 'User';
     }
 
-    /** Get header display */
+    /** Get header display. */
     public function getHeaderDisplay(): string
     {
         return $this->getFullName();
     }
 
-    /** Get profile avatar statically */
+    /** Get profile avatar statically. */
     public static function getAvatarStatic(?string $avatar, ?string $fullName = null): string
     {
-        // If avatar is set, return it
         if (!empty($avatar)) {
             return '/'.ltrim("storage/images/avatars/$avatar", '/');
         }
 
-        // Get full name, if empty use 'U'
         $fullName = !empty($fullName) ? $fullName : 'U';
-
-        // Get just the first characters of all the words
         $name = preg_replace('/\b(\w)|./', '$1', $fullName);
 
-        // Otherwise return default
         return 'https://ui-avatars.com/api/?name=' . urlencode((string) $name) . '&color='.ltrim((string) config('wr-laravel-administration.colors.primary.50'), '#').'&background='.ltrim((string) config('wr-laravel-administration.colors.primary.500'), '#').'&size=128&font-size=0.5&rounded=true';
     }
-    
-    /** Get user by email */
+
+    /** Alias for getUserByEmail. */
     public static function getByEmail(string $email): mixed
     {
-        return WRLAHelper::getUserModelClass()::where('email', $email)->first();
+        return static::getUserByEmail($email);
     }
 
-    /** Get user permission, such as 'layered.permission.key' */
+    /** Get user permission, such as 'layered.permission.key'. */
     public function getPermission(string $dottedKey): mixed
     {
         return data_get(json_decode($this->permissions ?? '', true), $dottedKey);
     }
 
-    /** Set inner permission by key */
+    /** Set inner permission by key. */
     public function setPermission(string $dottedKey, $value): void
     {
         $this->discardChanges();
         $permissions = json_decode($this->permissions ?? '', true);
 
-        // If not array, create new array
         if (!is_array($permissions)) {
             $permissions = [];
         }
@@ -205,19 +199,18 @@ class UserData extends Model
         $this->update(['permissions' => $this->permissions]);
     }
 
-    /** Get user setting based on dotted key value, such as 'ui.theme' */
+    /** Get user setting based on dotted key value, such as 'ui.theme'. */
     public function getSetting(string $dottedKey): mixed
     {
         return data_get(json_decode($this->settings ?? '', true), $dottedKey);
     }
 
-    /** Set inner setting by key */
+    /** Set inner setting by key. */
     public function setSetting(string $dottedKey, $value): void
     {
         $this->discardChanges();
         $settings = json_decode($this->settings ?? '', true);
 
-        // If not array, create new array
         if (!is_array($settings)) {
             $settings = [];
         }
@@ -227,19 +220,18 @@ class UserData extends Model
         $this->update(['settings' => $this->settings]);
     }
 
-    /** Get user data based on dotted key value, such as 'profile.avatar' */
+    /** Get user data based on dotted key value, such as 'profile.avatar'. */
     public function getData(string $dottedKey): mixed
     {
         return data_get(json_decode($this->data ?? '', true), $dottedKey);
     }
 
-    /** Set inner data by key */
+    /** Set inner data by key. */
     public function setData(string $dottedKey, $value): void
     {
         $this->discardChanges();
         $data = json_decode($this->data ?? '', true);
 
-        // If not array, create new array
         if (!is_array($data)) {
             $data = [];
         }
@@ -249,37 +241,37 @@ class UserData extends Model
         $this->update(['data' => $this->data]);
     }
 
-    /** Get role */
+    /** Get role. */
     public function getRole(): string
     {
-        if($this->isMaster()) {
+        if ($this->isMaster()) {
             return 'Master Administrator';
-        } else if($this->isAdmin()) {
+        } elseif ($this->isAdmin()) {
             return 'Administrator';
         } else {
             return 'User';
         }
     }
 
-    /** Get current theme, if null then WRLA will fallback to the default theme */
+    /** Get current theme, or null to use the default theme. */
     public function getCurrentThemeKey(): ?string
     {
         return $this->getSetting('theme.current');
     }
 
-    /** Is user a master */
+    /** Is user a master. */
     public function isMaster(): bool
     {
         return $this->getPermission('master') == true;
     }
 
-    /** Is user an admin */
+    /** Is user an admin. */
     public function isAdmin(): bool
     {
         return $this->getPermission('admin') == true;
     }
 
-    /** Relationship: Belongs to User model */
+    /** Relationship: belongs to the configured user model. */
     public function user(): BelongsTo
     {
         return $this->belongsTo(WRLAHelper::getUserModelClass());

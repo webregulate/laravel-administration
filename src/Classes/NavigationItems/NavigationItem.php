@@ -2,7 +2,6 @@
 
 namespace WebRegulate\LaravelAdministration\Classes\NavigationItems;
 
-use App\Models\UserData;
 use Illuminate\Support\Arr;
 use Illuminate\View\ComponentAttributeBag;
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
@@ -184,7 +183,7 @@ class NavigationItem
             return true;
         }
 
-        return call_user_func($this->enableOnConditionCallback, UserData::getCurrentUserData());
+        return call_user_func($this->enableOnConditionCallback, WRLAHelper::getCurrentUserData());
     }
 
     /**

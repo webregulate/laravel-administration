@@ -39,7 +39,7 @@ class InstallCommand extends Command
         $this->updatePublishedConfig();
         $this->publishAssets();
         $this->publishLogViewerAssets();
-        $this->generateUserDataModel();
+        $this->generateWRLAUserDataModel();
         $this->generateUserManageableModel();
         $this->generateEmailTemplateManageableModel();
         $this->generateWRLASettingsClass();
@@ -116,17 +116,28 @@ class InstallCommand extends Command
         ]);
     }
 
-    private function generateUserDataModel(): void
+    private function generateWRLAUserDataModel(): void
     {
-        $envConnection = env('DB_CONNECTION', 'mysql');
-        WRLAHelper::generateFileFromStub(
-            'UserData.stub',
+        $legacyModelPath = app_path('Models/UserData.php');
+        if (ltrim(WRLAHelper::getUserDataModelClass(), '\\') === 'App\\Models\\UserData' && file_exists($legacyModelPath)) {
+            $this->warn(' - Legacy UserData model preserved at '.WRLAHelper::removeBasePath($legacyModelPath).'. Rename it to WRLAUserData and update models.wrla_user_data when following the v0.9.0 migration notes.');
+
+            return;
+        }
+
+        $createdWRLAUserDataAt = WRLAHelper::generateFileFromStub(
+            'WRLAUserData.stub',
             [
                 '{{ NAMESPACE }}' => 'App\Models',
-                '{{ CONNECTION }}' => "'$envConnection'",
             ],
-            app_path('Models/UserData.php')
+            app_path('Models/WRLAUserData.php')
         );
+
+        if ($createdWRLAUserDataAt !== false) {
+            $this->info(' - WRLAUserData model created successfully here: '.$createdWRLAUserDataAt);
+        } else {
+            $this->warn(' - WRLAUserData model already exists at '.WRLAHelper::removeBasePath(app_path('Models/WRLAUserData.php')).'. Existing customizations have been preserved; see the v0.9.0 migration notes to adopt WRLABaseUserData.');
+        }
     }
 
     private function generateUserManageableModel(): void

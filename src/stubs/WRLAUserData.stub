@@ -1,0 +1,9 @@
+<?php
+
+namespace {{ NAMESPACE }};
+
+use WebRegulate\LaravelAdministration\Models\WRLABaseUserData;
+
+class WRLAUserData extends WRLABaseUserData
+{
+}
