@@ -44,6 +44,17 @@ namespace App\Models;
 
 use WebRegulate\LaravelAdministration\Models\WRLAUserDataBase;
 
+/**
+ * Model: WRLAUserData
+ *
+ * @property int $id bigint unsigned
+ * @property string $user_id varchar(255)
+ * @property string $avatar varchar(255)
+ * @property string $permissions json
+ * @property string $settings json
+ * @property string $data json
+ * @property string $mfa_secret varchar(255)
+ */
 class WRLAUserData extends WRLAUserDataBase
 {
 }</code></pre>
