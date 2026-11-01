@@ -87,7 +87,7 @@ class WRLAUserData extends WRLAUserDataBase
         extending a default, and <code class="docs-inline-code">static::methodName()</code> when calling
         another overridable static helper. Application code should use its configured subclass or
         <code class="docs-inline-code">WRLAHelper::getUserDataModelClass()</code>, not instantiate the
-        package base directly. See the <a href="versions/v0.9.0.html" class="docs-link">v0.9.0 migration notes</a>
+        package base directly. See the <a href="versions/v0.9.1.html" class="docs-link">v0.9.1 migration notes</a>
         before renaming an existing <code class="docs-inline-code">UserData</code> model to
         <code class="docs-inline-code">WRLAUserData</code> and converting it to the new base.
     </p>
@@ -505,7 +505,7 @@ class WRLAUserData extends WRLAUserDataBase
         belongs to a given User model. It respects <code class="docs-inline-code">build_wrla_user_data_id</code>,
         compares IDs as strings, and returns <code class="docs-inline-code">false</code> when either ID is null.
         For the active user record, pass <code class="docs-inline-code">WRLAHelper::getActiveModelInstance()</code>.
-        This method is inherited by the v0.9.0 application subclass. Older standalone models must either
+        This method is inherited by the v0.9.1 application subclass. Older standalone models must either
         migrate to the base model or implement this method before using it.
     </p>
 

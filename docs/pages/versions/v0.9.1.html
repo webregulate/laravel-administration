@@ -1,27 +1,134 @@
 <p class="docs-lead">
-    Fixes the missing <code class="docs-inline-code">UpsertOptions</code> import in the generated User manageable model.
+    <code class="docs-inline-code">WRLAUserData</code> now inherits WRLA's defaults.
+    Keep only your custom overrides.
 </p>
 
+<!-- Breaking Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        Breaking Changes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li><code class="docs-inline-code">UserData</code> becomes <code class="docs-inline-code">WRLAUserData</code>, extending <code class="docs-inline-code">WRLAUserDataBase</code>.</li>
+        <li>Custom overrides must match the base method signatures.</li>
+    </ul>
+</div>
+
+<!-- Upgrade Guide -->
+<div class="docs-section">
+    <h2 class="docs-heading">Upgrade Steps</h2>
+    <ol class="list-decimal list-outside space-y-3 text-gray-600 ml-5">
+        <li>
+            Set WRLA's Composer constraint to <code class="docs-inline-code">^0.9.1</code>
+            (keep your existing constraint for local development), then run:
+            <div class="docs-code-block mt-2">
+                <pre><code>composer update webregulate/laravel-administration</code></pre>
+            </div>
+        </li>
+        <li>Rename <code class="docs-inline-code">app/Models/UserData.php</code> &rarr; <code class="docs-inline-code">app/Models/WRLAUserData.php</code>.</li>
+        <li>
+            Project-wide replace: <code class="docs-inline-code">\bUserData\b</code> &rarr;
+            <code class="docs-inline-code">WRLAUserData</code>.
+            Enable <strong>regex + case-sensitive</strong>; application PHP only, not vendor/caches.
+            Preview matches before replacing.
+        </li>
+        <li>
+            Replace the model with this. Retain your namespace and only intentional custom overrides, not copied defaults:
+            <div class="docs-code-block mt-2">
+                <pre><code>&lt;?php
+
+namespace App\Models;
+
+use WebRegulate\LaravelAdministration\Models\WRLAUserDataBase;
+
+/**
+ * Model: WRLAUserData
+ *
+ * @property int $id bigint unsigned
+ * @property string $user_id varchar(255)
+ * @property string $avatar varchar(255)
+ * @property string $permissions json
+ * @property string $settings json
+ * @property string $data json
+ * @property string $mfa_secret varchar(255)
+ */
+class WRLAUserData extends WRLAUserDataBase
+{
+}</code></pre>
+            </div>
+            <p class="docs-body mt-2">
+                Remove the old generated <code class="docs-inline-code">protected $connection = 'mysql';</code>
+                unless this model intentionally uses a different connection from Laravel's default.
+                With no model override, WRLA uses <code class="docs-inline-code">wr-laravel-administration.wrla_user_data.connection</code>
+                when configured, otherwise Laravel's default database connection.
+            </p>
+        </li>
+        <li>
+            Existing generated User manageable models that call <code class="docs-inline-code">UpsertOptions::default()</code>
+            need this import if it is missing:
+            <div class="docs-code-block mt-2">
+                <pre><code>use WebRegulate\LaravelAdministration\Classes\UpsertOptions;</code></pre>
+            </div>
+        </li>
+        <li>
+            Run, then check login and your overrides:
+            <div class="docs-code-block mt-2">
+                <pre><code>composer dump-autoload
+php artisan optimize:clear</code></pre>
+            </div>
+        </li>
+    </ol>
+    <p class="docs-body mt-4">
+        No database changes. Table, relation and helper names stay unchanged.
+        The installer does not migrate existing models.
+    </p>
+    <p class="docs-body mt-2">
+        Already migrated with v0.9.0? Update the package and check the
+        <code class="docs-inline-code">UpsertOptions</code> import; the model migration does not need repeating.
+        Use v0.9.1 rather than the re-tagged v0.9.0: Packagist keeps stable version references immutable,
+        so the original v0.9.0 snapshot does not contain the fixes below.
+    </p>
+</div>
+
+<!-- Fixes -->
 <div class="docs-section">
     <h2 class="docs-heading">Fixes</h2>
     <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
-        <li>New installations correctly resolve <code class="docs-inline-code">UpsertOptions::default()</code>.</li>
+        <li>New installations correctly resolve <code class="docs-inline-code">UpsertOptions::default()</code> in the generated User manageable model.</li>
         <li>Includes the restored WRLAUserData stub docblock and documentation.</li>
     </ul>
 </div>
 
+<!-- Features -->
 <div class="docs-section">
-    <h2 class="docs-heading">Upgrade Steps</h2>
-    <p class="text-gray-600">
-        Run <code class="docs-inline-code">composer update webregulate/laravel-administration</code>.
-        Existing generated User manageable models that call <code class="docs-inline-code">UpsertOptions::default()</code>
-        need this import if it is missing:
-    </p>
-    <div class="docs-code-block mt-2">
-        <pre><code>use WebRegulate\LaravelAdministration\Classes\UpsertOptions;</code></pre>
-    </div>
-    <p class="text-gray-600 mt-2">
-        Use 0.9.1 rather than the re-tagged 0.9.0: Packagist keeps stable version references immutable,
-        so the original 0.9.0 snapshot does not contain these fixes.
-    </p>
+    <h2 class="docs-heading">New Features</h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>Package-owned <code class="docs-inline-code">WRLAUserDataBase</code> contains the default implementation.</li>
+        <li>New installations generate an empty <code class="docs-inline-code">WRLAUserData</code> subclass. Override only what your project needs; leave defaults inherited to receive future fixes.</li>
+    </ul>
+</div>
+
+<!-- Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">Changes &amp; Improvements</h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>Inherited static calls honour application overrides, and WRLA resolves the configured application model rather than a hard-coded class.</li>
+        <li>The installer and uninstaller use the renamed application model while recognising configured legacy models.</li>
+        <li>User creation and password checks honour model helpers. Connection priority: model, config, Laravel default; review this order if using custom connections.</li>
+        <li>
+            The generated <code class="docs-inline-code">User</code> model's
+            <code class="docs-inline-code">ENABLED</code> and <code class="docs-inline-code">DELETE</code>
+            defaults now use <code class="docs-inline-code">belongsToUser()</code> to check the active model
+            against the current user's data. Masters can manage users, and other users can access their own
+            profile; deletion requires a master and excludes their own account.
+            <div class="docs-code-block mt-2">
+                <pre><code>static::setPermission(ManageableModelPermissions::ENABLED, fn($wrlaUserData) => $wrlaUserData->isMaster() || $wrlaUserData->belongsToUser(WRLAHelper::getActiveModelInstance()));
+static::setPermission(ManageableModelPermissions::DELETE, fn($wrlaUserData) => $wrlaUserData->isMaster() &amp;&amp; !$wrlaUserData->belongsToUser(WRLAHelper::getActiveModelInstance()));</code></pre>
+            </div>
+            Existing applications must update these permissions manually, preserving any custom restrictions.
+        </li>
+    </ul>
 </div>
