@@ -17,7 +17,7 @@ use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
  * @property string|null $data
  * @property string|null $mfa_secret
  */
-class WRLABaseUserData extends Model
+class WRLAUserDataBase extends Model
 {
     protected $table = 'wrla_user_data';
 

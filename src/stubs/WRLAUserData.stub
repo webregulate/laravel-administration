@@ -2,8 +2,8 @@
 
 namespace {{ NAMESPACE }};
 
-use WebRegulate\LaravelAdministration\Models\WRLABaseUserData;
+use WebRegulate\LaravelAdministration\Models\WRLAUserDataBase;
 
-class WRLAUserData extends WRLABaseUserData
+class WRLAUserData extends WRLAUserDataBase
 {
 }

@@ -136,7 +136,7 @@ class InstallCommand extends Command
         if ($createdWRLAUserDataAt !== false) {
             $this->info(' - WRLAUserData model created successfully here: '.$createdWRLAUserDataAt);
         } else {
-            $this->warn(' - WRLAUserData model already exists at '.WRLAHelper::removeBasePath(app_path('Models/WRLAUserData.php')).'. Existing customizations have been preserved; see the v0.9.0 migration notes to adopt WRLABaseUserData.');
+            $this->warn(' - WRLAUserData model already exists at '.WRLAHelper::removeBasePath(app_path('Models/WRLAUserData.php')).'. Existing customizations have been preserved; see the v0.9.0 migration notes to adopt WRLAUserDataBase.');
         }
     }
 

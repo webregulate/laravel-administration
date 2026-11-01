@@ -17,10 +17,10 @@ return [
     // Model definitions
     'models' => [
         'user' => \App\Models\User::class,
-        'wrla_user_data' => \App\Models\WRLAUserData::class, // Application subclass of WRLABaseUserData.
+        'wrla_user_data' => \App\Models\WRLAUserData::class, // Application subclass of WRLAUserDataBase.
     ],
 
-    // WRLAUserData connection, null uses Laravel's default connection. An explicit model connection takes precedence.
+    // Optional connection; an explicit model connection takes precedence.
     'wrla_user_data' => [
         'connection' => null,
     ],

@@ -4,7 +4,7 @@ namespace WebRegulate\LaravelAdministration\Commands;
 
 use Illuminate\Console\Command;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
-use WebRegulate\LaravelAdministration\Models\WRLABaseUserData;
+use WebRegulate\LaravelAdministration\Models\WRLAUserDataBase;
 use Faker;
 
 class CreateUserCommand extends Command
@@ -98,7 +98,7 @@ class CreateUserCommand extends Command
 
         // Create WRLA user data record
         $wrlaUserData = new $userDataClass;
-        if ($wrlaUserData instanceof WRLABaseUserData) {
+        if ($wrlaUserData instanceof WRLAUserDataBase) {
             $wrlaUserData->attachUser($user);
         } else {
             $wrlaUserData->user_id = WRLAHelper::buildUserId($user);

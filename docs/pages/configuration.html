@@ -28,11 +28,11 @@
             </tr>
             <tr>
                 <td><code class="docs-inline-code">models.wrla_user_data</code></td>
-                <td>Application model class that stores WRLA-specific user meta. Default: <code class="docs-inline-code">App\Models\WRLAUserData</code>, extending <code class="docs-inline-code">WebRegulate\LaravelAdministration\Models\WRLABaseUserData</code>. Keep this setting pointed at your application subclass.</td>
+                <td>Application model class that stores WRLA-specific user meta. Default: <code class="docs-inline-code">App\Models\WRLAUserData</code>, extending <code class="docs-inline-code">WebRegulate\LaravelAdministration\Models\WRLAUserDataBase</code>. Keep this setting pointed at your application subclass.</td>
             </tr>
             <tr>
                 <td><code class="docs-inline-code">wrla_user_data.connection</code></td>
-                <td>Laravel connection name for the inherited WRLAUserData model and new user-data table migrations. Default: <code class="docs-inline-code">null</code> (Laravel's default connection). A model's explicit <code class="docs-inline-code">$connection</code> or <code class="docs-inline-code">setConnection()</code> takes precedence for model operations. Existing tables are not moved automatically.</td>
+                <td>Optional model and fresh-migration connection. Default: <code class="docs-inline-code">null</code> (Laravel default). Explicit model connections take precedence for model operations. Existing tables are not moved.</td>
             </tr>
             <tr>
                 <td><code class="docs-inline-code">middleware.prepend</code></td>
@@ -60,9 +60,9 @@
 
 namespace App\Models;
 
-use WebRegulate\LaravelAdministration\Models\WRLABaseUserData;
+use WebRegulate\LaravelAdministration\Models\WRLAUserDataBase;
 
-class WRLAUserData extends WRLABaseUserData
+class WRLAUserData extends WRLAUserDataBase
 {
     public function getFullName(): string
     {
