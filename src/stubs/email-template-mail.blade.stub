@@ -1,3 +1,10 @@
 <x-mail::message>
+<style>
+    .content-cell a:not(.button) {
+        color: #0000ee;
+        text-decoration: underline;
+    }
+</style>
+
 {!! $emailTemplate->getRenderedBody($renderMode ?? 'email') !!}
 </x-mail::message>
