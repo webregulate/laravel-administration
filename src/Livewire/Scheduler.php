@@ -28,9 +28,9 @@ class Scheduler extends WRLAPageComponent
      */
     public string $flashType = 'success';
 
-    public function mount(): void
+    public function boot(): void
     {
-        // Hidden entirely unless the current user may access the page.
+        // Enforce scheduler access on every Livewire request
         if (! WRLAHelper::schedulerEnabled()) {
             abort(404);
         }

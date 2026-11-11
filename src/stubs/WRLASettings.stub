@@ -50,9 +50,20 @@ class WRLASettings
                 ],
             ],
 
-            // Show the documentation link for these users.
+            // Documentation access and top-bar link visibility.
             'documentation' => [
+                'enabled' => true,
                 'show_link' => fn ($wrlaUserData) => $wrlaUserData?->isMaster() ?? false,
+            ],
+
+            // File Manager access; bool or callback receiving the current user's WRLA data.
+            'file_manager' => [
+                'enabled' => fn ($wrlaUserData) => $wrlaUserData?->isMaster() ?? false,
+            ],
+
+            // Log viewer access; the viewer itself is selected in config/wrla.php.
+            'logs' => [
+                'enabled' => fn ($wrlaUserData) => $wrlaUserData?->isMaster() ?? false,
             ],
 
             // null uses the WRLA avatar; a callback receives the User model and returns a URL.
@@ -124,7 +135,7 @@ class WRLASettings
 
             // File Manager
             NavigationItem::make(url: route('wrla.file-manager'), name: 'File Manager', icon: 'fa fa-folder-open')->showOnCondition(fn() => 
-                WRLAHelper::getCurrentUserData()?->isMaster() && config('wrla.file_manager.enabled', false)
+                WRLAHelper::fileManagerEnabled()
             ),
 
             // Scheduler & Jobs
@@ -134,7 +145,7 @@ class WRLASettings
 
             // View Logs
             NavigationItem::make(url: route('wrla.logs'), name: 'View Logs', icon: 'fa fa-file-alt')->showOnCondition(fn() =>
-                WRLAHelper::getCurrentUserData()?->isMaster() && !empty(config('wrla.logs.current'))
+                WRLAHelper::logsEnabled()
             ),
 
             // Divider
@@ -155,7 +166,7 @@ class WRLASettings
         Route::get('dashboard', Dashboard::class)
             ->name('wrla.dashboard');
 
-        // File manager - Enabled via `wrla.file_manager.enabled` configuration
+        // File manager - Access is configured in runtime().
         Route::get('file-manager', FileManager::class)
             ->name('wrla.file-manager');
 
@@ -167,7 +178,7 @@ class WRLASettings
         Route::get('scheduler', Scheduler::class)
             ->name('wrla.scheduler');
 
-        // View logs - Set via `wrla.logs.current` configuration
+        // View logs - Access is configured in runtime(); select the viewer in config/wrla.php.
         Route::get('logs', Logs::class)
             ->name('wrla.logs');
     }

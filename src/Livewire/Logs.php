@@ -28,6 +28,11 @@ class Logs extends WRLAPageComponent
 
     /* Livewire Methods / Hooks
     --------------------------------------------------------------------------*/
+    public function boot(): void
+    {
+        abort_unless(WRLAHelper::logsEnabled(), 403, 'Access to logs permission denied.');
+    }
+
     public function mount()
     {
         // opcodesio/log-viewer mode: redirect out to the standalone viewer, or embed

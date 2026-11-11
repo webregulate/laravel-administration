@@ -11,7 +11,7 @@ class UpgradeCommand extends Command
         {--dry-run : Preview application file changes without writing anything}
         {--yes : Explicitly approve the previewed migration, including in non-interactive mode}';
 
-    protected $description = 'Migrate application files for WRLA 0.10.0, with preview and confirmation.';
+    protected $description = 'Migrate application files for WRLA 0.10.1, with preview and confirmation.';
 
     public function handle(): int
     {
@@ -25,12 +25,12 @@ class UpgradeCommand extends Command
 
         // Already upgraded applications need no writes or cache clearing
         if ($changes === []) {
-            $this->info('WRLA application files are already up to date for 0.10.0.');
+            $this->info('WRLA application files are already up to date for 0.10.1.');
 
             return self::SUCCESS;
         }
 
-        $this->info('WRLA 0.10.0 application upgrade');
+        $this->info('WRLA 0.10.1 application upgrade');
         $this->line('Rename config to wrla and configure every runtime-capable setting exclusively in WRLASettings::runtime().');
         $this->table(['Action', 'Application file'], array_map(
             fn (string $path, array $change) => [
@@ -76,7 +76,7 @@ class UpgradeCommand extends Command
             }
         }
 
-        $this->info('WRLA 0.10.0 changes applied. Review the Git diff and test before finalising the upgrade.');
+        $this->info('WRLA 0.10.1 changes applied. Review the Git diff and test before finalising the upgrade.');
 
         return self::SUCCESS;
     }

@@ -14,13 +14,16 @@ class DatabaseSchema extends WRLAPageComponent
      */
     public ?string $iframeSrc = null;
 
-    public function mount()
+    public function boot(): void
     {
-        // Hidden entirely unless the current user may access the viewer.
+        // Enforce schema access on every Livewire request
         if (! WRLAHelper::databaseSchemaViewerEnabled()) {
             abort(404);
         }
+    }
 
+    public function mount()
+    {
         $trussUrl = Route::has('truss.index')
             ? route('truss.index')
             : url('/' . config('truss.route_prefix', 'truss'));

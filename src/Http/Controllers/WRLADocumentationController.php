@@ -15,6 +15,7 @@ class WRLADocumentationController extends Controller
      */
     public function index(Request $request): View
     {
+        // Enforce documentation's runtime access rule
         if(!WRLAHelper::documentationEnabled()) {
             abort(404);
         }
@@ -29,6 +30,7 @@ class WRLADocumentationController extends Controller
      */
     public function static(Request $request, string $path): \Illuminate\Http\Response|RedirectResponse
     {
+        // Protect documentation assets with the same runtime rule
         if(!WRLAHelper::documentationEnabled()) {
             abort(404);
         }

@@ -95,7 +95,7 @@ PHP;
         $static = require $this->directory . '/config/wrla.php';
         $this->assertSame('my-admin', $static['base_url']);
         $this->assertSame('blocking', $static['developer']['update']['mode']);
-        $this->assertArrayNotHasKey('enabled', $static['database_browser']);
+        $this->assertArrayNotHasKey('database_browser', $static);
         $this->assertSame([], UpgradeTo0100::plan($this->directory));
     }
 

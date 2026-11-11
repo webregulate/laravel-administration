@@ -3,6 +3,7 @@
 namespace WebRegulate\LaravelAdministration\Classes\NavigationItems;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\ComponentAttributeBag;
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
 use WebRegulate\LaravelAdministration\Classes\UpsertModal;
@@ -155,6 +156,22 @@ class NavigationItem
      */
     public function checkShowCondition(): bool
     {
+        $features = [
+            'wrla.file-manager' => 'fileManagerEnabled',
+            'wrla.logs' => 'logsEnabled',
+            'wrla.scheduler' => 'schedulerEnabled',
+            'wrla.database-schema' => 'databaseSchemaViewerEnabled',
+            'wrla.database.tables' => 'databaseBrowserEnabled',
+            'wrla.documentation' => 'documentationEnabled',
+        ];
+
+        foreach ($features as $route => $check) {
+            // Feature access also applies to custom navigation and direct-URL items
+            if (($this->route === $route || ($this->url !== null && Route::has($route) && $this->url === route($route))) && !WRLAHelper::{$check}()) {
+                return false;
+            }
+        }
+
         if ($this->showOnConditionCallback === null) {
             return true;
         }

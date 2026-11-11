@@ -922,6 +922,16 @@ class WRLAHelper
         return $enabled === null ? static::userIsDev() : static::resolveDeveloperToolsFlag($enabled);
     }
 
+    public static function fileManagerEnabled(): bool
+    {
+        return static::resolveDeveloperToolsFlag(WRLASettingsService::get('file_manager.enabled'));
+    }
+
+    public static function logsEnabled(): bool
+    {
+        return static::resolveDeveloperToolsFlag(WRLASettingsService::get('logs.enabled'));
+    }
+
     public static function databaseBrowserConnections(): array
     {
         $configured = array_keys(config('database.connections', []));
@@ -1050,7 +1060,7 @@ class WRLAHelper
     }
 
     /**
-     * Resolve a developer-tools config value to a boolean.
+     * Resolve an application runtime access rule to a boolean.
      *
      * Accepts a bool, null, or a Closure($wrlaUserData) returning bool. Closures are
      * only invoked when current user data is available (returns false otherwise).
@@ -1075,7 +1085,7 @@ class WRLAHelper
      */
     public static function documentationEnabled(): bool
     {
-        return (bool) config('wrla.documentation.enabled', true);
+        return static::resolveDeveloperToolsFlag(WRLASettingsService::get('documentation.enabled'));
     }
 
     /**

@@ -8,6 +8,8 @@
         <li><code class="docs-inline-code">config/wr-laravel-administration.php</code> becomes <code class="docs-inline-code">config/wrla.php</code>. Config lookups now use <code class="docs-inline-code">wrla.*</code>.</li>
         <li>Every runtime-capable setting belongs exclusively in <code class="docs-inline-code">App\WRLA\WRLASettings::runtime(): array</code>, including its boolean/null/list values. The generated method includes all runtime options. The nested keys stay the same.</li>
         <li>Custom code reading callback-capable settings must use <code class="docs-inline-code">WRLASettingsService::get()</code> rather than reading only Laravel config. Existing WRLA helpers already use the resolver.</li>
+        <li>Feature access rules live in <code class="docs-inline-code">runtime()</code>, including <code class="docs-inline-code">file_manager.enabled</code>, <code class="docs-inline-code">logs.enabled</code> and <code class="docs-inline-code">documentation.enabled</code>. Each accepts a boolean or callback receiving WRLA user data. Viewer selection, filesystem definitions and other static options stay in config.</li>
+        <li>File Manager, Logs, Scheduler and Schema Viewer enforce runtime access on initial page loads and every Livewire request. The standalone Opcodes viewer uses <code class="docs-inline-code">logs.enabled</code> too, rather than deriving authorization from a navigation item. Move any custom log authorization into that rule; generated log access initially allows masters. Custom navigation can further restrict visibility but cannot bypass feature access.</li>
         <li><code class="docs-inline-code">build_wrla_user_data_id</code> must be callable. The generated callback returns the user ID; invalid values no longer silently fall back to it.</li>
         <li>Asset paths, Blade view namespaces and route names are unchanged. No database changes are required.</li>
     </ul>
@@ -23,7 +25,7 @@
     </p>
     <ol class="list-decimal list-outside space-y-3 text-gray-600 ml-5">
         <li>
-            Change your Composer constraint to <code class="docs-inline-code">^0.10.0</code>
+            Change your Composer constraint to <code class="docs-inline-code">^0.10.1</code>
             (keep an appropriate existing constraint when developing from a local checkout), then update:
             <div class="docs-code-block mt-2"><pre><code>composer update webregulate/laravel-administration</code></pre></div>
         </li>
@@ -61,7 +63,7 @@ php artisan config:clear</code></pre></div>
         <li>Parses PHP source without requiring config files or executing application callbacks.</li>
         <li>Moves every runtime-owned setting out of config, retaining imported names, list order and explicit boolean/null/empty values. Missing runtime options are written into the application method from the installation template.</li>
         <li>Inserts a new <code class="docs-inline-code">runtime()</code> as the first method, followed by one blank line, preserving existing routes and navigation. Existing runtime values take precedence over old config values, preserving their previous effective behaviour.</li>
-        <li>Rewrites standard PHP config helpers, Config facade aliases, repository getters and common Blade expressions. Runtime reads use the resolver. Whole-config/mixed parent reads and runtime config assignments require manual migration rather than changing their meaning silently.</li>
+        <li>Rewrites standard PHP config helpers, Config facade aliases, repository getters and common Blade expressions. Runtime reads use the resolver; formerly boolean-only feature reads use the access helpers so callbacks are evaluated. Whole-config/mixed parent reads and runtime config assignments require manual migration rather than changing their meaning silently.</li>
         <li>Preserves Blade templates' existing PHP opening/closing boundaries instead of inserting stray PHP tags around rewritten markup.</li>
         <li>Scans application PHP and Blade source, excluding vendor, node_modules, public assets, storage and bootstrap caches. It leaves Blade namespaces and public asset URLs alone.</li>
         <li>Warns you to start with a clean Git worktree so the resulting diff contains only the automatic upgrade changes. No backup copies or upgrade manifests are created. An exclusive lock prevents concurrent upgrades, and stale previews cannot overwrite new edits. Originals are held in memory for rollback on write failures; any rollback error is reported for manual recovery using Git.</li>
@@ -72,6 +74,9 @@ php artisan config:clear</code></pre></div>
         When a detected case cannot be migrated safely, the command stops before applying the plan and explains why.
         Review custom wrappers, namespace strings held in variables, code outside the scanned application, and any
         dynamically generated references manually; static analysis cannot discover every indirection.
+        If you have already run an earlier upgrade, run it again to move the remaining feature access rules,
+        add the explicit log access rule and correct older generated settings comments.
+        Existing configured booleans and callbacks are retained; review the new log access rule against your application's requirements.
         To undo a completed upgrade, review and revert its tracked changes using Git, remove only files newly created
         by the upgrade, then clear config/routes/views. In-memory rollback cannot recover from a terminated process
         or a later failed application test; the clean Git worktree is your recovery point.
@@ -97,7 +102,8 @@ php artisan config:clear</code></pre></div>
         and empty lists are respected. Required permission maps include every action.
         Callback definitions are built once per request; the resolver does not evaluate them or cache their results.
         Keep user lookups and database queries inside the callbacks, not at the top of <code class="docs-inline-code">runtime()</code>.
-        The initial generated access rules allow admins for manageable models and masters for developer tools/documentation.
+        The initial generated access rules allow admins for manageable models and masters for developer tools,
+        File Manager, Logs and documentation links. Documentation page access initially allows all authenticated WRLA users.
         See <a href="configuration.html" class="docs-link">Configuration</a> for every supported runtime key.
     </p>
 </div>

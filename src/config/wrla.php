@@ -115,12 +115,6 @@ return [
         ],
     ],
 
-    // Documentation configuration
-    'documentation' => [
-        // Whether the documentation page is accessible at all
-        'enabled' => true,
-    ],
-
 
     /*-------------------------------------------------------------------------
         GENERAL CONFIGURATION
@@ -303,9 +297,8 @@ return [
         ],
     ],
 
-    // File manager configuration
+    // File manager storage and display options; access is configured in WRLASettings::runtime().
     'file_manager' => [
-        'enabled' => true,
         'max_characters' => 500000,
         'default_filesystem' => 'public', // Use null or empty string to display all filesystems
         'can_upload_mime_types' => [
@@ -323,7 +316,7 @@ return [
         ]
     ],
 
-    // Logs configuration
+    // Log viewer selection and display options; access is configured in WRLASettings::runtime().
     'logs' => [
         'current' => 'opcodesio/log-viewer', // 'wrla', 'opcodesio/log-viewer'
 

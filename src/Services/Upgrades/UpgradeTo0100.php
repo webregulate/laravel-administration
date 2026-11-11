@@ -248,6 +248,11 @@ class UpgradeTo0100
                 // Include only branches containing moved values
                 if ($nested->items !== []) {
                     $runtime[] = new Node\ArrayItem($nested, static::detached($resolvedItem->key));
+
+                    // Remove sections whose settings now all belong to runtime
+                    if ($item->value->items === []) {
+                        unset($array->items[$index]);
+                    }
                 }
             } elseif (static::hasRuntimeValue($item->value)) {
                 throw new \RuntimeException("Non-cacheable value at {$path} is not a supported runtime setting. Migrate it manually.");

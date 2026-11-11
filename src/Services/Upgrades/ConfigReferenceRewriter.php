@@ -13,14 +13,15 @@ use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\NodeVisitorAbstract;
 use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter\Standard;
+use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Services\WRLASettingsService;
 
 class ConfigReferenceRewriter
 {
     public static function rewrite(string $source): string
     {
-        // Avoid parsing files unrelated to this config namespace
-        if (!str_contains($source, 'wr-laravel-administration') && !str_contains($source, 'wrla.') && !str_contains($source, "'wrla'") && !str_contains($source, '"wrla"')) {
+        // Avoid parsing files unrelated to WRLA config or settings
+        if (!str_contains($source, 'wr-laravel-administration') && !str_contains($source, 'wrla.') && !str_contains($source, "'wrla'") && !str_contains($source, '"wrla"') && !str_contains($source, 'WRLASettings')) {
             return $source;
         }
 
@@ -40,8 +41,25 @@ class ConfigReferenceRewriter
             {
                 foreach ($node->getComments() as $index => $comment) {
                     $text = str_replace('wr-laravel-administration.', 'wrla.', $comment->getText());
+                    $text = strtr($text, [
+                        '// File manager - Enabled via `wrla.file_manager.enabled` configuration' => '// File manager - Access is configured in runtime().',
+                        '// File manager - Enabled by file_manager.enabled in config/wrla.php.' => '// File manager - Access is configured in runtime().',
+                        '// Scheduler & Jobs - Access via `wrla.scheduler.enabled` configuration' => '// Scheduler & Jobs - Access is configured in runtime().',
+                        '// Database schema viewer - Enabled via `wrla.database_schema_viewer.enabled` configuration' => '// Database schema viewer - Access is configured in runtime().',
+                        '// Database schema viewer - Enabled via `wrla.database_schema_viewer.enabled`' => '// Database schema viewer - Access is configured in runtime().',
+                        '// View logs - Set via `wrla.logs.current` configuration' => '// View logs - Access is configured in runtime(); select the viewer in config/wrla.php.',
+                        '// View logs - Viewer selected by logs.current in config/wrla.php.' => '// View logs - Access is configured in runtime(); select the viewer in config/wrla.php.',
+                        '// Show the documentation link for these users.' => '// Documentation access and top-bar link visibility.',
+                        '// Build user_id identifier for wrlaUserData, if not set will default to simply $user->id' => '// Identifier linking the User model to its WRLA user data.',
+                        '// Allow adhoc running, use either: bool, fn($wrlaUserData): bool, null (fallback using WRLAHelper::userIsDev())' => '// null uses scheduler access; bool or callback sets an independent rule.',
+                    ]);
 
-                    // Keep configuration comments aligned with the renamed namespace
+                    // Keep published, commented-out navigation examples usable
+                    if (str_starts_with($text, '// NavigationItem::')) {
+                        $text = ConfigReferenceRewriter::inline($text);
+                    }
+
+                    // Keep published comments aligned with each setting's owner
                     if ($text !== $comment->getText()) {
                         $comments = $node->getComments();
                         $class = $comment instanceof Comment\Doc ? Comment\Doc::class : Comment::class;
@@ -59,7 +77,7 @@ class ConfigReferenceRewriter
             }
         }))->traverse($nodes);
 
-        return (new Standard())->printFormatPreserving($nodes, $original, $parser->getTokens());
+        return (new Standard(['newline' => str_contains($source, "\r\n") ? "\r\n" : "\n"]))->printFormatPreserving($nodes, $original, $parser->getTokens());
     }
 
     public static function call(Node $node): ?Node
@@ -128,6 +146,23 @@ class ConfigReferenceRewriter
 
         // Runtime reads require explicit settings, not the original config fallback
         if ($operation === 'get' && $runtime) {
+            $accessChecks = [
+                'file_manager.enabled' => 'fileManagerEnabled',
+                'logs.enabled' => 'logsEnabled',
+                'documentation.enabled' => 'documentationEnabled',
+            ];
+            [$relative, $complete] = static::prefix($renamed);
+
+            // Former boolean-only reads must evaluate their newly supported callbacks
+            if ($complete && isset($accessChecks[$relative])) {
+                return new Expr\StaticCall(
+                    new Node\Name\FullyQualified(WRLAHelper::class),
+                    $accessChecks[$relative],
+                    [],
+                    ['comments' => $node->getComments()],
+                );
+            }
+
             return new Expr\StaticCall(
                 new Node\Name\FullyQualified(WRLASettingsService::class),
                 'get',

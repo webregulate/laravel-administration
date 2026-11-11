@@ -143,14 +143,13 @@ class FileManager extends WRLAPageComponent
 
     /* Livewire Methods / Hooks
     --------------------------------------------------------------------------*/
+    public function boot(): void
+    {
+        abort_unless(WRLAHelper::fileManagerEnabled(), 403, 'Access to file manager permission denied.');
+    }
+
     public function mount()
     {
-        // Redirect if file manager is not enabled in config
-        if (config('wrla.file_manager.enabled', false) !== true) {
-            WRLAHelper::pushAlert('danger', 'Access to file manager permission denied.');
-            $this->redirect(route('wrla.dashboard'));
-        }
-
         // Config
         $this->viewFileMaxCharacters = config('wrla.file_manager.max_characters', 500000);
         $attemptFileSystemName = config('wrla.file_manager.default_filesystem', null);
@@ -469,7 +468,7 @@ class FileManager extends WRLAPageComponent
     private function getCurrentFileSystem()
     {
         abort_unless(
-            config('wrla.file_manager.enabled', false) === true,
+            WRLAHelper::fileManagerEnabled(),
             403,
             'Access to file manager permission denied.',
         );

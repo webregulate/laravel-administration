@@ -6,7 +6,7 @@
 </p>
 
 <div class="docs-section" id="runtime-settings">
-    <h2 class="docs-heading">Cacheable Config and Runtime Settings (v0.10.0)</h2>
+    <h2 class="docs-heading">Cacheable Config and Runtime Settings (v0.10.1)</h2>
     <p class="docs-body">
         Use <code class="docs-inline-code">config('wrla.base_url')</code> for normal scalar/array options.
         Never put closures or objects in the config file. Runtime-capable settings belong exclusively in
@@ -22,7 +22,9 @@
     <p class="docs-body mt-4">
         Supported runtime keys: <code class="docs-inline-code">default_manageable_model_permissions</code>,
         <code class="docs-inline-code">developer.enable</code>, <code class="docs-inline-code">developer.commands</code>,
-        <code class="docs-inline-code">documentation.show_link</code>, <code class="docs-inline-code">user_avatar</code>,
+        <code class="docs-inline-code">documentation.enabled</code>, <code class="docs-inline-code">documentation.show_link</code>,
+        <code class="docs-inline-code">file_manager.enabled</code>, <code class="docs-inline-code">logs.enabled</code>,
+        <code class="docs-inline-code">user_avatar</code>,
         <code class="docs-inline-code">user_groups</code>, <code class="docs-inline-code">build_wrla_user_data_id</code>,
         <code class="docs-inline-code">middleware.commands</code>, <code class="docs-inline-code">database_browser.enabled</code>,
         <code class="docs-inline-code">database_browser.permissions</code>,
@@ -32,12 +34,18 @@
     </p>
     <p class="docs-body">
         The generated method contains every runtime option and its initial value: manageable models require an admin,
-        developer tools/documentation links require a master, the admin group is defined, and user identifiers use
+        developer tools, File Manager, Logs and documentation links require a master, the admin group is defined, and user identifiers use
         <code class="docs-inline-code">$user-&gt;id</code>. These values are application-owned, not hidden package defaults.
         The resolver never merges with config or supplies missing values. Missing required settings fail with
         guidance to run <code class="docs-inline-code">php artisan wrla:upgrade</code>.
         Explicit false/null/empty lists are respected; required permission maps must include every action.
         Null access rules explicitly inherit the related developer/scheduler access rule as described below.
+        File Manager, Logs and Documentation access accept booleans or callbacks receiving the current user's WRLA data.
+        Their rules apply to navigation and direct requests. File Manager, Logs, Scheduler and Schema Viewer check every Livewire request.
+        Use <code class="docs-inline-code">WRLAHelper::fileManagerEnabled()</code>,
+        <code class="docs-inline-code">WRLAHelper::logsEnabled()</code> and
+        <code class="docs-inline-code">WRLAHelper::documentationEnabled()</code> to evaluate these rules.
+        Application navigation conditions may further restrict visibility but cannot bypass a denied feature rule.
     </p>
     <p class="docs-body">
         Custom consumers should use <code class="docs-inline-code">\WebRegulate\LaravelAdministration\Services\WRLASettingsService::get('developer.enable')</code>
@@ -45,7 +53,7 @@
         The resolver builds runtime definitions once per request; it does not invoke callbacks or memoize their results.
         Keep user lookups and queries inside callbacks. Existing helpers such as
         <code class="docs-inline-code">WRLAHelper::userIsDev()</code> still perform their normal access checks.
-        Existing installations should follow the <a href="versions/v0.10.0.html" class="docs-link">v0.10.0 upgrade guide</a>
+        Existing installations should follow the <a href="versions/v0.10.1.html" class="docs-link">v0.10.1 upgrade guide</a>
         and run <code class="docs-inline-code">php artisan wrla:upgrade</code> locally.
     </p>
 </div>
@@ -369,7 +377,7 @@ class WRLAUserData extends WRLAUserDataBase
                     Set <code class="docs-inline-code">refresh</code> to <code class="docs-inline-code">true</code> to offer a page refresh after completion.
                     Defaults include clearing caches and <code class="docs-inline-code">php artisan wrla:update --no-interaction</code>,
                     which automatically runs <code class="docs-inline-code">php artisan optimize:clear</code> after a successful Composer update.
-                    From v0.10.0, application upgrades run first; non-interactive updates stop and report pending source changes rather than approving them.
+                    From v0.10.1, application upgrades run first; non-interactive updates stop and report pending source changes rather than approving them.
                     Callback conditions belong in a complete <code class="docs-inline-code">developer.commands</code> list in <code class="docs-inline-code">runtime()</code>.
                     Edit the generated list, or use an empty array to disable all commands.
                 </td>
@@ -389,7 +397,7 @@ class WRLAUserData extends WRLAUserDataBase
         <tbody>
             <tr>
                 <td><code class="docs-inline-code">documentation.enabled</code></td>
-                <td>Whether the documentation page route is accessible.</td>
+                <td>Runtime boolean or callback receiving <code class="docs-inline-code">$wrlaUserData</code>. Controls both documentation pages and assets. Initially <code class="docs-inline-code">true</code>.</td>
             </tr>
             <tr>
                 <td><code class="docs-inline-code">documentation.show_link</code></td>
@@ -614,7 +622,7 @@ class WRLAUserData extends WRLAUserDataBase
             </tr>
         </thead>
         <tbody>
-            <tr><td><code class="docs-inline-code">file_manager.enabled</code></td><td>Enable or disable the file manager.</td></tr>
+            <tr><td><code class="docs-inline-code">file_manager.enabled</code></td><td>Runtime boolean or callback receiving <code class="docs-inline-code">$wrlaUserData</code>. Controls navigation, direct access and file operations. Initially allows masters in new installations; upgrades retain the configured rule.</td></tr>
             <tr><td><code class="docs-inline-code">file_manager.max_characters</code></td><td>Maximum characters read when previewing text-based files.</td></tr>
             <tr><td><code class="docs-inline-code">file_manager.default_filesystem</code></td><td>Default disk to show. <code class="docs-inline-code">null</code> or empty shows all configured disks.</td></tr>
             <tr><td><code class="docs-inline-code">file_manager.can_upload_mime_types</code></td><td>Allowed MIME types for file uploads.</td></tr>
@@ -701,8 +709,12 @@ class WRLAUserData extends WRLAUserDataBase
         </thead>
         <tbody>
             <tr>
+                <td><code class="docs-inline-code">logs.enabled</code></td>
+                <td>Runtime boolean or callback receiving <code class="docs-inline-code">$wrlaUserData</code>. Initially allows masters. Controls navigation, WRLA log actions and the standalone Opcodes viewer.</td>
+            </tr>
+            <tr>
                 <td><code class="docs-inline-code">logs.current</code></td>
-                <td>Log viewer engine to use. Options: <code class="docs-inline-code">'wrla'</code>, <code class="docs-inline-code">'opcodesio/log-viewer'</code>.</td>
+                <td>Static viewer selection in <code class="docs-inline-code">config/wrla.php</code>, not an access rule. Options: <code class="docs-inline-code">'wrla'</code>, <code class="docs-inline-code">'opcodesio/log-viewer'</code>.</td>
             </tr>
             <tr>
                 <td><code class="docs-inline-code">logs.wrla.max_characters</code></td>

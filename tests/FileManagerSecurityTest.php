@@ -19,12 +19,15 @@ use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use WebRegulate\LaravelAdministration\Livewire\FileManager;
+use WebRegulate\LaravelAdministration\Tests\Fixtures\RuntimeSettings;
 
 class FileManagerSecurityTest extends TestCase
 {
     protected function setUp(): void
     {
         parent::setUp();
+        RuntimeSettings::useForApplication();
+        RuntimeSettings::set(['file_manager.enabled' => true]);
 
         $path = getenv('WRLA_TEST_APP_PATH');
         if (! $path) {
@@ -41,7 +44,6 @@ class FileManagerSecurityTest extends TestCase
         $app->instance('config', new Repository([
             'wrla' => [
                 'file_manager' => [
-                    'enabled' => true,
                     'file_systems' => ['public' => ['enabled' => true], 'local' => ['enabled' => false]],
                     'can_upload_mime_types' => ['image/png'],
                 ],
@@ -93,7 +95,7 @@ class FileManagerSecurityTest extends TestCase
     #[DataProvider('deniedAccess')]
     public function test_every_file_operation_rechecks_access(string $disk, bool $enabled, string $operation): void
     {
-        config(['wrla.file_manager.enabled' => $enabled]);
+        RuntimeSettings::set(['file_manager.enabled' => $enabled]);
         Storage::shouldReceive('disk')->never();
         $manager = $this->manager();
         $manager->currentFileSystemName = $disk;
