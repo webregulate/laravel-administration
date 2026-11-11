@@ -307,7 +307,7 @@
             <i class="fas fa-info-circle text-slate-400 mr-1"></i>
             No file system found or selected.<br />
             <br />
-            Set within wr-laravel-administration.file_manager config.
+            Set within wrla.file_manager config.
         </div>
 
     @endif

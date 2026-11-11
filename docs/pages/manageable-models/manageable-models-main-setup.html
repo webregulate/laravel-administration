@@ -169,9 +169,10 @@ static::setPermission(ManageableModelPermissions::DELETE, fn($userData) => $user
 
     <h3 class="docs-subheading mb-3">Available permissions</h3>
     <p class="docs-body">
-        All permissions default to <code class="docs-inline-code">true</code> unless overridden globally in
-        <code class="docs-inline-code">config/wr-laravel-administration.php</code> under
+        Configure application-wide permissions in <code class="docs-inline-code">WRLASettings::runtime()</code> under
         <code class="docs-inline-code">default_manageable_model_permissions</code>.
+        The generated rules require an admin for <code class="docs-inline-code">ENABLED</code> and allow the other actions.
+        Individual models can override these rules in <code class="docs-inline-code">mainSetup()</code>.
     </p>
     <table class="docs-table">
         <thead>

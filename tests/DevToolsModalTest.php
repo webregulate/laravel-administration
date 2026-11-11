@@ -19,6 +19,7 @@ use PHPUnit\Framework\TestCase;
 use WebRegulate\LaravelAdministration\Classes\VersionHandler\VersionHandler;
 use WebRegulate\LaravelAdministration\Commands\UpdateCommand;
 use WebRegulate\LaravelAdministration\Livewire\DevTools\DevToolsModal;
+use WebRegulate\LaravelAdministration\Tests\Fixtures\RuntimeSettings;
 
 class DevToolsModalTest extends TestCase
 {
@@ -27,6 +28,8 @@ class DevToolsModalTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        RuntimeSettings::useForApplication();
+        RuntimeSettings::set(['developer.enable' => true]);
 
         $path = getenv('WRLA_TEST_APP_PATH');
         if (!$path) {
@@ -37,11 +40,10 @@ class DevToolsModalTest extends TestCase
         $loader->addPsr4('WebRegulate\\LaravelAdministration\\', dirname(__DIR__) . '/src', true);
         $this->app = new Application($path);
         $this->app->instance('config', new Repository([
-            'wr-laravel-administration' => require dirname(__DIR__) . '/src/config/wr-laravel-administration.php',
+            'wrla' => require dirname(__DIR__) . '/src/config/wrla.php',
         ]));
         config([
-            'wr-laravel-administration.developer.enable' => true,
-            'wr-laravel-administration.models.wrla_user_data' => DevToolsUserDataFixture::class,
+            'wrla.models.wrla_user_data' => DevToolsUserDataFixture::class,
         ]);
         Facade::setFacadeApplication($this->app);
         $cache = Mockery::mock();
@@ -102,7 +104,7 @@ class DevToolsModalTest extends TestCase
 
     public function test_commands_are_checked_server_side_and_cannot_overlap(): void
     {
-        config(['wr-laravel-administration.developer.commands' => [
+        RuntimeSettings::set(['developer.commands' => [
             ['command' => 'allowed', 'condition' => fn ($userData) => $userData === null],
             ['command' => 'denied', 'condition' => false],
         ]]);
@@ -121,7 +123,7 @@ class DevToolsModalTest extends TestCase
 
     public function test_unauthorised_users_cannot_execute_commands(): void
     {
-        config(['wr-laravel-administration.developer.enable' => false]);
+        RuntimeSettings::set(['developer.enable' => false]);
         $modal = new DevToolsModalFixture();
         $modal->runCommand(1);
 
@@ -156,11 +158,18 @@ class DevToolsModalTest extends TestCase
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
     #[DataProvider('updateOutcomes')]
-    public function test_upgrade_automatically_clears_cache_and_returns_correct_exit_code(bool $composer, bool $clear, int $exitCode): void
+    public function test_upgrade_automatically_clears_cache_and_returns_correct_exit_code(bool $composer, bool $upgrade, bool $clear, int $exitCode): void
     {
         $handler = Mockery::mock('overload:' . VersionHandler::class);
         $handler->shouldReceive('runComposerUpdate')->once()->andReturn($composer);
+        // Run source upgrades only after Composer succeeds
         if ($composer) {
+            $handler->shouldReceive('runUpgrade')->once()->with(false, false)->andReturn($upgrade);
+        } else {
+            $handler->shouldNotReceive('runUpgrade');
+        }
+        // Clear caches only after source upgrades succeed
+        if ($composer && $upgrade) {
             $handler->shouldReceive('runOptimizeClear')->once()->andReturn($clear);
         } else {
             $handler->shouldNotReceive('runOptimizeClear');
@@ -171,7 +180,7 @@ class DevToolsModalTest extends TestCase
 
     public static function updateOutcomes(): array
     {
-        return [[true, true, 0], [false, true, 1], [true, false, 1]];
+        return [[true, true, true, 0], [false, true, true, 1], [true, false, true, 1], [true, true, false, 1]];
     }
 
     #[RunInSeparateProcess]
@@ -197,10 +206,10 @@ class DevToolsModalTest extends TestCase
 
     public function test_modal_displays_installed_version_resources_and_command_states(): void
     {
-        config([
-            'wr-laravel-administration.database_browser.enabled' => true,
-            'wr-laravel-administration.database_schema_viewer.enabled' => true,
-            'wr-laravel-administration.scheduler.enabled' => true,
+        RuntimeSettings::set([
+            'database_browser.enabled' => true,
+            'database_schema_viewer.enabled' => true,
+            'scheduler.enabled' => true,
         ]);
         Route::swap(new class {
             public function has(string $name): bool

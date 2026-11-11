@@ -205,7 +205,7 @@ class User extends ManageableModel
 
             JsonUI::make($this, 'wrlaUserData.permissions')
                 ->setLabel('Permissions')
-                ->mergeDefaultKeyValues(config('wr-laravel-administration.default_user_data.permissions'))
+                ->mergeDefaultKeyValues(config('wrla.default_user_data.permissions'))
                 ->jsonFormatValidation([
                     'master' => 'boolean'.(($currentUserData?->user_id == $modelInstance?->id) ? "|wrla_no_change:wrla_user_data,{$currentUserData?->id},permissions->master" : ''),
                     'admin' => 'boolean'.(($currentUserData?->user_id == $modelInstance?->id) ? "|wrla_no_change:wrla_user_data,{$currentUserData?->id},permissions->admin" : ''),
@@ -213,10 +213,10 @@ class User extends ManageableModel
                 ->setActive(fn() => WRLAHelper::getCurrentUserData()?->isMaster()),
 
             JsonUI::make($this, 'wrlaUserData.settings')
-                ->mergeDefaultKeyValues(config('wr-laravel-administration.default_user_data.settings')),
+                ->mergeDefaultKeyValues(config('wrla.default_user_data.settings')),
 
             JsonUI::make($this, 'wrlaUserData.data')
-                ->mergeDefaultKeyValues(config('wr-laravel-administration.default_user_data.data')),
+                ->mergeDefaultKeyValues(config('wrla.default_user_data.data')),
         ];
     }
 
@@ -254,11 +254,8 @@ class User extends ManageableModel
         // Get the user by their old id
         $user = WRLAHelper::getUserModelClass()::find($oldId);
 
-        // Get the build wrla user id callable from config
-        $buildWRLAUserIdFunc = config('wr-laravel-administration.build_wrla_user_data_id');
-
         // Get the user id to delete from the wrla_user_data table
-        $userIdToDelete = is_callable($buildWRLAUserIdFunc) ? $buildWRLAUserIdFunc($user) : $user->id;
+        $userIdToDelete = WRLAHelper::buildUserId($user);
 
         // Delete the user data
         WRLAHelper::getUserDataModelClass()::where('user_id', $userIdToDelete)->delete();

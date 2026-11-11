@@ -1,5 +1,5 @@
 @php
-    $defaultMode = $defaultMode ?? config('wr-laravel-administration.database_schema_viewer.default_mode', 'light');
+    $defaultMode = $defaultMode ?? config('wrla.database_schema_viewer.default_mode', 'light');
 @endphp
 
 <div class="h-full -mt-7 -mx-1 md:-mx-2 lg:-ml-7 lg:-mr-5">

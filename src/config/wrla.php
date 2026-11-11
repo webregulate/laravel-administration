@@ -1,11 +1,11 @@
 <?php
 
-use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
-use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\Image;
 use WebRegulate\LaravelAdministration\Classes\ManageableFields\ImageCroppable;
 
 return [
+
+    // Scalar configuration. Runtime settings are configured in App\WRLA\WRLASettings::runtime().
 
     /* ------------------------------------------------------------------------
         STRUCTURAL CONFIGURATION
@@ -29,7 +29,6 @@ return [
     'middleware' => [
         'prepend' => [],
         'append' => [],
-        'commands' => [],
     ],
 
 
@@ -96,22 +95,8 @@ return [
         ImageCroppable::class => 'nullable|image|max:4096|mimes:jpg,jpeg,png,gif,webp,svg|extensions:jpg,jpeg,png,gif,webp,svg',
     ],
 
-    // Default manageable model permissions, must be a boolean or function that returns a boolean.
-    // Can be overriden in a manageable model's mainSetup method.
-    'default_manageable_model_permissions' => [
-        ManageableModelPermissions::ENABLED->value => fn($wrlaUserData) => $wrlaUserData?->isAdmin() ?? false,
-        ManageableModelPermissions::CREATE->value => true,
-        ManageableModelPermissions::BROWSE->value => true,
-        ManageableModelPermissions::EDIT->value => true,
-        ManageableModelPermissions::DELETE->value => true,
-        ManageableModelPermissions::RESTORE->value => true,
-    ],
-
     // Developer tooling configuration
     'developer' => [
-        // Enable: fn($wrlaUserData): bool
-        'enable' => fn($wrlaUserData) => $wrlaUserData?->isMaster(),
-
         // Composer behaviour for the wrla:update command
         'composer' => [
             // App environments that should run `composer update --no-dev`
@@ -128,29 +113,12 @@ return [
             // bar and the update modal stay in sync and avoid repeated Packagist hits.
             'check_ttl' => 600,
         ],
-
-        // Commands that can be run from the developer tools modal, with optional arguments.
-        'commands' => [
-            [
-                'command' => 'php artisan wrla:update --no-interaction',
-                'label' => 'Update WRLA',
-                'condition' => true,
-                'refresh' => true,
-            ],
-            [
-                'command' => 'php artisan optimize:clear',
-                'label' => 'Clear All Cache',
-                'condition' => true,
-            ],
-        ],
     ],
 
     // Documentation configuration
     'documentation' => [
         // Whether the documentation page is accessible at all
         'enabled' => true,
-        // Whether to show the documentation link in the top bar. Accepts bool or Closure taking wrlaUserData and returning bool.
-        'show_link' => fn($wrlaUserData) => $wrlaUserData?->isMaster() ?? false,
     ],
 
 
@@ -264,31 +232,12 @@ return [
         'upsert' => true, // Catch errors during upsert operations
     ],
 
-    // User avatar, override the default user image path with a callback function that passes the \App\Models\User model as an argument
-    'user_avatar' => null,
-    // 'user_avatar' => fn(\App\Models\User $user) => $user->profile_image,
-
     // Default user data fields (JSON)
     'default_user_data' => [
         'permissions' => ['admin' => false, 'master' => false],
         'settings' => [],
         'data' => [],
     ],
-
-    // User groups, each must be a function that returns a Collection of users
-    'user_groups' => [
-        'admin' => fn() => WRLAHelper::getUserModelClass()::whereIn('id',
-            WRLAHelper::getUserDataModelClass()
-                ::whereJsonContains('permissions', ['admin' => true])
-                ->get()
-                ->pluck('user_id')
-        )->get()
-    ],
-
-    // Build user_id identifier for wrlaUserData, if not set will default to simply $user->id
-    'build_wrla_user_data_id' => function(mixed $user) {
-        return $user->id;
-    },
 
     // Email templates
     'email_templates' => [
@@ -392,9 +341,6 @@ return [
 
     // Database browser (connections, tables, and raw records) configuration
     'database_browser' => [
-        // bool, fn($wrlaUserData): bool, or null to use developer.enable.
-        'enabled' => null,
-
         // Connection names from database.connections. null allows all; [] allows none.
         'connections' => null,
 
@@ -412,14 +358,6 @@ return [
 
         // Connections that must remain read-only even when writes are enabled elsewhere.
         'read_only_connections' => [],
-
-        // Each permission accepts bool or fn($wrlaUserData): bool.
-        // These never override enabled, connection/table restrictions, or read-only mode.
-        'permissions' => [
-            'create' => true,
-            'edit' => true,
-            'delete' => true,
-        ],
 
         // null values inherit browse.pagination; max_per_page also caps client-supplied values.
         'pagination' => [
@@ -455,9 +393,6 @@ return [
 
     // Database schema viewer (albertoarena/laravel-truss) configuration
     'database_schema_viewer' => [
-        // Enabled, use either: bool, fn($wrlaUserData): bool, null (fallback using WRLAHelper::userIsDev())
-        'enabled' => null,
-
         // 'embed' (Truss dashboard inside the WRLA layout) or 'redirect' (standalone Truss page).
         'display' => 'embed',
 
@@ -479,12 +414,6 @@ return [
 
     // Scheduler / Job manager page configuration
     'scheduler' => [
-        // Enabled, use either: bool, fn($wrlaUserData): bool, null (fallback using WRLAHelper::userIsDev())
-        'enabled' => null,
-
-        // Allow adhoc running, use either: bool, fn($wrlaUserData): bool, null (fallback using WRLAHelper::userIsDev())
-        'can_run_adhoc' => null,
-
         // Maximum number of pending / failed job rows to load into the table at once.
         'max_rows' => 60,
     ],

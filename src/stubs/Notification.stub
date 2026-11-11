@@ -8,7 +8,7 @@ class {{ $CLASS_NAME }} extends NotificationBase
     /**
      * Create a new {{ $DISPLAY_NAME }} notification for the given user.
      *
-     * @param int|string $userId The id of the user, or string user_group to send to (see wr-laravel-administration user_groups config).
+     * @param int|string $userId The user ID, or a user_groups key from WRLASettings::runtime().
      * @param  array  $data  Custom data passed through to the notification.
      */
     public static function make(int|string $userId, array $data = []): self

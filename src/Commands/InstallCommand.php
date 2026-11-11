@@ -42,9 +42,14 @@ class InstallCommand extends Command
         $this->generateWRLAUserDataModel();
         $this->generateUserManageableModel();
         $this->generateEmailTemplateManageableModel();
-        $this->generateWRLASettingsClass();
+        $createdSettings = $this->generateWRLASettingsClass();
         $this->generateNotificationCustomClass();
         $this->generateEmailTemplateMailBlade();
+
+        // Finish provider boot once the new application's runtime settings exist
+        if ($createdSettings) {
+            $this->laravel->getProvider(\WebRegulate\LaravelAdministration\WRLAServiceProvider::class)->bootAdministration();
+        }
 
         $this->line('');
         $this->info('🥳 WRLA installed successfully.');
@@ -87,7 +92,7 @@ class InstallCommand extends Command
 
     private function updatePublishedConfig(): void
     {
-        $configPath = config_path('wr-laravel-administration.php');
+        $configPath = config_path('wrla.php');
         if (! file_exists($configPath)) {
             return;
         }
@@ -170,7 +175,7 @@ class InstallCommand extends Command
         }
     }
 
-    private function generateWRLASettingsClass(): void
+    private function generateWRLASettingsClass(): bool
     {
         $createdWRLASettingsAt = WRLAHelper::generateFileFromStub(
             'WRLASettings.stub',
@@ -179,10 +184,13 @@ class InstallCommand extends Command
         );
 
         if ($createdWRLASettingsAt !== false) {
+            require_once app_path('WRLA/WRLASettings.php');
             $this->info(' - WRLASettings class created successfully here: '.$createdWRLASettingsAt);
         } else {
             $this->warn(' - WRLASettings class already exists at '.WRLAHelper::removeBasePath(app_path('WRLA/WRLASettings.php')).'. To replace it delete the file and run again.');
         }
+
+        return $createdWRLASettingsAt !== false;
     }
 
     private function generateNotificationCustomClass(): void
@@ -295,7 +303,7 @@ class InstallCommand extends Command
         $values[]  = 'fn($wrlaUserData) => $wrlaUserData?->isAdmin()';
 
         $choices[] = 'Disabled for all users (I will configure this myself if needed)';
-        $values[]  = 'fn($wrlaUserData) => false';
+        $values[]  = 'false';
 
         $selectedChoice = $this->choice(
             'Who should have developer tools enabled?',
@@ -305,27 +313,39 @@ class InstallCommand extends Command
 
         $selectedValue = $values[array_search($selectedChoice, $choices)];
 
-        if ($selectedValue === 'fn($wrlaUserData) => false') {
+        $settingsPath = app_path('WRLA/WRLASettings.php');
+
+        // Leave missing or customized settings for explicit developer review
+        if (!file_exists($settingsPath)) {
+            $this->warn(' - WRLASettings.php not found. Configure developer.enable in WRLASettings::runtime() manually.');
+
             return;
         }
 
-        $configPath = config_path('wr-laravel-administration.php');
-        if (! file_exists($configPath)) {
-            $this->warn(' - Config file not found, could not update developer tools setting.');
+        $contents = file_get_contents($settingsPath);
+
+        // Do not mistake an unreadable settings file for a customized one
+        if ($contents === false) {
+            throw new \RuntimeException('Unable to read WRLASettings.php developer access settings.');
+        }
+
+        $placeholder = "'enable' => fn (\$wrlaUserData) => \$wrlaUserData?->isMaster() ?? false,";
+
+        // Only replace the generated access rule, never application-owned runtime logic
+        if (substr_count($contents, $placeholder) !== 1) {
+            $this->warn(' - Existing runtime settings preserved. Set developer.enable in WRLASettings::runtime() to: ' . $selectedValue);
+
             return;
         }
 
-        $contents = file_get_contents($configPath);
-        $updated  = preg_replace_callback(
-            "/'enable'\s*=>\s*fn\(\\\$wrlaUserData\)\s*=>\s*false,.*$/m",
-            function () use ($selectedValue) {
-                return "'enable' => {$selectedValue},";
-            },
-            $contents
-        );
+        $updated = str_replace($placeholder, "'enable' => {$selectedValue},", $contents);
 
-        file_put_contents($configPath, $updated);
-        $this->info(' - Developer tools configuration updated successfully.');
+        // Surface failed settings writes instead of claiming success
+        if (file_put_contents($settingsPath, $updated) === false) {
+            throw new \RuntimeException('Unable to write WRLASettings.php developer access settings.');
+        }
+
+        $this->info(' - Developer tools runtime settings updated successfully.');
     }
 
     private function promptOpenDocumentation(): void

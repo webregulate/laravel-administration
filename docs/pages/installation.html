@@ -65,11 +65,18 @@
         Configure the package
     </h2>
     <p class="docs-body">
-        While installing, WRLA will create a config file at <code class="docs-inline-code">config/wr-laravel-administration.php</code>. Feel free to edit this as you wish. One of the first things you may want to change is the route URL for the admin section itself, which is the first key => value in the configuration file:
+        While installing, WRLA will create a config file at <code class="docs-inline-code">config/wrla.php</code>. Feel free to edit this as you wish. One of the first things you may want to change is the route URL for the admin section itself, which is the first key => value in the configuration file:
     </p>
     <div class="docs-code-block">
         <pre><code>'base_url' => 'wr-admin',</code></pre>
     </div>
+    <p class="docs-body mt-4">
+        Keep this file cacheable. Every runtime-capable option, including boolean/null/list values, is configured
+        exclusively in <code class="docs-inline-code">App\WRLA\WRLASettings::runtime()</code>.
+        Installation generates the complete method; edit its values rather than adding overrides to config.
+        Existing applications should follow the <a href="versions/v0.10.0.html" class="docs-link">v0.10.0 upgrade guide</a>
+        and run <code class="docs-inline-code">php artisan wrla:upgrade</code> locally instead of overwriting published config.
+    </p>
 </div>
 
 <!-- Step 5 -->

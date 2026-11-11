@@ -1,9 +1,54 @@
 <h1 class="docs-title"><i class="fa-solid fa-gear mr-3 text-primary-500"></i>Configuration</h1>
 <p class="docs-lead">
     After running <code class="docs-inline-code">php artisan wrla:install</code>, the configuration file is
-    published to <code class="docs-inline-code">config/wr-laravel-administration.php</code>.
+    published to <code class="docs-inline-code">config/wrla.php</code>.
     Options are grouped into four sections matching the comments in that file.
 </p>
+
+<div class="docs-section" id="runtime-settings">
+    <h2 class="docs-heading">Cacheable Config and Runtime Settings (v0.10.0)</h2>
+    <p class="docs-body">
+        Use <code class="docs-inline-code">config('wrla.base_url')</code> for normal scalar/array options.
+        Never put closures or objects in the config file. Runtime-capable settings belong exclusively in
+        <code class="docs-inline-code">App\WRLA\WRLASettings::runtime()</code>, including boolean, null and array values.
+        Installation and upgrade generate the complete method. For example, edit these sections in its return array,
+        keeping the other generated sections:
+    </p>
+    <div class="docs-code-block"><pre><code>'developer' =&gt; [
+    'enable' =&gt; fn ($wrlaUserData) =&gt; $wrlaUserData?-&gt;isMaster() ?? false,
+    'commands' =&gt; [],
+],
+'user_avatar' =&gt; fn ($user) =&gt; $user-&gt;profile_image,</code></pre></div>
+    <p class="docs-body mt-4">
+        Supported runtime keys: <code class="docs-inline-code">default_manageable_model_permissions</code>,
+        <code class="docs-inline-code">developer.enable</code>, <code class="docs-inline-code">developer.commands</code>,
+        <code class="docs-inline-code">documentation.show_link</code>, <code class="docs-inline-code">user_avatar</code>,
+        <code class="docs-inline-code">user_groups</code>, <code class="docs-inline-code">build_wrla_user_data_id</code>,
+        <code class="docs-inline-code">middleware.commands</code>, <code class="docs-inline-code">database_browser.enabled</code>,
+        <code class="docs-inline-code">database_browser.permissions</code>,
+        <code class="docs-inline-code">database_schema_viewer.enabled</code>, <code class="docs-inline-code">scheduler.enabled</code>
+        and <code class="docs-inline-code">scheduler.can_run_adhoc</code>.
+        Other options stay in <code class="docs-inline-code">wrla.php</code>; unsupported runtime keys throw an exception.
+    </p>
+    <p class="docs-body">
+        The generated method contains every runtime option and its initial value: manageable models require an admin,
+        developer tools/documentation links require a master, the admin group is defined, and user identifiers use
+        <code class="docs-inline-code">$user-&gt;id</code>. These values are application-owned, not hidden package defaults.
+        The resolver never merges with config or supplies missing values. Missing required settings fail with
+        guidance to run <code class="docs-inline-code">php artisan wrla:upgrade</code>.
+        Explicit false/null/empty lists are respected; required permission maps must include every action.
+        Null access rules explicitly inherit the related developer/scheduler access rule as described below.
+    </p>
+    <p class="docs-body">
+        Custom consumers should use <code class="docs-inline-code">\WebRegulate\LaravelAdministration\Services\WRLASettingsService::get('developer.enable')</code>
+        to retrieve the configured value. With no key, <code class="docs-inline-code">get()</code> returns only the runtime array.
+        The resolver builds runtime definitions once per request; it does not invoke callbacks or memoize their results.
+        Keep user lookups and queries inside callbacks. Existing helpers such as
+        <code class="docs-inline-code">WRLAHelper::userIsDev()</code> still perform their normal access checks.
+        Existing installations should follow the <a href="versions/v0.10.0.html" class="docs-link">v0.10.0 upgrade guide</a>
+        and run <code class="docs-inline-code">php artisan wrla:upgrade</code> locally.
+    </p>
+</div>
 
 <!-- ── 1. Structural ─────────────────────────────────────────────────────── -->
 <div class="docs-section">
@@ -232,6 +277,7 @@ class WRLAUserData extends WRLAUserDataBase
         <code class="docs-inline-code">bool</code> or a <code class="docs-inline-code">Closure</code> receiving
         <code class="docs-inline-code">$wrlaUserData</code> and returning a <code class="docs-inline-code">bool</code> as its value.
         Override per-model inside <code class="docs-inline-code">mainSetup()</code>.
+        This callback example is a section of <code class="docs-inline-code">runtime()</code>, not the config file.
     </p>
     <div class="docs-code-block mb-6">
         <pre><code>'default_manageable_model_permissions' => [
@@ -241,6 +287,7 @@ class WRLAUserData extends WRLAUserDataBase
     ManageableModelPermissions::EDIT->value     => true,
     ManageableModelPermissions::DELETE->value   => true,
     ManageableModelPermissions::RESTORE->value  => true,
+    ManageableModelPermissions::SHOW_IN_NAV->value => true,
 ]</code></pre>
     </div>
     <table class="docs-table mb-6">
@@ -275,6 +322,10 @@ class WRLAUserData extends WRLAUserDataBase
                 <td><code class="docs-inline-code">RESTORE</code></td>
                 <td>Allow restoring soft-deleted records.</td>
             </tr>
+            <tr>
+                <td><code class="docs-inline-code">SHOW_IN_NAV</code></td>
+                <td>Whether to include the model in generated navigation.</td>
+            </tr>
         </tbody>
     </table>
 
@@ -292,7 +343,7 @@ class WRLAUserData extends WRLAUserDataBase
                 <td><code class="docs-inline-code">developer.enable</code></td>
                 <td>
                     <ul class="list-disc pl-4 space-y-1">
-                        <li>Closure receiving <code class="docs-inline-code">$wrlaUserData</code>, must return <code class="docs-inline-code">bool</code></li>
+                        <li>Boolean, null or Closure in <code class="docs-inline-code">runtime()</code>. The Closure receives <code class="docs-inline-code">$wrlaUserData</code> and must return <code class="docs-inline-code">bool</code>.</li>
                         <li>e.g. <code class="docs-inline-code">fn($wrlaUserData) => $wrlaUserData?->isMaster()</code></li>
                     </ul>
                 </td>
@@ -318,7 +369,9 @@ class WRLAUserData extends WRLAUserDataBase
                     Set <code class="docs-inline-code">refresh</code> to <code class="docs-inline-code">true</code> to offer a page refresh after completion.
                     Defaults include clearing caches and <code class="docs-inline-code">php artisan wrla:update --no-interaction</code>,
                     which automatically runs <code class="docs-inline-code">php artisan optimize:clear</code> after a successful Composer update.
-                    Publishing a custom command list replaces the defaults.
+                    From v0.10.0, application upgrades run first; non-interactive updates stop and report pending source changes rather than approving them.
+                    Callback conditions belong in a complete <code class="docs-inline-code">developer.commands</code> list in <code class="docs-inline-code">runtime()</code>.
+                    Edit the generated list, or use an empty array to disable all commands.
                 </td>
             </tr>
         </tbody>
@@ -340,7 +393,7 @@ class WRLAUserData extends WRLAUserDataBase
             </tr>
             <tr>
                 <td><code class="docs-inline-code">documentation.show_link</code></td>
-                <td>Whether to show the documentation link in the top bar. Accepts a <code class="docs-inline-code">bool</code> or a Closure receiving <code class="docs-inline-code">$wrlaUserData</code>.</td>
+                <td>Whether to show the documentation link in the top bar. Set a boolean or Closure receiving <code class="docs-inline-code">$wrlaUserData</code> in <code class="docs-inline-code">runtime()</code>. Initially allows masters.</td>
             </tr>
         </tbody>
     </table>
@@ -479,7 +532,7 @@ class WRLAUserData extends WRLAUserDataBase
                 <td><code class="docs-inline-code">user_avatar</code></td>
                 <td>
                     <ul class="list-disc pl-4 space-y-1">
-                        <li>Closure receiving the User model, returns the avatar URL/path</li>
+                        <li>Runtime Closure receiving the User model, returns the avatar URL/path</li>
                         <li><code class="docs-inline-code">null</code> uses the default placeholder image</li>
                         <li>e.g. <code class="docs-inline-code">fn($user) => $user->profile_image</code></li>
                     </ul>
@@ -491,11 +544,11 @@ class WRLAUserData extends WRLAUserDataBase
             </tr>
             <tr>
                 <td><code class="docs-inline-code">user_groups</code></td>
-                <td>Named Closures, each returning a Collection of User models for that group. Used for dashboard notifications and group-based features.</td>
+                <td>Named Closures in runtime, each returning a Collection of User models for that group. Used for dashboard notifications and group-based features.</td>
             </tr>
             <tr>
                 <td><code class="docs-inline-code">build_wrla_user_data_id</code></td>
-                <td>Closure receiving the User model; returns the identifier used to link a user to their WRLAUserData record. Defaults to <code class="docs-inline-code">$user->id</code>.</td>
+                <td>Required runtime Closure receiving the User model; returns the identifier used to link a user to their WRLAUserData record. The generated callback returns <code class="docs-inline-code">$user->id</code>.</td>
             </tr>
         </tbody>
     </table>
@@ -587,7 +640,7 @@ class WRLAUserData extends WRLAUserDataBase
             <tr><td><code class="docs-inline-code">database_browser.excluded_tables</code></td><td>Map of connection names to excluded table names or wildcard patterns. The <code class="docs-inline-code">*</code> entry applies globally; connection-specific exclusions are added to it. Matches bare and schema-qualified table names. Default: no exclusions.</td></tr>
             <tr><td><code class="docs-inline-code">database_browser.read_only</code></td><td>Disable all create, edit and delete operations while keeping browse and view access. Default: <code class="docs-inline-code">false</code>.</td></tr>
             <tr><td><code class="docs-inline-code">database_browser.read_only_connections</code></td><td>Connection names where writes must remain disabled. Default: <code class="docs-inline-code">[]</code>.</td></tr>
-            <tr><td><code class="docs-inline-code">database_browser.permissions.create</code><br><code class="docs-inline-code">database_browser.permissions.edit</code><br><code class="docs-inline-code">database_browser.permissions.delete</code></td><td>Independent boolean or WRLA-user-data callback permissions. Each defaults to <code class="docs-inline-code">true</code>, but cannot override access restrictions or read-only mode. Permissions are rechecked before writes, including switching a viewed record into edit mode.</td></tr>
+            <tr><td><code class="docs-inline-code">database_browser.permissions.create</code><br><code class="docs-inline-code">database_browser.permissions.edit</code><br><code class="docs-inline-code">database_browser.permissions.delete</code></td><td>Independent boolean or WRLA-user-data callback permissions in <code class="docs-inline-code">runtime()</code>. The generated rules allow each action, but cannot override access restrictions or read-only mode. Permissions are rechecked before writes, including switching a viewed record into edit mode.</td></tr>
             <tr><td><code class="docs-inline-code">database_browser.pagination.default</code><br><code class="docs-inline-code">database_browser.pagination.perPage</code></td><td>Default page size and selectable sizes. Both default to <code class="docs-inline-code">null</code>, inheriting the corresponding <code class="docs-inline-code">browse.pagination</code> setting. Invalid sizes are discarded and client-supplied sizes must be in the permitted list.</td></tr>
             <tr><td><code class="docs-inline-code">database_browser.pagination.max_per_page</code></td><td>Upper bound for permitted page sizes. Default: <code class="docs-inline-code">1000</code>. If no configured sizes remain, a bounded fallback is used.</td></tr>
             <tr><td><code class="docs-inline-code">database_browser.filters.enable_all_fields</code></td><td>Allow the All columns filter and seed an empty all-column search. Default: <code class="docs-inline-code">true</code>. When disabled, wildcard filters are also rejected server-side.</td></tr>
@@ -606,7 +659,6 @@ class WRLAUserData extends WRLAUserDataBase
     </p>
     <div class="docs-code-block mb-6">
         <pre><code>'database_browser' => [
-    'enabled' => null,
     'connections' => ['mysql', 'reporting'],
     'default_connection' => 'mysql',
     'excluded_tables' => [
@@ -614,11 +666,6 @@ class WRLAUserData extends WRLAUserDataBase
         'mysql' => ['audit_*'],
     ],
     'read_only_connections' => ['reporting'],
-    'permissions' => [
-        'create' => false,
-        'edit' => fn($wrlaUserData) => $wrlaUserData?->isMaster() ?? false,
-        'delete' => false,
-    ],
     'pagination' => [
         'default' => 50,
         'perPage' => [20, 50, 100],
@@ -630,6 +677,18 @@ class WRLAUserData extends WRLAUserDataBase
     ],
 ]</code></pre>
     </div>
+    <p class="docs-body">
+        The example above belongs in scalar config. To allow edits for masters, edit this section in
+        <code class="docs-inline-code">WRLASettings::runtime()</code>:
+    </p>
+    <div class="docs-code-block mb-6"><pre><code>'database_browser' =&gt; [
+    'enabled' =&gt; null,
+    'permissions' =&gt; [
+        'create' =&gt; false,
+        'edit' =&gt; fn ($wrlaUserData) =&gt; $wrlaUserData?-&gt;isMaster() ?? false,
+        'delete' =&gt; false,
+    ],
+],</code></pre></div>
 
     <!-- Log Viewer -->
     <h3 class="docs-subheading">Log Viewer</h3>

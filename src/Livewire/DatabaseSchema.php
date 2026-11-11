@@ -26,7 +26,7 @@ class DatabaseSchema extends WRLAPageComponent
             : url('/' . config('truss.route_prefix', 'truss'));
 
         // Redirect mode: hand off to the standalone Truss dashboard.
-        if (config('wr-laravel-administration.database_schema_viewer.display', 'embed') === 'redirect') {
+        if (config('wrla.database_schema_viewer.display', 'embed') === 'redirect') {
             return redirect()->to($trussUrl);
         }
 
@@ -37,7 +37,7 @@ class DatabaseSchema extends WRLAPageComponent
     {
         return view(WRLAHelper::getViewPath('livewire.database-schema'), [
             'src' => $this->iframeSrc,
-            'defaultMode' => config('wr-laravel-administration.database_schema_viewer.default_mode', 'light'),
+            'defaultMode' => config('wrla.database_schema_viewer.default_mode', 'light'),
         ]);
     }
 }

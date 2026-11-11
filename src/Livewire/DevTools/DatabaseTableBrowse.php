@@ -31,9 +31,9 @@ class DatabaseTableBrowse extends DatabasePage
         $this->table = $table;
         $model = $this->model();
         $this->orderBy = $model->primaryKey ?? $model->columnNames()[0];
-        $this->perPage = $this->pageSize((int) (config('wr-laravel-administration.database_browser.pagination.default')
-            ?? config('wr-laravel-administration.browse.pagination.default', 20)));
-        if (!config('wr-laravel-administration.database_browser.filters.enable_all_fields', true)) {
+        $this->perPage = $this->pageSize((int) (config('wrla.database_browser.pagination.default')
+            ?? config('wrla.browse.pagination.default', 20)));
+        if (!config('wrla.database_browser.filters.enable_all_fields', true)) {
             $this->dynamicFilterInputs = [];
         }
     }
@@ -115,15 +115,15 @@ class DatabaseTableBrowse extends DatabasePage
     protected function filterRules(): array
     {
         $columns = $this->model()->columnNames();
-        if (config('wr-laravel-administration.database_browser.filters.enable_all_fields', true)) {
+        if (config('wrla.database_browser.filters.enable_all_fields', true)) {
             $columns[] = '*';
         }
 
         return [
-            'dynamicFilterInputs' => ['array', 'max:'.max(1, (int) config('wr-laravel-administration.database_browser.filters.max_filters', 50))],
+            'dynamicFilterInputs' => ['array', 'max:'.max(1, (int) config('wrla.database_browser.filters.max_filters', 50))],
             'dynamicFilterInputs.*.field' => ['required', \Illuminate\Validation\Rule::in($columns)],
             'dynamicFilterInputs.*.operator' => ['required', \Illuminate\Validation\Rule::in(['contains', 'not contains', 'like', 'not like', '=', '!=', '>', '<', '>=', '<=', 'empty', 'not empty'])],
-            'dynamicFilterInputs.*.value' => ['nullable', 'string', 'max:'.max(1, (int) config('wr-laravel-administration.database_browser.filters.max_value_length', 10000))],
+            'dynamicFilterInputs.*.value' => ['nullable', 'string', 'max:'.max(1, (int) config('wrla.database_browser.filters.max_value_length', 10000))],
         ];
     }
 
@@ -151,9 +151,9 @@ class DatabaseTableBrowse extends DatabasePage
             'models' => $models,
             'useModals' => WRLAHelper::databaseBrowserUpsertOptions()->isModal(),
             'pageSizes' => WRLAHelper::databaseBrowserPageSizes(),
-            'enableAllFields' => (bool) config('wr-laravel-administration.database_browser.filters.enable_all_fields', true),
-            'valueMaxLength' => max(1, (int) config('wr-laravel-administration.database_browser.display.value_max_length', 300)),
-            'tooltipMaxLength' => max(1, (int) config('wr-laravel-administration.database_browser.display.tooltip_max_length', 1000)),
+            'enableAllFields' => (bool) config('wrla.database_browser.filters.enable_all_fields', true),
+            'valueMaxLength' => max(1, (int) config('wrla.database_browser.display.value_max_length', 300)),
+            'tooltipMaxLength' => max(1, (int) config('wrla.database_browser.display.tooltip_max_length', 1000)),
             'canCreate' => WRLAHelper::databaseBrowserCan('create', $this->connection, $this->table),
             'canEdit' => WRLAHelper::databaseBrowserCan('edit', $this->connection, $this->table),
             'canDelete' => WRLAHelper::databaseBrowserCan('delete', $this->connection, $this->table),

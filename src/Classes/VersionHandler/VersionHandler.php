@@ -67,11 +67,40 @@ class VersionHandler
     }
 
     /**
+     * Load upgrade code in a fresh process after Composer replaces the package.
+     */
+    public function runUpgrade(bool $interactive = false, bool $yes = false): bool
+    {
+        $php = (new PhpExecutableFinder())->find(false) ?: PHP_BINARY;
+        $command = [$php, base_path('artisan'), 'wrla:upgrade'];
+
+        // Non-interactive updates must never implicitly consent to source changes
+        if (!$interactive) {
+            $command[] = '--no-interaction';
+        }
+
+        // Approval must be supplied explicitly by the developer
+        if ($yes) {
+            $command[] = '--yes';
+        }
+
+        $this->context->line('Checking WRLA application upgrades...');
+        $success = $this->context->runProcess($command);
+
+        // Composer may succeed even when a required source upgrade remains pending
+        if (!$success) {
+            $this->context->error('WRLA application upgrade is incomplete. Run php artisan wrla:upgrade locally and resolve any reported issues.');
+        }
+
+        return $success;
+    }
+
+    /**
      * Run `composer update` honouring the developer.composer.no_dev config.
      */
     public function runComposerUpdate(): bool
     {
-        $noDevEnvironments = config('wr-laravel-administration.developer.composer.no_dev', ['production']);
+        $noDevEnvironments = config('wrla.developer.composer.no_dev', ['production']);
         $useNoDev = in_array(app()->environment(), (array) $noDevEnvironments, true);
 
         $command = ['composer', 'update', '--no-interaction'];
@@ -306,6 +335,6 @@ class VersionHandler
 
     protected static function updateCheckTtl(): int
     {
-        return (int) config('wr-laravel-administration.developer.update.check_ttl', 600);
+        return (int) config('wrla.developer.update.check_ttl', 600);
     }
 }

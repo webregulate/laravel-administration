@@ -25,7 +25,7 @@ abstract class ConfiguredModeBasedHandler
     public function __construct()
     {
         // Get all configuration for the given base path
-        $baseConfiguration = config('wr-laravel-administration.'.$this->baseConfigurationPath());
+        $baseConfiguration = config('wrla.'.$this->baseConfigurationPath());
 
         // Get the current mode
         $this->mode = $baseConfiguration['current'] ?? null;

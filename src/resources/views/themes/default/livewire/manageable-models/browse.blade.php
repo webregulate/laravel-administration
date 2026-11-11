@@ -17,7 +17,7 @@
         </div>
         @php
             $wrlaBrowseTotal = $models instanceof \Illuminate\Pagination\LengthAwarePaginator ? $models?->total() : $models->count();
-            $wrlaPerPageOptions = config('wr-laravel-administration.browse.pagination.perPage', [20, 30, 50, 75, 100]);
+            $wrlaPerPageOptions = config('wrla.browse.pagination.perPage', [20, 30, 50, 75, 100]);
         @endphp
         <div class="flex items-center gap-4">
             <div wire:loading.flex class="items-center gap-2 text-sm">

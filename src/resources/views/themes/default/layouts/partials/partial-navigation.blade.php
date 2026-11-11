@@ -73,7 +73,7 @@
                 x-transition
                 x-transition:enter.duration.100ms
                 x-transition:leave.duration.40ms
-                class="wrla-nav-group-children" style="border-bottom-color: {{ config('wr-laravel-administration.colors.slate.600') }};">
+                class="wrla-nav-group-children" style="border-bottom-color: {{ config('wrla.colors.slate.600') }};">
                 @foreach($navigationItem->children as $child)
                     {{-- If $child is null or fails checkCondition then continue --}}
                     @continue($child == null || !$child->checkShowCondition())

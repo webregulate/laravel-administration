@@ -9,12 +9,100 @@ use WebRegulate\LaravelAdministration\Livewire\Logs;
 use WebRegulate\LaravelAdministration\Livewire\Scheduler;
 use WebRegulate\LaravelAdministration\Livewire\DatabaseSchema;
 use WebRegulate\LaravelAdministration\Classes\NavigationItems\NavigationItem;
+use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
 
 class WRLASettings
 {
-    /**
-     * Build navigation for the WRLA application
-     */
+    /** Configure application runtime settings and callbacks. */
+    public static function runtime(): array
+    {
+        return [
+            // Default access rules for manageable models; individual models can override these.
+            'default_manageable_model_permissions' => [
+                ManageableModelPermissions::ENABLED->value => fn ($wrlaUserData) => $wrlaUserData?->isAdmin() ?? false,
+                ManageableModelPermissions::CREATE->value => true,
+                ManageableModelPermissions::BROWSE->value => true,
+                ManageableModelPermissions::EDIT->value => true,
+                ManageableModelPermissions::DELETE->value => true,
+                ManageableModelPermissions::RESTORE->value => true,
+                ManageableModelPermissions::SHOW_IN_NAV->value => true,
+            ],
+
+            // Developer tools access and available commands.
+            'developer' => [
+                // Access rules receive the current user's WRLA user data.
+                'enable' => fn ($wrlaUserData) => $wrlaUserData?->isMaster() ?? false,
+
+                // Commands available in developer tools; condition accepts a bool or callback.
+                'commands' => [
+                    [
+                        'command' => 'php artisan wrla:update --no-interaction',
+                        'label' => 'Update WRLA',
+                        'condition' => true,
+                        'refresh' => true,
+                    ],
+                    [
+                        'command' => 'php artisan optimize:clear',
+                        'label' => 'Clear All Cache',
+                        'condition' => true,
+                        'refresh' => false,
+                    ],
+                ],
+            ],
+
+            // Show the documentation link for these users.
+            'documentation' => [
+                'show_link' => fn ($wrlaUserData) => $wrlaUserData?->isMaster() ?? false,
+            ],
+
+            // null uses the WRLA avatar; a callback receives the User model and returns a URL.
+            'user_avatar' => null,
+
+            // Each group callback returns a collection of User models.
+            'user_groups' => [
+                'admin' => fn () => WRLAHelper::getUserModelClass()::whereIn(
+                    'id',
+                    WRLAHelper::getUserDataModelClass()::whereJsonContains('permissions', ['admin' => true])->get()->pluck('user_id'),
+                )->get(),
+            ],
+
+            // Identifier linking the User model to its WRLA user data.
+            'build_wrla_user_data_id' => fn (mixed $user) => $user->id,
+
+            // Middleware applied before WRLA commands run.
+            'middleware' => [
+                'commands' => [],
+            ],
+
+            // Access and editing permissions for the database browser.
+            'database_browser' => [
+                // null uses developer access; bool or callback sets an independent rule.
+                'enabled' => null,
+                // These rules cannot bypass connection/table restrictions or read-only mode.
+                'permissions' => [
+                    'create' => true,
+                    'edit' => true,
+                    'delete' => true,
+                ],
+            ],
+
+            // Access to the database schema diagram.
+            'database_schema_viewer' => [
+                // null uses developer access; bool or callback sets an independent rule.
+                'enabled' => null,
+            ],
+
+            // Access to scheduled jobs and manual runs.
+            'scheduler' => [
+                // null uses developer access; bool or callback sets an independent rule.
+                'enabled' => null,
+                // null uses scheduler access; bool or callback sets an independent rule.
+                'can_run_adhoc' => null,
+            ],
+        ];
+    }
+
+    /** Build navigation for the WRLA application */
     public static function buildNavigation(): array
     {
         return [
@@ -36,7 +124,7 @@ class WRLASettings
 
             // File Manager
             NavigationItem::make(url: route('wrla.file-manager'), name: 'File Manager', icon: 'fa fa-folder-open')->showOnCondition(fn() => 
-                WRLAHelper::getCurrentUserData()?->isMaster() && config('wr-laravel-administration.file_manager.enabled', false)
+                WRLAHelper::getCurrentUserData()?->isMaster() && config('wrla.file_manager.enabled', false)
             ),
 
             // Scheduler & Jobs
@@ -46,7 +134,7 @@ class WRLASettings
 
             // View Logs
             NavigationItem::make(url: route('wrla.logs'), name: 'View Logs', icon: 'fa fa-file-alt')->showOnCondition(fn() =>
-                WRLAHelper::getCurrentUserData()?->isMaster() && !empty(config('wr-laravel-administration.logs.current'))
+                WRLAHelper::getCurrentUserData()?->isMaster() && !empty(config('wrla.logs.current'))
             ),
 
             // Divider
@@ -60,28 +148,26 @@ class WRLASettings
         ];
     }
 
-    /**
-     * Build routes. Livewire routes should extend WRLAPageComponent.
-     */
+    /** Build routes. Livewire routes should extend WRLAPageComponent. */
     public static function buildRoutes(): void
     {
         // Dashboard
         Route::get('dashboard', Dashboard::class)
             ->name('wrla.dashboard');
 
-        // File manager - Enabled via `wr-laravel-administration.file_manager.enabled` configuration
+        // File manager - Enabled via `wrla.file_manager.enabled` configuration
         Route::get('file-manager', FileManager::class)
             ->name('wrla.file-manager');
 
-        // Database schema viewer - Enabled via `wr-laravel-administration.database_schema_viewer.enabled` configuration
+        // Database schema viewer - Access is configured in runtime().
         Route::get('database-schema', DatabaseSchema::class)
             ->name('wrla.database-schema');
 
-        // Scheduler & Jobs - Access via `wr-laravel-administration.scheduler.enabled` configuration
+        // Scheduler & Jobs - Access is configured in runtime().
         Route::get('scheduler', Scheduler::class)
             ->name('wrla.scheduler');
 
-        // View logs - Set via `wr-laravel-administration.logs.current` configuration
+        // View logs - Set via `wrla.logs.current` configuration
         Route::get('logs', Logs::class)
             ->name('wrla.logs');
     }

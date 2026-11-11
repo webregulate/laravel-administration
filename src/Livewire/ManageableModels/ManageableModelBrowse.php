@@ -71,7 +71,7 @@ class ManageableModelBrowse extends WRLAPageComponent
 
     /**
      * Number of records to display per page. Initialised from the
-     * `wr-laravel-administration.browse.pagination.default` config in mount().
+     * `wrla.browse.pagination.default` config in mount().
      *
      * @var int
      */
@@ -202,7 +202,7 @@ class ManageableModelBrowse extends WRLAPageComponent
         $this->preFilters = $preFilters;
 
         // Set the default per-page value from config
-        $this->perPage = $this->resolvePerPage(config('wr-laravel-administration.browse.pagination.default', 20));
+        $this->perPage = $this->resolvePerPage(config('wrla.browse.pagination.default', 20));
 
         // Build parent columns from manageable model
         $columns = $manageableModelInstance->getBrowseColumns();
@@ -251,8 +251,8 @@ class ManageableModelBrowse extends WRLAPageComponent
      */
     protected function resolvePerPage(int|string|null $perPage): int
     {
-        $options = array_map('intval', config('wr-laravel-administration.browse.pagination.perPage', [20, 30, 50, 75, 100]));
-        $default = (int) config('wr-laravel-administration.browse.pagination.default', 20);
+        $options = array_map('intval', config('wrla.browse.pagination.perPage', [20, 30, 50, 75, 100]));
+        $default = (int) config('wrla.browse.pagination.default', 20);
         $perPage = (int) $perPage;
 
         return in_array($perPage, $options, true) ? $perPage : $default;

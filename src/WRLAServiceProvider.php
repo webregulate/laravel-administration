@@ -23,6 +23,8 @@ use WebRegulate\LaravelAdministration\Livewire\Scheduler;
 use WebRegulate\LaravelAdministration\Livewire\FileManager;
 use WebRegulate\LaravelAdministration\Livewire\DatabaseSchema;
 use WebRegulate\LaravelAdministration\Commands\UpdateCommand;
+use WebRegulate\LaravelAdministration\Commands\UpgradeCommand;
+use WebRegulate\LaravelAdministration\Services\WRLASettingsService;
 use WebRegulate\LaravelAdministration\Commands\InstallCommand;
 use WebRegulate\LaravelAdministration\Commands\EditUserCommand;
 use WebRegulate\LaravelAdministration\Commands\DocsCommand;
@@ -58,9 +60,9 @@ class WRLAServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Merge config (recursively, so nested package defaults such as developer.commands
+        // Merge scalar config (recursively, so nested package defaults such as browse.pagination
         // are preserved when the site config only overrides some keys of a nested array).
-        $this->deepMergeConfigFrom(__DIR__ . '/config/wr-laravel-administration.php', 'wr-laravel-administration');
+        $this->deepMergeConfigFrom(__DIR__ . '/config/wrla.php', 'wrla');
 
         // Register Livewire
         $this->app->register(\Livewire\LivewireServiceProvider::class);
@@ -84,17 +86,23 @@ class WRLAServiceProvider extends ServiceProvider
     /**
      * Merge the package config into the app config recursively. Unlike Laravel's
      * mergeConfigFrom (a shallow array_merge), this preserves nested package defaults
-     * (eg. developer.commands) when the site config only overrides some keys of a
+     * (eg. browse.pagination) when the site config only overrides some keys of a
      * nested associative array. The site config always wins on conflicting scalar and
      * list values.
      */
     protected function deepMergeConfigFrom(string $path, string $key): void
     {
-        if ($this->app instanceof \Illuminate\Contracts\Foundation\CachesConfiguration && $this->app->configurationIsCached()) {
+        $config = $this->app->make('config');
+
+        // Cached v0.10 applications already contain the merged defaults
+        if ($this->app instanceof \Illuminate\Contracts\Foundation\CachesConfiguration && $this->app->configurationIsCached() && $config->has($key)) {
             return;
         }
 
-        $config = $this->app->make('config');
+        // Keep legacy applications bootable until the developer approves migration
+        if (!$config->has($key) && !is_file(config_path('wrla.php')) && $config->has('wr-laravel-administration')) {
+            $config->set($key, $config->get('wr-laravel-administration'));
+        }
 
         $config->set($key, $this->deepMergeConfig(require $path, $config->get($key, [])));
     }
@@ -107,19 +115,15 @@ class WRLAServiceProvider extends ServiceProvider
     protected function deepMergeConfig(array $default, array $override): array
     {
         foreach ($override as $key => $value) {
-            if (
-                is_int($key)
-                || !array_key_exists($key, $default)
-                || !is_array($value)
-                || !is_array($default[$key])
-                || array_is_list($value)
-                || array_is_list($default[$key])
-            ) {
+            // Replace scalar values and lists; merge associative sections
+            if (is_int($key) || !array_key_exists($key, $default) || !is_array($value) || !is_array($default[$key]) || array_is_list($value) || array_is_list($default[$key])) {
+                // Preserve numeric entries in a root list
                 if (is_int($key)) {
                     $default[] = $value;
                 } else {
                     $default[$key] = $value;
                 }
+
                 continue;
             }
 
@@ -136,6 +140,28 @@ class WRLAServiceProvider extends ServiceProvider
     {
         // Publish assets
         $this->publishableAssets();
+
+        $this->registerCommands();
+
+        // Only maintenance commands may boot before runtime settings are complete
+        if ($this->app->runningInConsole() && WRLASettingsService::needsSetup()) {
+            $command = (new \Symfony\Component\Console\Input\ArgvInput())->getFirstArgument() ?? 'list';
+
+            // Keep installation, upgrade and cache recovery available
+            if (in_array($command, ['wrla:install', 'wrla:upgrade', 'wrla:update', 'package:discover', 'vendor:publish', 'list', 'help', 'config:clear', 'cache:clear', 'route:clear', 'view:clear', 'event:clear', 'optimize:clear', 'clear-compiled'], true)) {
+                return;
+            }
+        }
+
+        $this->bootAdministration();
+    }
+
+    /**
+     * Initialise administration after runtime settings are available.
+     */
+    public function bootAdministration(): void
+    {
+        WRLASettingsService::get();
 
         // Main setup - Loading migrations, model setup, routes, views, etc.
         $this->mainSetup();
@@ -170,7 +196,7 @@ class WRLAServiceProvider extends ServiceProvider
     {
         // Publish config
         $this->publishes([
-            __DIR__ . '/config/wr-laravel-administration.php' => config_path('wr-laravel-administration.php'),
+            __DIR__ . '/config/wrla.php' => config_path('wrla.php'),
             __DIR__ . '/config/wire-elements-modal.php' => config_path('wire-elements-modal.php'),
         ], 'wrla-config');
 
@@ -182,14 +208,14 @@ class WRLAServiceProvider extends ServiceProvider
     }
 
     /**
-     * Main setup - Loading assets, routes, etc.
+     * Register WRLA console commands.
      */
-    protected function mainSetup(): void
+    protected function registerCommands(): void
     {
-        // Commands
         $this->commands([
             InstallCommand::class,
             UpdateCommand::class,
+            UpgradeCommand::class,
             CreateManageableModelCommand::class,
             CreateNotificationCommand::class,
             CreateUserCommand::class,
@@ -199,7 +225,13 @@ class WRLAServiceProvider extends ServiceProvider
             SiteConfigurationCommand::class,
             ModelDocblockCommand::class,
         ]);
+    }
 
+    /**
+     * Load administration routes, models and assets.
+     */
+    protected function mainSetup(): void
+    {
         // Custom logging channels
         app('config')->set('logging.channels.smtp', [
             'driver' => 'daily',
@@ -232,7 +264,7 @@ class WRLAServiceProvider extends ServiceProvider
 
             // Load custom routes from WRLASettings if exists
             if(class_exists(\App\WRLA\WRLASettings::class) && method_exists(\App\WRLA\WRLASettings::class, 'buildRoutes')) {
-                Route::prefix(config('wr-laravel-administration.base_url', 'wr-admin'))->group(function (): void {
+                Route::prefix(config('wrla.base_url', 'wr-admin'))->group(function (): void {
                     Route::group(['middleware' => ['wrla_is_admin']], function (): void {
                         \App\WRLA\WRLASettings::buildRoutes();
                     });
@@ -247,7 +279,7 @@ class WRLAServiceProvider extends ServiceProvider
             // to Route::has() at this point.
             Route::getRoutes()->refreshNameLookups();
             if (! Route::has('wrla.dashboard')) {
-                Route::prefix(config('wr-laravel-administration.base_url', 'wr-admin'))
+                Route::prefix(config('wrla.base_url', 'wr-admin'))
                     ->name('wrla.')
                     ->middleware('wrla_is_admin')
                     ->group(function (): void {
@@ -262,7 +294,7 @@ class WRLAServiceProvider extends ServiceProvider
         // Register validation rules
         $this->registerValidationRules();
 
-        // Configure rate limiting for routes - Set in wr-laravel-administration.rate_limiting config
+        // Configure rate limiting for routes - Set in wrla.rate_limiting config
         $this->configureRateLimiting(Request::capture());
 
         // Load views
@@ -310,7 +342,7 @@ class WRLAServiceProvider extends ServiceProvider
     protected function configureRateLimiting(Request $request)
     {
         // Get the rate limiting configuration
-        $rateLimitingConfig = config('wr-laravel-administration.rate_limiting');
+        $rateLimitingConfig = config('wrla.rate_limiting');
         $prefix = 'wrla.';
 
         // Refresh route name lookups
@@ -533,7 +565,7 @@ class WRLAServiceProvider extends ServiceProvider
                     }
 
                     // Populate default user data from configuration.
-                    foreach (config('wr-laravel-administration.default_user_data') as $key => $value) {
+                    foreach (config('wrla.default_user_data') as $key => $value) {
                         $wrlaUserData->{$key} = is_array($value) ? json_encode($value) : $value;
                     }
                     
@@ -575,7 +607,7 @@ class WRLAServiceProvider extends ServiceProvider
         // Skip only when the viewer is explicitly disabled for everyone. A bool,
         // Closure or null (developer fallback) all leave it potentially accessible,
         // gated per-request by the viewTruss gate below.
-        if (config('wr-laravel-administration.database_schema_viewer.enabled') === false) {
+        if (WRLASettingsService::get('database_schema_viewer.enabled') === false) {
             return;
         }
 
@@ -601,7 +633,7 @@ class WRLAServiceProvider extends ServiceProvider
         config(['truss.enabled' => true]);
 
         // Feed configured connections through (Truss shows a picker for two or more).
-        $connections = config('wr-laravel-administration.database_schema_viewer.connections', []);
+        $connections = config('wrla.database_schema_viewer.connections', []);
         if (! empty($connections)) {
             config(['truss.connections' => $connections]);
         }
@@ -610,7 +642,7 @@ class WRLAServiceProvider extends ServiceProvider
         $this->applyWrlaThemeToTruss();
 
         // Deep-merge explicit passthrough config last so it wins over the above.
-        $passthrough = config('wr-laravel-administration.database_schema_viewer.truss', []);
+        $passthrough = config('wrla.database_schema_viewer.truss', []);
         if (! empty($passthrough)) {
             config(['truss' => $this->deepMergeConfig(config('truss', []), $passthrough)]);
         }
@@ -622,7 +654,7 @@ class WRLAServiceProvider extends ServiceProvider
      */
     protected function applyWrlaThemeToTruss(): void
     {
-        $colors = config('wr-laravel-administration.colors', []);
+        $colors = config('wrla.colors', []);
         $primary = $colors['primary'] ?? [];
         $notes = $colors['notes'] ?? [];
         $slate = $colors['slate'] ?? [];
@@ -661,8 +693,8 @@ class WRLAServiceProvider extends ServiceProvider
     protected function applyCustomMiddleware(): void
     {
         // Apply config middleware.prepend and middleware.append arrays to the global middleware stack
-        $middlewarePrepend = config('wr-laravel-administration.middleware.prepend', []);
-        $middlewareAppend = config('wr-laravel-administration.middleware.append', []);
+        $middlewarePrepend = config('wrla.middleware.prepend', []);
+        $middlewareAppend = config('wrla.middleware.append', []);
 
         // Prepend middleware
         foreach ($middlewarePrepend as $middleware) {

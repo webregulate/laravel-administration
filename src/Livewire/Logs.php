@@ -32,10 +32,10 @@ class Logs extends WRLAPageComponent
     {
         // opcodesio/log-viewer mode: redirect out to the standalone viewer, or embed
         // it in an iframe when configured to display within WRLA.
-        if (config('wr-laravel-administration.logs.current') === 'opcodesio/log-viewer') {
+        if (config('wrla.logs.current') === 'opcodesio/log-viewer') {
             $logViewerPath = '/'.config('log-viewer.route_path', 'log-viewer');
 
-            if (config('wr-laravel-administration.logs.opcodesio/log-viewer.display_within_wrla', false) !== true) {
+            if (config('wrla.logs.opcodesio/log-viewer.display_within_wrla', false) !== true) {
                 return redirect()->to($logViewerPath);
             }
 
@@ -44,7 +44,7 @@ class Logs extends WRLAPageComponent
         }
 
         // Built-in WRLA log viewer
-        $this->viewLogMaxCharacters = config('wr-laravel-administration.logs.wrla.max_characters', 200000);
+        $this->viewLogMaxCharacters = config('wrla.logs.wrla.max_characters', 200000);
 
         // Set all log files and directories
         $this->setDirectoriesAndFiles();

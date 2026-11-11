@@ -21,6 +21,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use WebRegulate\LaravelAdministration\Classes\DatabaseSchema\AssetController;
 use WebRegulate\LaravelAdministration\Classes\DatabaseSchema\SnapshotBuilder;
 use WebRegulate\LaravelAdministration\WRLAServiceProvider;
+use WebRegulate\LaravelAdministration\Tests\Fixtures\RuntimeSettings;
 
 class DatabaseSchemaTest extends TestCase
 {
@@ -29,6 +30,8 @@ class DatabaseSchemaTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        RuntimeSettings::useForApplication();
+        RuntimeSettings::set(['database_schema_viewer.enabled' => true]);
 
         $path = getenv('WRLA_TEST_APP_PATH');
         if (!$path) {
@@ -39,7 +42,7 @@ class DatabaseSchemaTest extends TestCase
         $loader->addPsr4('WebRegulate\\LaravelAdministration\\', dirname(__DIR__) . '/src', true);
         $this->app = new Application($path);
         $this->app->instance('config', new Repository([
-            'wr-laravel-administration' => ['database_schema_viewer' => ['enabled' => true]],
+            'wrla' => [],
         ]));
         Facade::setFacadeApplication($this->app);
         DB::swap(Mockery::mock(DatabaseManager::class));

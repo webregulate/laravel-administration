@@ -38,7 +38,7 @@ class DatabaseTables extends WRLAPageComponent
                 report($exception);
             }
         }
-        $default = config('wr-laravel-administration.database_browser.default_connection') ?? config('database.default');
+        $default = config('wrla.database_browser.default_connection') ?? config('database.default');
         $this->connection = in_array($default, $this->connections, true) ? $default : ($this->connections[0] ?? '');
     }
 

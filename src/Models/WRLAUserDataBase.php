@@ -2,6 +2,7 @@
 
 namespace WebRegulate\LaravelAdministration\Models;
 
+use WebRegulate\LaravelAdministration\Services\WRLASettingsService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Auth;
@@ -33,7 +34,7 @@ class WRLAUserDataBase extends Model
     public function getConnectionName(): ?string
     {
         return parent::getConnectionName()
-            ?? config('wr-laravel-administration.wrla_user_data.connection');
+            ?? config('wrla.wrla_user_data.connection');
     }
 
     /** Get current logged in user. */
@@ -139,7 +140,7 @@ class WRLAUserDataBase extends Model
     public function getProfileAvatar(): string
     {
         $user = $this->user;
-        $userAvatarConfig = config('wr-laravel-administration.user_avatar');
+        $userAvatarConfig = WRLASettingsService::get('user_avatar');
         if ($user != null && $userAvatarConfig != null && is_callable($userAvatarConfig)) {
             return $userAvatarConfig($user);
         }
@@ -169,7 +170,7 @@ class WRLAUserDataBase extends Model
         $fullName = !empty($fullName) ? $fullName : 'U';
         $name = preg_replace('/\b(\w)|./', '$1', $fullName);
 
-        return 'https://ui-avatars.com/api/?name=' . urlencode((string) $name) . '&color='.ltrim((string) config('wr-laravel-administration.colors.primary.50'), '#').'&background='.ltrim((string) config('wr-laravel-administration.colors.primary.500'), '#').'&size=128&font-size=0.5&rounded=true';
+        return 'https://ui-avatars.com/api/?name=' . urlencode((string) $name) . '&color='.ltrim((string) config('wrla.colors.primary.50'), '#').'&background='.ltrim((string) config('wrla.colors.primary.500'), '#').'&size=128&font-size=0.5&rounded=true';
     }
 
     /** Alias for getUserByEmail. */

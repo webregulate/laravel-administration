@@ -12,7 +12,7 @@ use WebRegulate\LaravelAdministration\Livewire\ManageableModels\ManageAccount;
 Route::group(['namespace' => 'WebRegulate\LaravelAdministration\Http\Controllers'], function (): void {
 
     // Prefix routes with the base url and name
-    Route::prefix(config('wr-laravel-administration.base_url', 'wr-admin'))->name('wrla.')->group(function (): void {
+    Route::prefix(config('wrla.base_url', 'wr-admin'))->name('wrla.')->group(function (): void {
 
         // Other
         Route::get('to-frontend', fn () => redirect('/'))->name('to-frontend');
@@ -21,7 +21,7 @@ Route::group(['namespace' => 'WebRegulate\LaravelAdministration\Http\Controllers
         // Auth controller
         Route::group(['controller' => WRLAAuthController::class, 'middleware' => ['wrla_is_not_admin']], function (): void {
             // Login - If wrla_auth_routes_enabled is true
-            if (config('wr-laravel-administration.wrla_auth_routes_enabled')) {
+            if (config('wrla.wrla_auth_routes_enabled')) {
                 // Base Url if not logged in
                 Route::get('', fn () => redirect()->route('wrla.login'));
 
@@ -76,7 +76,7 @@ Route::group(['namespace' => 'WebRegulate\LaravelAdministration\Http\Controllers
 // invokable component class strings are not incorrectly prefixed with the
 // controller namespace. They still share the WRLA base url, "wrla." name prefix
 // and admin middleware.
-Route::prefix(config('wr-laravel-administration.base_url', 'wr-admin'))
+Route::prefix(config('wrla.base_url', 'wr-admin'))
     ->name('wrla.')
     ->middleware('wrla_is_admin')
     ->group(function (): void {

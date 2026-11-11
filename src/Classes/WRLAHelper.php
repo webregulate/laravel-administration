@@ -2,6 +2,7 @@
 
 namespace WebRegulate\LaravelAdministration\Classes;
 
+use WebRegulate\LaravelAdministration\Services\WRLASettingsService;
 use Livewire\Livewire;
 use Illuminate\Http\Request;
 use Psr\Log\LoggerInterface;
@@ -46,7 +47,7 @@ class WRLAHelper
             'type' => $type,
             'message' => $message,
             'url' => $url,
-            'ttl' => max(0, $forceTTL ?? (int) config('wr-laravel-administration.alerts.ttl', 5000)),
+            'ttl' => max(0, $forceTTL ?? (int) config('wrla.alerts.ttl', 5000)),
         ];
 
         $livewireComponent = Livewire::current();
@@ -144,7 +145,7 @@ class WRLAHelper
      */
     public static function getUserModelClass(): string
     {
-        return config('wr-laravel-administration.models.user');
+        return config('wrla.models.user');
     }
 
     /**
@@ -152,7 +153,7 @@ class WRLAHelper
      */
     public static function getUserDataModelClass(): string
     {
-        return config('wr-laravel-administration.models.wrla_user_data');
+        return config('wrla.models.wrla_user_data');
     }
 
     /**
@@ -202,14 +203,19 @@ class WRLAHelper
      */
     public static function buildUserId(mixed $user): mixed
     {
-        // Get the build user id function from configuration
-        $buildUserIdFunc = config('wr-laravel-administration.build_wrla_user_data_id', null);
+        // Get the runtime user identifier builder
+        $buildUserIdFunc = WRLASettingsService::get('build_wrla_user_data_id');
 
         if(empty($user?->id)) {
             return null;
         }
 
-        return is_callable($buildUserIdFunc) ? $buildUserIdFunc($user) : $user->id;
+        // Require an explicit user identifier rule
+        if (!is_callable($buildUserIdFunc)) {
+            throw new \InvalidArgumentException('WRLASettings::runtime() must define a callable build_wrla_user_data_id.');
+        }
+
+        return $buildUserIdFunc($user);
     }
 
     /**
@@ -224,7 +230,7 @@ class WRLAHelper
         $returnTitle = '';
 
         // Get the title template from the config
-        $titleTemplate = config('wr-laravel-administration.title_template');
+        $titleTemplate = config('wrla.title_template');
 
         // Replace the page title in the title format
         $returnTitle = str_replace('{page_title}', $pageTitle, $titleTemplate);
@@ -381,7 +387,7 @@ class WRLAHelper
 
         // If current theme is empty then fall back to the config default_theme.
         if (empty($currentTheme)) {
-            $currentTheme = config('wr-laravel-administration.default_theme');
+            $currentTheme = config('wrla.default_theme');
         }
 
         // Return either the entire array or the specific key dot notation value of the current theme.
@@ -398,12 +404,12 @@ class WRLAHelper
     public static function getThemeData(string $themeKey, ?string $keyDotNotation = null): mixed
     {
         // Retrieve the themes array from the config
-        $themes = config('wr-laravel-administration.themes');
+        $themes = config('wrla.themes');
 
         // Check if the theme key exists in the themes array
         if (! array_key_exists($themeKey, $themes)) {
             // If the theme key does not exist, resort to the default theme
-            $themeKey = config('wr-laravel-administration.default_theme');
+            $themeKey = config('wrla.default_theme');
         }
 
         // Check if a specific key dot notation is provided
@@ -555,7 +561,7 @@ class WRLAHelper
 
     public static function handleRedirectOnFailedLogin()
     {
-        if(config('wr-laravel-administration.wrla_auth_routes_enabled')) {
+        if(config('wrla.wrla_auth_routes_enabled')) {
             // If auth routes are enabled, redirect to login
             return redirect()->route('wrla.login')->with(
                 'error',
@@ -857,7 +863,7 @@ class WRLAHelper
     }
 
     /**
-     * Get user group, must pass a tag that is defined in user_groups config, or an integer for user id.
+     * Get a user group defined in runtime settings, or an individual user by ID.
      *
      * @param  string|int  $key  The key to get the user group from.
      * @return ?Collection The collection of users. Returns null if the key is not found or user does not exist.
@@ -871,15 +877,15 @@ class WRLAHelper
             return $user === null ? null : collect([$user]);
         }
 
-        // Get user group config
-        $userGroupConfig = config("wr-laravel-administration.user_groups.$key");
+        // Get the runtime user group resolver
+        $userGroupConfig = WRLASettingsService::get('user_groups')[$key] ?? null;
 
-        // If key is not found or not callable in user_groups config then return null
+        // Skip missing or non-callable user groups
         if (empty($userGroupConfig) || ! is_callable($userGroupConfig)) {
             return null;
         }
 
-        // Return invoked user group config
+        // Resolve the configured user group
         return call_user_func($userGroupConfig);
     }
 
@@ -889,15 +895,14 @@ class WRLAHelper
     public static function userIsDev(): bool
     {
         return once(function() {
-            return WRLAHelper::resolveDeveloperToolsFlag(config('wr-laravel-administration.developer.enable'));
+            return WRLAHelper::resolveDeveloperToolsFlag(WRLASettingsService::get('developer.enable'));
         });
     }
 
     /**
      * Whether to show the version / update indicator in the top bar.
      *
-     * Shown for developers (userIsDev), or force-shown when the `developer.enable`
-     * config key is null (not yet published), so the indicator is never silently hidden.
+     * Shown for developers, or when developer.enable is explicitly null.
      */
     public static function showVersionUpdateBar(): bool
     {
@@ -906,13 +911,13 @@ class WRLAHelper
                 return true;
             }
 
-            return config('wr-laravel-administration.developer.enable') === null;
+            return WRLASettingsService::get('developer.enable') === null;
         });
     }
 
     public static function databaseBrowserEnabled(): bool
     {
-        $enabled = config('wr-laravel-administration.database_browser.enabled');
+        $enabled = WRLASettingsService::get('database_browser.enabled');
 
         return $enabled === null ? static::userIsDev() : static::resolveDeveloperToolsFlag($enabled);
     }
@@ -920,7 +925,7 @@ class WRLAHelper
     public static function databaseBrowserConnections(): array
     {
         $configured = array_keys(config('database.connections', []));
-        $allowed = config('wr-laravel-administration.database_browser.connections');
+        $allowed = config('wrla.database_browser.connections');
 
         return $allowed === null ? $configured : array_values(array_intersect((array) $allowed, $configured));
     }
@@ -931,7 +936,7 @@ class WRLAHelper
             return false;
         }
 
-        $excluded = config('wr-laravel-administration.database_browser.excluded_tables', []);
+        $excluded = config('wrla.database_browser.excluded_tables', []);
         $patterns = array_merge($excluded['*'] ?? [], $excluded[$connection] ?? []);
 
         return !\Illuminate\Support\Str::is($patterns, $table)
@@ -947,19 +952,19 @@ class WRLAHelper
             return true;
         }
         if (!in_array($action, ['create', 'edit', 'delete'], true)
-            || config('wr-laravel-administration.database_browser.read_only', false)
-            || in_array($connection, config('wr-laravel-administration.database_browser.read_only_connections', []), true)) {
+            || config('wrla.database_browser.read_only', false)
+            || in_array($connection, config('wrla.database_browser.read_only_connections', []), true)) {
             return false;
         }
 
-        return static::resolveDeveloperToolsFlag(config('wr-laravel-administration.database_browser.permissions.'.$action, true));
+        return static::resolveDeveloperToolsFlag(WRLASettingsService::get('database_browser.permissions.'.$action));
     }
 
     public static function databaseBrowserPageSizes(): array
     {
-        $maximum = max(1, (int) config('wr-laravel-administration.database_browser.pagination.max_per_page', 1000));
-        $options = config('wr-laravel-administration.database_browser.pagination.perPage')
-            ?? config('wr-laravel-administration.browse.pagination.perPage', [20, 30, 50, 75, 100]);
+        $maximum = max(1, (int) config('wrla.database_browser.pagination.max_per_page', 1000));
+        $options = config('wrla.database_browser.pagination.perPage')
+            ?? config('wrla.browse.pagination.perPage', [20, 30, 50, 75, 100]);
         $sizes = array_values(array_unique(array_filter(
             array_map('intval', (array) $options),
             fn (int $size) => $size > 0 && $size <= $maximum,
@@ -970,19 +975,19 @@ class WRLAHelper
 
     public static function databaseBrowserUpsertOptions(?bool $inModal = null): UpsertOptions
     {
-        $mode = config('wr-laravel-administration.database_browser.upsert.mode')
-            ?? config('wr-laravel-administration.upsert.mode', UpsertOptions::MODE_PAGE);
+        $mode = config('wrla.database_browser.upsert.mode')
+            ?? config('wrla.upsert.mode', UpsertOptions::MODE_PAGE);
         $modal = $inModal ?? ($mode === UpsertOptions::MODE_MODAL);
         $returnToBrowse = $modal
-            ? (config('wr-laravel-administration.database_browser.upsert.modal.return_to_browse_after_save')
-                ?? config('wr-laravel-administration.upsert.modal.return_to_browse_after_save', true))
-            : (config('wr-laravel-administration.database_browser.upsert.page.return_to_browse_after_save', true)
-                ?? config('wr-laravel-administration.upsert.page.return_to_browse_after_save', false));
+            ? (config('wrla.database_browser.upsert.modal.return_to_browse_after_save')
+                ?? config('wrla.upsert.modal.return_to_browse_after_save', true))
+            : (config('wrla.database_browser.upsert.page.return_to_browse_after_save', true)
+                ?? config('wrla.upsert.page.return_to_browse_after_save', false));
 
         return new UpsertOptions(
             $modal ? UpsertOptions::MODE_MODAL : UpsertOptions::MODE_PAGE,
-            $modal ? (config('wr-laravel-administration.database_browser.upsert.modal.size')
-                ?? config('wr-laravel-administration.upsert.modal.size', '6xl')) : null,
+            $modal ? (config('wrla.database_browser.upsert.modal.size')
+                ?? config('wrla.upsert.modal.size', '6xl')) : null,
             (bool) $returnToBrowse,
         );
     }
@@ -996,7 +1001,7 @@ class WRLAHelper
     public static function databaseSchemaViewerEnabled(): bool
     {
         return once(function() {
-            $config = config('wr-laravel-administration.database_schema_viewer.enabled');
+            $config = WRLASettingsService::get('database_schema_viewer.enabled');
 
             if ($config === null) {
                 return WRLAHelper::userIsDev();
@@ -1015,7 +1020,7 @@ class WRLAHelper
     public static function schedulerEnabled(): bool
     {
         return once(function() {
-            $config = config('wr-laravel-administration.scheduler.enabled');
+            $config = WRLASettingsService::get('scheduler.enabled');
 
             if ($config === null) {
                 return WRLAHelper::userIsDev();
@@ -1034,7 +1039,7 @@ class WRLAHelper
     public static function schedulerCanRunAdhoc(): bool
     {
         return once(function() {
-            $config = config('wr-laravel-administration.scheduler.can_run_adhoc');
+            $config = WRLASettingsService::get('scheduler.can_run_adhoc');
 
             if ($config === null) {
                 return WRLAHelper::schedulerEnabled();
@@ -1070,7 +1075,7 @@ class WRLAHelper
      */
     public static function documentationEnabled(): bool
     {
-        return (bool) config('wr-laravel-administration.documentation.enabled', true);
+        return (bool) config('wrla.documentation.enabled', true);
     }
 
     /**
@@ -1081,7 +1086,7 @@ class WRLAHelper
         return once(function() {
             if(!WRLAHelper::documentationEnabled()) return false;
 
-            $showLinkConfig = config('wr-laravel-administration.documentation.show_link', false);
+            $showLinkConfig = WRLASettingsService::get('documentation.show_link');
 
             // If the config is callable, invoke it
             if(is_callable($showLinkConfig)) {
@@ -1226,7 +1231,7 @@ class WRLAHelper
      */
     public static function getCaptchaSettings(): array
     {
-        $captchaConfig = config('wr-laravel-administration.captcha');
+        $captchaConfig = config('wrla.captcha');
 
         return $captchaConfig[$captchaConfig['current']];
     }
@@ -1236,7 +1241,7 @@ class WRLAHelper
      */
     public static function getCaptchaHTML(): string
     {
-        if (config('wr-laravel-administration.captcha.current') ?? null == 'turnstile') {
+        if (config('wrla.captcha.current') ?? null == 'turnstile') {
             return Blade::render(<<<'HTML'
                 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
 
@@ -1261,11 +1266,11 @@ class WRLAHelper
      */
     public static function applyCaptchaCheck(Request $request): bool
     {
-        if (config('wr-laravel-administration.captcha.current') ?? null == 'turnstile') {
+        if (config('wrla.captcha.current') ?? null == 'turnstile') {
             $ipAddress = $request->ip();
 
             $data = Http::post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
-                'secret' => config('wr-laravel-administration.captcha.turnstile.secret_key'),
+                'secret' => config('wrla.captcha.turnstile.secret_key'),
                 'remoteip' => $ipAddress,
                 'response' => $request->input('cf-turnstile-response'),
             ]);
@@ -1286,7 +1291,7 @@ class WRLAHelper
     public static function catchIfConfiguredTo(string $alias, callable $callback, ?callable $catchCallback = null): mixed
     {
         // If catch_errors config is not set or does not contain the alias, run the callback as normal
-        if (! config("wr-laravel-administration.catch_errors.$alias", false)) {
+        if (! config("wrla.catch_errors.$alias", false)) {
             return $callback();
         }
 
@@ -1312,7 +1317,7 @@ class WRLAHelper
      */
     public static function renderLogo(?string $extraClasses = null, ?string $mode = null): string
     {
-        $logo = config('wr-laravel-administration.logo', []);
+        $logo = config('wrla.logo', []);
 
         // Resolve sources, falling back to the legacy 'light'/'dark' keys.
         $lightSrc = $logo['src'] ?? $logo['light'] ?? null;
@@ -1803,8 +1808,8 @@ class WRLAHelper
      */
     public static function runCommandMiddleware(Command $command): void
     {
-        // Run middleware or callable from config middleware.commands
-        $middleware = config('wr-laravel-administration.middleware.commands', []);
+        // Run middleware configured in runtime settings
+        $middleware = WRLASettingsService::get('middleware.commands');
         foreach ($middleware as $middlewareClassOrMethod) {
             if(is_string($middlewareClassOrMethod)) {
                 app($middlewareClassOrMethod)->handle(new Request(), fn($request) => \Illuminate\Support\Facades\Response::make(''));
@@ -1972,7 +1977,7 @@ class WRLAHelper
      */
     public static function getLogChannel(string $key): ?LoggerInterface
     {
-        $logWrapper = config('wr-laravel-administration.logging.'.$key);
+        $logWrapper = config('wrla.logging.'.$key);
 
         if (empty($logWrapper) || empty($logWrapper['enabled']) || empty($logWrapper['config'])) {
             return null;

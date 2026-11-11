@@ -1,0 +1,121 @@
+<p class="docs-lead">
+    Cacheable configuration and application-owned runtime settings, with a consent-based upgrade command.
+</p>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Breaking Changes</h2>
+    <ul class="list-disc list-outside space-y-2 text-gray-600 ml-5">
+        <li><code class="docs-inline-code">config/wr-laravel-administration.php</code> becomes <code class="docs-inline-code">config/wrla.php</code>. Config lookups now use <code class="docs-inline-code">wrla.*</code>.</li>
+        <li>Every runtime-capable setting belongs exclusively in <code class="docs-inline-code">App\WRLA\WRLASettings::runtime(): array</code>, including its boolean/null/list values. The generated method includes all runtime options. The nested keys stay the same.</li>
+        <li>Custom code reading callback-capable settings must use <code class="docs-inline-code">WRLASettingsService::get()</code> rather than reading only Laravel config. Existing WRLA helpers already use the resolver.</li>
+        <li><code class="docs-inline-code">build_wrla_user_data_id</code> must be callable. The generated callback returns the user ID; invalid values no longer silently fall back to it.</li>
+        <li>Asset paths, Blade view namespaces and route names are unchanged. No database changes are required.</li>
+    </ul>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Upgrade Locally First</h2>
+    <p class="docs-body">
+        Start with a clean Git worktree: no staged, unstaged or untracked changes. The upgrade warns you
+        before applying changes and does not create backup copies. We recommend running it locally and
+        agreeing to the automatic migration after reviewing its file preview. Review the automatically applied
+        changes in Git and test your application before finalising the upgrade, committing or deploying.
+    </p>
+    <ol class="list-decimal list-outside space-y-3 text-gray-600 ml-5">
+        <li>
+            Change your Composer constraint to <code class="docs-inline-code">^0.10.0</code>
+            (keep an appropriate existing constraint when developing from a local checkout), then update:
+            <div class="docs-code-block mt-2"><pre><code>composer update webregulate/laravel-administration</code></pre></div>
+        </li>
+        <li>
+            Run from a local terminal, review the preview and confirm when ready:
+            <div class="docs-code-block mt-2"><pre><code>php artisan wrla:upgrade</code></pre></div>
+            The command lists affected files and asks before writing. Declining leaves source files unchanged.
+            It does not update Composer dependencies or run database migrations.
+            Optionally add <code class="docs-inline-code">--dry-run</code> for a read-only preview without confirmation or writes, useful for scripts and CI.
+        </li>
+        <li>
+            Review the renamed config, generated <code class="docs-inline-code">runtime()</code> method and
+            rewritten application references. Test authentication, permissions, developer tools, notifications,
+            avatars, user IDs and any database-browser/scheduler overrides you use.
+        </li>
+        <li>
+            Confirm config caching works in your application, then clear the local cache when finished testing:
+            <div class="docs-code-block mt-2"><pre><code>php artisan config:cache
+php artisan config:clear</code></pre></div>
+        </li>
+    </ol>
+    <p class="docs-body mt-4">
+        Console setup and upgrade commands remain available before runtime settings are complete.
+        Administration requires the complete runtime method; there is no config/default fallback.
+        A closure-filled legacy config is not cacheable. Do not republish config with <code class="docs-inline-code">--force</code>
+        or manually create both config files before upgrading. If both files exist, merge them manually first.
+        Earlier releases' running update commands cannot load this new upgrade step until the new package is installed:
+        run <code class="docs-inline-code">wrla:upgrade</code> explicitly for this first transition.
+    </p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">What the Automatic Migration Does</h2>
+    <ul class="list-disc list-outside space-y-2 text-gray-600 ml-5">
+        <li>Parses PHP source without requiring config files or executing application callbacks.</li>
+        <li>Moves every runtime-owned setting out of config, retaining imported names, list order and explicit boolean/null/empty values. Missing runtime options are written into the application method from the installation template.</li>
+        <li>Inserts a new <code class="docs-inline-code">runtime()</code> as the first method, followed by one blank line, preserving existing routes and navigation. Existing runtime values take precedence over old config values, preserving their previous effective behaviour.</li>
+        <li>Rewrites standard PHP config helpers, Config facade aliases, repository getters and common Blade expressions. Runtime reads use the resolver. Whole-config/mixed parent reads and runtime config assignments require manual migration rather than changing their meaning silently.</li>
+        <li>Preserves Blade templates' existing PHP opening/closing boundaries instead of inserting stray PHP tags around rewritten markup.</li>
+        <li>Scans application PHP and Blade source, excluding vendor, node_modules, public assets, storage and bootstrap caches. It leaves Blade namespaces and public asset URLs alone.</li>
+        <li>Warns you to start with a clean Git worktree so the resulting diff contains only the automatic upgrade changes. No backup copies or upgrade manifests are created. An exclusive lock prevents concurrent upgrades, and stale previews cannot overwrite new edits. Originals are held in memory for rollback on write failures; any rollback error is reported for manual recovery using Git.</li>
+        <li>Clears config, route and compiled-view caches after a successful migration. Running the command again is safe and reports when nothing remains to migrate.</li>
+    </ul>
+    <p class="docs-body mt-4">
+        Computed keys, captured file-scope state, custom runtime logic, config conflicts and linked paths may need manual work.
+        When a detected case cannot be migrated safely, the command stops before applying the plan and explains why.
+        Review custom wrappers, namespace strings held in variables, code outside the scanned application, and any
+        dynamically generated references manually; static analysis cannot discover every indirection.
+        To undo a completed upgrade, review and revert its tracked changes using Git, remove only files newly created
+        by the upgrade, then clear config/routes/views. In-memory rollback cannot recover from a terminated process
+        or a later failed application test; the clean Git worktree is your recovery point.
+    </p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Runtime Settings</h2>
+    <p class="docs-body">
+        Keep scalar-only options in <code class="docs-inline-code">wrla.php</code>.
+        The generated <code class="docs-inline-code">runtime()</code> is the sole source for every runtime-capable option.
+        Edit its existing sections, keeping all other generated settings. For example:
+    </p>
+    <div class="docs-code-block"><pre><code>'user_avatar' =&gt; fn ($user) =&gt; $user-&gt;profile_image,
+'scheduler' =&gt; [
+    'enabled' =&gt; fn ($wrlaUserData) =&gt; $wrlaUserData?-&gt;isMaster() ?? false,
+    'can_run_adhoc' =&gt; null,
+],</code></pre></div>
+    <p class="docs-body mt-4">
+        There are no package runtime defaults or config fallbacks at read time.
+        Missing required options fail clearly; run the local upgrade command to add them explicitly.
+        Explicit <code class="docs-inline-code">false</code>, <code class="docs-inline-code">null</code>
+        and empty lists are respected. Required permission maps include every action.
+        Callback definitions are built once per request; the resolver does not evaluate them or cache their results.
+        Keep user lookups and database queries inside the callbacks, not at the top of <code class="docs-inline-code">runtime()</code>.
+        The initial generated access rules allow admins for manageable models and masters for developer tools/documentation.
+        See <a href="configuration.html" class="docs-link">Configuration</a> for every supported runtime key.
+    </p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Updates and Automation</h2>
+    <p class="docs-body">
+        From this release, <code class="docs-inline-code">wrla:update</code> runs Composer, launches
+        <code class="docs-inline-code">wrla:upgrade</code> in a fresh PHP process, then clears application caches.
+        Interactive terminals forward confirmation input. Web/non-interactive updates never silently approve source edits:
+        pending migrations return a non-zero status and tell you to run the upgrade locally.
+        Explicitly approved automation can use:
+    </p>
+    <div class="docs-code-block"><pre><code>php artisan wrla:upgrade --yes --no-interaction
+php artisan wrla:update --yes --no-interaction</code></pre></div>
+    <p class="docs-body mt-4">
+        Use <code class="docs-inline-code">--yes</code> only after reviewing and testing the migration.
+        New installations publish cacheable config and a complete runtime settings method automatically.
+        Installing or upgrading preserves existing application customizations rather than overwriting them.
+    </p>
+</div>

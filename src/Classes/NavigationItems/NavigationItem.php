@@ -11,7 +11,7 @@ use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 class NavigationItem
 {
     /**
-     * Navigation items to be passed to views. Setup in config/wr-laravel-administration.php and finalized in WRLAServiceProvider.php
+     * Navigation items built by WRLASettings::buildNavigation() and passed to views.
      *
      * @var array
      */

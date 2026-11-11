@@ -8,15 +8,17 @@ use WebRegulate\LaravelAdministration\Classes\VersionHandler\ConsoleVersionUpdat
 
 class UpdateCommand extends Command
 {
-    protected $signature = 'wrla:update';
+    protected $signature = 'wrla:update {--yes : Explicitly approve application file upgrades after Composer updates}';
 
-    protected $description = 'Run composer update for the WRLA package and clear cached application state.';
+    protected $description = 'Run Composer, upgrade WRLA application files with consent, and clear cached application state.';
 
     public function handle()
     {
         $versionHandler = new VersionHandler(new ConsoleVersionUpdateContext($this));
 
-        return $versionHandler->runComposerUpdate() && $versionHandler->runOptimizeClear()
+        return $versionHandler->runComposerUpdate()
+            && $versionHandler->runUpgrade($this->input?->isInteractive() ?? false, (bool) ($this->input?->getOption('yes') ?? false))
+            && $versionHandler->runOptimizeClear()
             ? self::SUCCESS
             : self::FAILURE;
     }

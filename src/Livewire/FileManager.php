@@ -120,7 +120,7 @@ class FileManager extends WRLAPageComponent
 
     private function validateUpload(UploadedFile $file, string $errorKey, string $destinationName): bool
     {
-        $allowedMimeTypes = config('wr-laravel-administration.file_manager.can_upload_mime_types', []);
+        $allowedMimeTypes = config('wrla.file_manager.can_upload_mime_types', []);
         $mimeType = $file->getMimeType();
 
         if (! in_array($mimeType, $allowedMimeTypes, true)) {
@@ -146,14 +146,14 @@ class FileManager extends WRLAPageComponent
     public function mount()
     {
         // Redirect if file manager is not enabled in config
-        if (config('wr-laravel-administration.file_manager.enabled', false) !== true) {
+        if (config('wrla.file_manager.enabled', false) !== true) {
             WRLAHelper::pushAlert('danger', 'Access to file manager permission denied.');
             $this->redirect(route('wrla.dashboard'));
         }
 
         // Config
-        $this->viewFileMaxCharacters = config('wr-laravel-administration.file_manager.max_characters', 500000);
-        $attemptFileSystemName = config('wr-laravel-administration.file_manager.default_filesystem', null);
+        $this->viewFileMaxCharacters = config('wrla.file_manager.max_characters', 500000);
+        $attemptFileSystemName = config('wrla.file_manager.default_filesystem', null);
 
         // Set file system
         $this->switchFileSystem($attemptFileSystemName);
@@ -413,7 +413,7 @@ class FileManager extends WRLAPageComponent
 
         // If the file system name is not in the available file systems, return
         if ($fileSystemName !== '' && ! in_array($fileSystemName, $availableFileSystemNames)) {
-            WRLAHelper::pushAlert('danger', "File system '$fileSystemName' not available or enabled in wr-laravel-administration.file_manager config.");
+            WRLAHelper::pushAlert('danger', "File system '$fileSystemName' not available or enabled in wrla.file_manager config.");
 
             return;
         }
@@ -469,7 +469,7 @@ class FileManager extends WRLAPageComponent
     private function getCurrentFileSystem()
     {
         abort_unless(
-            config('wr-laravel-administration.file_manager.enabled', false) === true,
+            config('wrla.file_manager.enabled', false) === true,
             403,
             'Access to file manager permission denied.',
         );
@@ -490,6 +490,6 @@ class FileManager extends WRLAPageComponent
     private function getAvailableFileSystemConfigs(): array
     {
         // Only where where enabled
-        return collect(config('wr-laravel-administration.file_manager.file_systems', []))->filter(fn ($fileSystem) => $fileSystem['enabled'] ?? false)->toArray();
+        return collect(config('wrla.file_manager.file_systems', []))->filter(fn ($fileSystem) => $fileSystem['enabled'] ?? false)->toArray();
     }
 }

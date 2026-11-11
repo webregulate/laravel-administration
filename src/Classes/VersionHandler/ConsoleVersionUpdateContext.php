@@ -39,6 +39,11 @@ class ConsoleVersionUpdateContext extends VersionUpdateContext
         $process = new Process($command, $workingDirectory ?? base_path());
         $process->setTimeout($timeout);
 
+        // Forward local developer input to the freshly loaded upgrade command
+        if (in_array('wrla:upgrade', $command, true) && !in_array('--no-interaction', $command, true) && defined('STDIN')) {
+            $process->setInput(STDIN);
+        }
+
         $process->run(function ($type, $buffer) {
             // Stream stdout/stderr straight through to the console as it arrives
             $this->command->getOutput()->write($buffer);

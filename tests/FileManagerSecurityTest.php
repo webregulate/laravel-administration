@@ -39,7 +39,7 @@ class FileManagerSecurityTest extends TestCase
         ]);
         $app = new Application($path);
         $app->instance('config', new Repository([
-            'wr-laravel-administration' => [
+            'wrla' => [
                 'file_manager' => [
                     'enabled' => true,
                     'file_systems' => ['public' => ['enabled' => true], 'local' => ['enabled' => false]],
@@ -93,7 +93,7 @@ class FileManagerSecurityTest extends TestCase
     #[DataProvider('deniedAccess')]
     public function test_every_file_operation_rechecks_access(string $disk, bool $enabled, string $operation): void
     {
-        config(['wr-laravel-administration.file_manager.enabled' => $enabled]);
+        config(['wrla.file_manager.enabled' => $enabled]);
         Storage::shouldReceive('disk')->never();
         $manager = $this->manager();
         $manager->currentFileSystemName = $disk;
@@ -137,7 +137,7 @@ class FileManagerSecurityTest extends TestCase
 
     public function test_server_side_disk_switch_still_works(): void
     {
-        config(['wr-laravel-administration.file_manager.file_systems.local.enabled' => true]);
+        config(['wrla.file_manager.file_systems.local.enabled' => true]);
         $disk = Mockery::mock(FilesystemAdapter::class);
         $disk->shouldReceive('directories')->once()->with('')->andReturn([]);
         $disk->shouldReceive('files')->once()->with('')->andReturn([]);

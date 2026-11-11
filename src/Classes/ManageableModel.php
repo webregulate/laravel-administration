@@ -2,6 +2,7 @@
 
 namespace WebRegulate\LaravelAdministration\Classes;
 
+use WebRegulate\LaravelAdministration\Services\WRLASettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\MessageBag;
@@ -115,7 +116,7 @@ abstract class ManageableModel
 
     public static function getDefaultPermission(ManageableModelPermissions $permission): bool|callable
     {
-        return config('wr-laravel-administration.default_manageable_model_permissions.'.$permission->value, true);
+        return WRLASettingsService::get('default_manageable_model_permissions.'.$permission->value);
     }
 
     /**

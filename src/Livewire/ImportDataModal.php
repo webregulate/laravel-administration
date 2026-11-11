@@ -27,7 +27,7 @@ class ImportDataModal extends ModalComponent
 
     /**
      * The uploaded file. Validation rules are defined in rules() so they can be
-     * sourced from the wr-laravel-administration config (csv_imports.upload_rules).
+     * sourced from the wrla config (csv_imports.upload_rules).
      *
      * @var mixed
      */
@@ -39,7 +39,7 @@ class ImportDataModal extends ModalComponent
     protected function rules(): array
     {
         return [
-            'file' => config('wr-laravel-administration.csv_imports.upload_rules', [
+            'file' => config('wrla.csv_imports.upload_rules', [
                 'required',
                 'file',
                 'mimetypes:text/csv,text/plain,application/csv,application/vnd.ms-excel,application/octet-stream',
@@ -73,7 +73,7 @@ class ImportDataModal extends ModalComponent
         'totalImports' => 0,
         'totalImported' => 0,
         // Chunked import state
-        'chunkSize' => 500, // overridden from config('wr-laravel-administration.csv_imports.chunk_size') on import
+        'chunkSize' => 500, // overridden from config('wrla.csv_imports.chunk_size') on import
         'chunkBaseName' => '',   // e.g. "users-import-2025-01-01-12-00-00"
         'chunkDir' => '',        // directory (relative to local disk) where chunk files live
         'totalChunks' => 0,
@@ -209,7 +209,7 @@ class ImportDataModal extends ModalComponent
         // Get all the table fields for this model
         $modelInstance = (new $this->manageableModelClass)->model();
         $tableColumns = WRLAHelper::getTableColumns($modelInstance->getTable(), $modelInstance->getConnectionName());
-        $tableColumns = array_diff($tableColumns, (array) config('wr-laravel-administration.csv_imports.ignore_columns', ['id']));
+        $tableColumns = array_diff($tableColumns, (array) config('wrla.csv_imports.ignore_columns', ['id']));
         $this->data['tableColumnsDisplay'] = array_combine($tableColumns, $tableColumns);
 
         // Cache column metadata (nullable / type) so we can correctly cast values per column
@@ -319,7 +319,7 @@ class ImportDataModal extends ModalComponent
             ];
         }
 
-        $componentKb = $this->extractMaxKbFromRules((array) config('wr-laravel-administration.csv_imports.upload_rules', []));
+        $componentKb = $this->extractMaxKbFromRules((array) config('wrla.csv_imports.upload_rules', []));
         if ($componentKb !== null) {
             $items[] = [
                 'source' => 'WRLA csv_imports.upload_rules max',
@@ -434,7 +434,7 @@ class ImportDataModal extends ModalComponent
         if ($skipDataRows === 0) {
             $manageableModel = (new $this->manageableModelClass)->model();
             $manageableModelColumns = Schema::getColumnListing($manageableModel->getTable());
-            $manageableModelColumns = array_diff($manageableModelColumns, (array) config('wr-laravel-administration.csv_imports.ignore_columns', ['id']));
+            $manageableModelColumns = array_diff($manageableModelColumns, (array) config('wrla.csv_imports.ignore_columns', ['id']));
             $this->data['tableColumns'] = array_combine($manageableModelColumns, $manageableModelColumns);
             $this->data['tableColumns'] = ['' => ' - no column selected - '] + $this->data['tableColumns'];
             $this->autoMapHeadersToColumns();
@@ -563,7 +563,7 @@ class ImportDataModal extends ModalComponent
         // final completed-screen totals reflect everything the user has done in this session.
         $this->data['currentChunkIndex'] = 0;
         $this->data['totalChunks'] = 0;
-        $this->data['chunkSize'] = (int) config('wr-laravel-administration.csv_imports.chunk_size', 500);
+        $this->data['chunkSize'] = (int) config('wrla.csv_imports.chunk_size', 500);
 
         $this->data['currentStep'] = 'processing';
 
@@ -719,7 +719,7 @@ class ImportDataModal extends ModalComponent
      */
     private function insertRows($modelClass, array $rows): void
     {
-        $maxReasons = (int) config('wr-laravel-administration.csv_imports.max_failed_reasons', 20);
+        $maxReasons = (int) config('wrla.csv_imports.max_failed_reasons', 20);
 
         foreach ($rows as $rowIndex => $rowData) {
             try {
@@ -859,7 +859,7 @@ class ImportDataModal extends ModalComponent
     {
         $modelInstance = (new $this->manageableModelClass)->model();
         $tableColumns = WRLAHelper::getTableColumns($modelInstance->getTable(), $modelInstance->getConnectionName());
-        $tableColumns = array_diff($tableColumns, (array) config('wr-laravel-administration.csv_imports.ignore_columns', ['id']));
+        $tableColumns = array_diff($tableColumns, (array) config('wrla.csv_imports.ignore_columns', ['id']));
 
         $fileName = (new ($this->manageableModelClass::getBaseModelClass()))->getTable().'-import-template.csv';
 

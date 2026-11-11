@@ -314,7 +314,7 @@ class Scheduler extends WRLAPageComponent
 
     protected function maxRows(): int
     {
-        return (int) config('wr-laravel-administration.scheduler.max_rows', 100);
+        return (int) config('wrla.scheduler.max_rows', 100);
     }
 
     protected function cleanCommand(?string $command): ?string

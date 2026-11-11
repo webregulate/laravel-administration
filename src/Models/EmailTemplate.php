@@ -409,7 +409,7 @@ class EmailTemplate extends Model
      */
     public function getRenderMode(): string
     {
-        return $this->type ?: config('wr-laravel-administration.email_templates.render_mode', 'markdown');
+        return $this->type ?: config('wrla.email_templates.render_mode', 'markdown');
     }
 
     /**

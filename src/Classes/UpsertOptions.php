@@ -51,13 +51,13 @@ class UpsertOptions
     ) {}
 
     /**
-     * Build options from the wr-laravel-administration.upsert config, using the
+     * Build options from the wrla.upsert config, using the
      * configured default mode. This is the fallback when a model never calls
      * setUpsertOptions().
      */
     public static function fromConfig(): static
     {
-        $mode = config('wr-laravel-administration.upsert.mode', self::MODE_PAGE);
+        $mode = config('wrla.upsert.mode', self::MODE_PAGE);
 
         return $mode === self::MODE_MODAL ? static::modal() : static::page();
     }
@@ -86,7 +86,7 @@ class UpsertOptions
         return new static(
             self::MODE_PAGE,
             null,
-            (bool) config('wr-laravel-administration.upsert.page.return_to_browse_after_save', false),
+            (bool) config('wrla.upsert.page.return_to_browse_after_save', false),
         );
     }
 
@@ -99,8 +99,8 @@ class UpsertOptions
     {
         return new static(
             self::MODE_MODAL,
-            $size ?? config('wr-laravel-administration.upsert.modal.size', '6xl'),
-            (bool) config('wr-laravel-administration.upsert.modal.return_to_browse_after_save', true),
+            $size ?? config('wrla.upsert.modal.size', '6xl'),
+            (bool) config('wrla.upsert.modal.return_to_browse_after_save', true),
         );
     }
 

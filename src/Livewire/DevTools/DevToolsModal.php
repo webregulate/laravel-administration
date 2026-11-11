@@ -2,6 +2,7 @@
 
 namespace WebRegulate\LaravelAdministration\Livewire\DevTools;
 
+use WebRegulate\LaravelAdministration\Services\WRLASettingsService;
 use LivewireUI\Modal\ModalComponent;
 use Symfony\Component\Process\Process;
 use WebRegulate\LaravelAdministration\Classes\VersionHandler\BackgroundUpdateProcess;
@@ -44,7 +45,7 @@ class DevToolsModal extends ModalComponent
             return;
         }
 
-        $this->mode = config('wr-laravel-administration.developer.update.mode', 'live') === 'blocking'
+        $this->mode = config('wrla.developer.update.mode', 'live') === 'blocking'
             ? 'blocking'
             : 'live';
 
@@ -70,7 +71,7 @@ class DevToolsModal extends ModalComponent
      */
     protected function resolveCommands(): array
     {
-        $configured = (array) config('wr-laravel-administration.developer.commands', []);
+        $configured = WRLASettingsService::get('developer.commands');
         $wrlaUserData = WRLAHelper::getCurrentUserData();
 
         $resolved = [];

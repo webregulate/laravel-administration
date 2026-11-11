@@ -48,8 +48,8 @@ class UninstallCommand extends Command
         }
         $this->confirmAndRemove('Remove the WRLAUserData model (including the configured legacy model, if applicable)?', $userDataModelPaths);
 
-        // Remove app/config/wr-laravel-administration.php
-        $this->confirmAndRemove('Remove the WRLA configuration file?', ['config/wr-laravel-administration.php'], function() {
+        // Remove app/config/wrla.php
+        $this->confirmAndRemove('Remove the WRLA configuration file?', ['config/wrla.php', 'config/wr-laravel-administration.php'], function() {
             // Clear configuration cache
             Artisan::call('config:clear');
         });

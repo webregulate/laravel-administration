@@ -8,7 +8,7 @@
     {{-- Notifications widget --}}
     <div>
         @livewire('wrla.notifications-widget', [
-            'userIds' => config('wr-laravel-administration.dashboard.notifications.user_groups'),
+            'userIds' => config('wrla.dashboard.notifications.user_groups'),
         ])
     </div>
 </div>

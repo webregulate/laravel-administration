@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::connection(config('wr-laravel-administration.wrla_user_data.connection'))->create('wrla_user_data', function (Blueprint $table): void {
+        Schema::connection(config('wrla.wrla_user_data.connection'))->create('wrla_user_data', function (Blueprint $table): void {
             // Id
             $table->id();
 
@@ -39,6 +39,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::connection(config('wr-laravel-administration.wrla_user_data.connection'))->dropIfExists('wrla_user_data');
+        Schema::connection(config('wrla.wrla_user_data.connection'))->dropIfExists('wrla_user_data');
     }
 };

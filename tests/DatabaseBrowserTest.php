@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Livewire;
 use WebRegulate\LaravelAdministration\Classes\ManageableModelDynamic;
+use WebRegulate\LaravelAdministration\Tests\Fixtures\RuntimeSettings;
 use WebRegulate\LaravelAdministration\Livewire\DevTools\DatabaseRecordUpsert;
 use WebRegulate\LaravelAdministration\Livewire\DevTools\DatabaseRecordModal;
 use WebRegulate\LaravelAdministration\Livewire\DevTools\DatabaseTableBrowse;
@@ -18,6 +19,7 @@ class DatabaseBrowserTest extends TestCase
 {
     public function createApplication()
     {
+        RuntimeSettings::useForApplication();
         $path = getenv('WRLA_TEST_APP_PATH');
         if (!$path) {
             $this->markTestSkipped('Set WRLA_TEST_APP_PATH to a Laravel application with WRLA dependencies installed.');
@@ -36,6 +38,7 @@ class DatabaseBrowserTest extends TestCase
         $app = require $path.'/bootstrap/app.php';
         $app->beforeBootstrapping(\Illuminate\Foundation\Bootstrap\RegisterProviders::class, function ($app) {
             $app['config']->set([
+                'wrla' => require dirname(__DIR__).'/src/config/wrla.php',
                 'database.connections' => [
                     'browser_a' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => ''],
                     'browser_b' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => ''],
@@ -59,10 +62,10 @@ class DatabaseBrowserTest extends TestCase
                 'browser_b' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => ''],
             ],
             'database.default' => 'browser_a',
-            'wr-laravel-administration.developer.enable' => true,
             'session.driver' => 'array',
             'cache.default' => 'array',
         ]);
+        RuntimeSettings::set(['developer.enable' => true]);
         foreach (['browser_a', 'browser_b'] as $connection) {
             DB::connection($connection)->getSchemaBuilder()->create('records', function ($table) {
                 $table->string('uuid')->primary();
@@ -251,7 +254,7 @@ class DatabaseBrowserTest extends TestCase
 
     public function test_non_developers_cannot_open_pages(): void
     {
-        config(['wr-laravel-administration.developer.enable' => false]);
+        RuntimeSettings::set(['developer.enable' => false]);
         foreach ([DatabaseTables::class, DatabaseTableBrowse::class, DatabaseRecordUpsert::class, DatabaseRecordModal::class] as $component) {
             Livewire::test($component, ['connection' => 'browser_a', 'table' => 'main.records'])->assertForbidden();
         }
@@ -260,15 +263,15 @@ class DatabaseBrowserTest extends TestCase
     public function test_browser_access_can_be_configured_independently(): void
     {
         foreach ([false, fn ($userData) => false] as $enabled) {
-            config(['wr-laravel-administration.database_browser.enabled' => $enabled]);
+            RuntimeSettings::set(['database_browser.enabled' => $enabled]);
             foreach ([DatabaseTables::class, DatabaseTableBrowse::class, DatabaseRecordUpsert::class] as $component) {
                 Livewire::test($component, ['connection' => 'browser_a', 'table' => 'main.records'])->assertForbidden();
             }
         }
 
-        config([
-            'wr-laravel-administration.developer.enable' => false,
-            'wr-laravel-administration.database_browser.enabled' => true,
+        RuntimeSettings::set([
+            'developer.enable' => false,
+            'database_browser.enabled' => true,
         ]);
         Livewire::test(DatabaseTables::class)->assertOk();
     }
@@ -276,27 +279,27 @@ class DatabaseBrowserTest extends TestCase
     public function test_browser_connections_and_tables_are_restricted_on_direct_access(): void
     {
         config([
-            'wr-laravel-administration.database_browser.connections' => ['browser_b'],
-            'wr-laravel-administration.database_browser.default_connection' => 'browser_b',
+            'wrla.database_browser.connections' => ['browser_b'],
+            'wrla.database_browser.default_connection' => 'browser_b',
         ]);
         Livewire::test(DatabaseTables::class)->assertSet('connections', ['browser_b'])->assertSet('connection', 'browser_b');
         foreach ([DatabaseTableBrowse::class, DatabaseRecordUpsert::class, DatabaseRecordModal::class] as $component) {
             Livewire::test($component, ['connection' => 'browser_a', 'table' => 'main.records'])->assertNotFound();
         }
 
-        config(['wr-laravel-administration.database_browser.excluded_tables' => ['browser_b' => ['rec*']]]);
+        config(['wrla.database_browser.excluded_tables' => ['browser_b' => ['rec*']]]);
         Livewire::test(DatabaseTables::class)->assertDontSee('main.records');
         foreach ([DatabaseTableBrowse::class, DatabaseRecordUpsert::class, DatabaseRecordModal::class] as $component) {
             Livewire::test($component, ['connection' => 'browser_b', 'table' => 'main.records'])->assertNotFound();
         }
 
         config([
-            'wr-laravel-administration.database_browser.connections' => null,
-            'wr-laravel-administration.database_browser.excluded_tables' => ['*' => ['main.*']],
+            'wrla.database_browser.connections' => null,
+            'wrla.database_browser.excluded_tables' => ['*' => ['main.*']],
         ]);
         Livewire::test(DatabaseTables::class)->assertDontSee('main.records');
         Livewire::test(DatabaseTableBrowse::class, ['connection' => 'browser_a', 'table' => 'main.records'])->assertNotFound();
-        config(['wr-laravel-administration.database_browser.connections' => []]);
+        config(['wrla.database_browser.connections' => []]);
         Livewire::test(DatabaseTables::class)->assertSet('connections', [])->assertSet('connection', '');
     }
 
@@ -304,7 +307,7 @@ class DatabaseBrowserTest extends TestCase
     {
         DB::connection('browser_a')->table('records')->insert(['uuid' => 'one', 'name' => 'Original']);
         foreach ([['read_only' => true], ['read_only_connections' => ['browser_a']]] as $settings) {
-            config(['wr-laravel-administration.database_browser' => $settings]);
+            config(['wrla.database_browser' => $settings]);
             $browse = Livewire::test(DatabaseTableBrowse::class, ['connection' => 'browser_a', 'table' => 'main.records'])
                 ->assertSee('Original')->assertDontSee('Create record')->assertDontSee('Edit record')->assertDontSee('Delete record');
             $browse->call('openRecord', 'view', base64_encode('one'))->assertDispatched('openModal');
@@ -322,15 +325,15 @@ class DatabaseBrowserTest extends TestCase
 
     public function test_browser_permissions_are_independent_and_rechecked_before_saving(): void
     {
-        config(['wr-laravel-administration.database_browser.permissions' => ['create' => true, 'edit' => false, 'delete' => false]]);
+        RuntimeSettings::set(['database_browser.permissions' => ['create' => true, 'edit' => false, 'delete' => false]]);
         $create = Livewire::test(DatabaseRecordUpsert::class, ['connection' => 'browser_a', 'table' => 'main.records', 'inModal' => true])
             ->set('values.0', 'one')->set('values.1', 'Created')->call('save')->assertHasNoErrors();
         $create->set('values.1', 'Blocked')->call('save')->assertForbidden();
-        config(['wr-laravel-administration.database_browser.permissions.create' => false]);
+        RuntimeSettings::set(['database_browser.permissions.create' => false]);
         Livewire::test(DatabaseRecordUpsert::class, ['connection' => 'browser_a', 'table' => 'main.records'])->assertForbidden();
-        config(['wr-laravel-administration.database_browser.permissions.edit' => true]);
+        RuntimeSettings::set(['database_browser.permissions.edit' => true]);
         $edit = Livewire::test(DatabaseRecordUpsert::class, ['connection' => 'browser_a', 'table' => 'main.records', 'record' => base64_encode('one')]);
-        config(['wr-laravel-administration.database_browser.read_only' => true]);
+        config(['wrla.database_browser.read_only' => true]);
         $edit->set('values.1', 'Blocked')->call('save')->assertForbidden();
         $this->assertSame('Created', DB::connection('browser_a')->table('records')->value('name'));
     }
@@ -338,9 +341,9 @@ class DatabaseBrowserTest extends TestCase
     public function test_browser_pagination_and_filter_limits_are_independent(): void
     {
         config([
-            'wr-laravel-administration.browse.pagination' => ['default' => 75, 'perPage' => [75, 100]],
-            'wr-laravel-administration.database_browser.pagination' => ['default' => 2, 'perPage' => [2, 3, 100, 0, -1], 'max_per_page' => 3],
-            'wr-laravel-administration.database_browser.filters' => ['enable_all_fields' => false, 'max_filters' => 1, 'max_value_length' => 3],
+            'wrla.browse.pagination' => ['default' => 75, 'perPage' => [75, 100]],
+            'wrla.database_browser.pagination' => ['default' => 2, 'perPage' => [2, 3, 100, 0, -1], 'max_per_page' => 3],
+            'wrla.database_browser.filters' => ['enable_all_fields' => false, 'max_filters' => 1, 'max_value_length' => 3],
         ]);
         Livewire::test(DatabaseTableBrowse::class, ['connection' => 'browser_a', 'table' => 'main.records'])
             ->assertSet('perPage', 2)->assertSet('dynamicFilterInputs', [])->assertDontSee('All columns')
@@ -359,8 +362,8 @@ class DatabaseBrowserTest extends TestCase
     public function test_browser_upsert_options_override_general_options(): void
     {
         config([
-            'wr-laravel-administration.upsert.mode' => 'page',
-            'wr-laravel-administration.database_browser.upsert' => ['mode' => 'modal', 'modal' => ['size' => '4xl', 'return_to_browse_after_save' => true]],
+            'wrla.upsert.mode' => 'page',
+            'wrla.database_browser.upsert' => ['mode' => 'modal', 'modal' => ['size' => '4xl', 'return_to_browse_after_save' => true]],
         ]);
         Livewire::test(DatabaseTableBrowse::class, ['connection' => 'browser_a', 'table' => 'main.records'])
             ->assertSee('openRecord', false)->call('openRecord', 'create')
@@ -368,8 +371,8 @@ class DatabaseBrowserTest extends TestCase
         Livewire::test(DatabaseRecordUpsert::class, ['connection' => 'browser_a', 'table' => 'main.records', 'inModal' => true])
             ->set('values.0', 'one')->set('values.1', 'Created')->call('save')->assertHasNoErrors()->assertDispatched('closeModal');
         config([
-            'wr-laravel-administration.database_browser.upsert.mode' => 'page',
-            'wr-laravel-administration.database_browser.upsert.page.return_to_browse_after_save' => false,
+            'wrla.database_browser.upsert.mode' => 'page',
+            'wrla.database_browser.upsert.page.return_to_browse_after_save' => false,
         ]);
         Livewire::test(DatabaseTableBrowse::class, ['connection' => 'browser_a', 'table' => 'main.records'])->assertDontSee('openRecord', false);
         Livewire::test(DatabaseRecordUpsert::class, ['connection' => 'browser_a', 'table' => 'main.records'])
@@ -382,14 +385,14 @@ class DatabaseBrowserTest extends TestCase
     public function test_browser_save_uses_the_rendered_page_or_modal_settings(): void
     {
         config([
-            'wr-laravel-administration.database_browser.upsert.mode' => 'modal',
-            'wr-laravel-administration.database_browser.upsert.page.return_to_browse_after_save' => true,
-            'wr-laravel-administration.database_browser.upsert.modal.return_to_browse_after_save' => false,
+            'wrla.database_browser.upsert.mode' => 'modal',
+            'wrla.database_browser.upsert.page.return_to_browse_after_save' => true,
+            'wrla.database_browser.upsert.modal.return_to_browse_after_save' => false,
         ]);
         Livewire::test(DatabaseRecordUpsert::class, ['connection' => 'browser_a', 'table' => 'main.records'])
             ->set('values.0', 'page')->set('values.1', 'Page')->call('save')->assertHasNoErrors()
             ->assertRedirect(route('wrla.database.table', ['connection' => 'browser_a', 'table' => 'main.records']));
-        config(['wr-laravel-administration.database_browser.upsert.mode' => 'page']);
+        config(['wrla.database_browser.upsert.mode' => 'page']);
         Livewire::test(DatabaseRecordUpsert::class, ['connection' => 'browser_a', 'table' => 'main.records', 'inModal' => true])
             ->set('values.0', 'modal')->set('values.1', 'Modal')->call('save')->assertHasNoErrors()->assertNoRedirect()->assertNotDispatched('closeModal');
     }
@@ -414,7 +417,7 @@ class DatabaseBrowserTest extends TestCase
     {
         DB::connection('browser_a')->table('records')->insert(['uuid' => 'key/with spaces', 'name' => 'Original']);
         $key = rtrim(strtr(base64_encode('key/with spaces'), '+/', '-_'), '=');
-        config(['wr-laravel-administration.upsert.mode' => 'modal', 'wr-laravel-administration.upsert.modal.size' => '5xl']);
+        config(['wrla.upsert.mode' => 'modal', 'wrla.upsert.modal.size' => '5xl']);
         $browse = Livewire::test(DatabaseTableBrowse::class, ['connection' => 'browser_a', 'table' => 'main.records'])
             ->assertSee('openRecord', false)->assertSee('window.wrlaOpenDatabaseRecordModal', false);
         foreach (['create', 'view', 'edit'] as $action) {
@@ -428,7 +431,7 @@ class DatabaseBrowserTest extends TestCase
         Livewire::test(\WebRegulate\LaravelAdministration\Livewire\WireElementsModal::class)
             ->dispatch('openModal', 'wrla.dev-tools.database-record-modal', ['connection' => 'browser_a', 'table' => 'main.records', 'record' => $key, 'readOnly' => true], ['maxWidth' => '5xl'])
             ->assertDispatched('activeModalComponentChanged')->assertSee('View main.records')->assertSee('Original');
-        config(['wr-laravel-administration.upsert.mode' => 'page']);
+        config(['wrla.upsert.mode' => 'page']);
         Livewire::test(DatabaseTableBrowse::class, ['connection' => 'browser_a', 'table' => 'main.records'])
             ->assertDontSee('openRecord', false);
     }
@@ -449,12 +452,12 @@ class DatabaseBrowserTest extends TestCase
 
     public function test_modal_save_refreshes_listing_and_respects_close_setting(): void
     {
-        config(['wr-laravel-administration.upsert.modal.return_to_browse_after_save' => true]);
+        config(['wrla.upsert.modal.return_to_browse_after_save' => true]);
         Livewire::test(DatabaseRecordUpsert::class, ['connection' => 'browser_a', 'table' => 'main.records', 'inModal' => true])
             ->set('values.0', 'one')->set('values.1', 'Created')->call('save')
             ->assertHasNoErrors()->assertNoRedirect()->assertDispatched('closeModal')
             ->assertDispatched('database-record-saved', connection: 'browser_a', table: 'main.records');
-        config(['wr-laravel-administration.upsert.modal.return_to_browse_after_save' => false]);
+        config(['wrla.upsert.modal.return_to_browse_after_save' => false]);
         Livewire::test(DatabaseRecordUpsert::class, ['connection' => 'browser_a', 'table' => 'main.records', 'inModal' => true])
             ->set('values.0', 'two')->set('values.1', 'Stays open')->call('save')
             ->assertHasNoErrors()->assertSet('recordId', 'two')->assertSet('values.2', 7)
@@ -510,4 +513,3 @@ class DatabaseBrowserTest extends TestCase
             ->assertSet('values.4', '[binary]')->assertSee('[binary]');
     }
 }
-

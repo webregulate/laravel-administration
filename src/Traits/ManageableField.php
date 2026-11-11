@@ -97,7 +97,7 @@ trait ManageableField
         $parentClass = get_class($this);
 
         // Get default validation rules if exists
-        $defaultValidationRules = config("wr-laravel-administration.default_validation_rules.$parentClass");
+        $defaultValidationRules = config("wrla.default_validation_rules.$parentClass");
         if(!empty($defaultValidationRules)) {
             $this->validation($defaultValidationRules);
         }

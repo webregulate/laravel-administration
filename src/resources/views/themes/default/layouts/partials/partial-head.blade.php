@@ -8,7 +8,7 @@
         // Theme overrides
         theme: {
             extend: {
-                colors: @php echo json_encode(config('wr-laravel-administration.colors')) @endphp
+                colors: @php echo json_encode(config('wrla.colors')) @endphp
             }
         }
     };
@@ -248,7 +248,7 @@
         pointer-events: none;
     }
 
-    {{ config('wr-laravel-administration.common_css') }}
+    {{ config('wrla.common_css') }}
 </style>
 
 @stack('styles')
