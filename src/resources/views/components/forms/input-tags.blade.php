@@ -1,4 +1,4 @@
-@props(['options' => [], 'label' => null])
+@props(['options' => [], 'label' => null, 'tagValue' => ''])
 
 @php
     // Set id from name if unset
@@ -9,6 +9,9 @@
 
     // Max tags (null = unlimited)
     $maxTags = $options['maxTags'] ?? null;
+
+    $tagValue = is_string($tagValue) ? $tagValue : (string) ($attributes->get('value') ?? '');
+    $storeAsJson = (bool) ($options['storeAsJson'] ?? false);
 @endphp
 
 <div class="{{ $options['containerClass'] ?? 'w-full flex-1 flex flex-col gap-1 md:flex-auto' }}">
@@ -23,37 +26,100 @@
     ])
 @endif
 
+{{-- x-data stays inline so Livewire morphs do not depend on a script tag running.
+     The attribute is double-quoted, so this script must not contain a raw double quote.
+     &amp; is written twice because the browser decodes the attribute before Alpine parses it. --}}
 <div x-data="{
     tags: [],
     newTag: '',
     editingIndex: null,
     editValue: '',
-    maxTags: {{ is_null($maxTags) ? 'null' : (int) $maxTags }},
+    storeAsJson: false,
+    preserveInitial: false,
+    initialStoredValue: '',
+    maxTags: null,
     get isFull() {
         return this.maxTags !== null && this.tags.length >= this.maxTags;
     },
-    init() {
-        const initialVal = '{{ old($attributes->get('name'), $attributes->get('value') ?? '') }}';
-        if (initialVal.trim()) {
-            initialVal.split(',').forEach(tag => this.addTag(tag.trim()));
+    get storedValue() {
+        if (this.preserveInitial) {
+            return this.initialStoredValue;
         }
+        return this.storeAsJson ? JSON.stringify(this.tags) : this.tags.join(',');
     },
-    addTag(tag) {
-        tag = tag.trim();
-
+    init() {
+        const rawMax = this.$el.dataset.maxTags;
+        this.maxTags = rawMax === undefined || rawMax === '' ? null : Number(rawMax);
+        this.storeAsJson = this.$el.dataset.storeAsJson === '1';
+        const initial = this.$el.dataset.tagValue ?? '';
+        this.initialStoredValue = initial;
+        const parsed = this.parseStored(initial);
+        const trimmed = String(initial).trim();
+        if (this.storeAsJson && parsed.length === 0 && trimmed !== '' && trimmed !== '[]') {
+            this.preserveInitial = true;
+            return;
+        }
+        parsed.forEach(tag => this.addTag(tag, false));
+    },
+    parseStored(initialVal) {
+        const trimmed = String(initialVal ?? '').trim();
+        if (trimmed === '') {
+            return [];
+        }
+        if (this.storeAsJson) {
+            try {
+                const decoded = JSON.parse(trimmed);
+                if (Array.isArray(decoded) && decoded.every(tag => typeof tag === 'string' || typeof tag === 'number')) {
+                    return decoded.filter(tag => String(tag).trim() !== '');
+                }
+            } catch (error) {}
+            return [];
+        }
+        return trimmed.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+    },
+    tagKey(tag) {
+        return String(tag ?? '').trim();
+    },
+    escapeHtml(value) {
+        const quote = String.fromCharCode(34);
+        return String(value)
+            .replace(/&/g, '&amp;amp;')
+            .replace(/</g, '&amp;lt;')
+            .replace(/>/g, '&amp;gt;')
+            .replace(new RegExp(quote, 'g'), '&amp;quot;')
+            .replace(/'/g, '&amp;#39;');
+    },
+    notifyDuplicate(tag) {
+        const quote = String.fromCharCode(34);
+        this.$dispatch('wrla-alert', {
+            type: 'warning',
+            message: 'The tag ' + quote + this.escapeHtml(tag) + quote + ' has already been added.',
+            url: null,
+        });
+    },
+    addTag(tag, notify = true) {
+        const text = this.tagKey(tag);
         if (this.isFull) {
             this.newTag = '';
             return;
         }
-
-        if (tag && !this.tags.includes(tag)) {
-            this.tags.push(tag);
+        if (text === '') {
             this.newTag = '';
+            return;
         }
+        if (this.tags.some(existing => this.tagKey(existing) === text)) {
+            this.newTag = '';
+            if (notify) {
+                this.notifyDuplicate(text);
+            }
+            return;
+        }
+        this.preserveInitial = false;
+        this.tags.push(typeof tag === 'number' && String(tag) === text ? tag : text);
+        this.newTag = '';
     },
     removeTag(index) {
         this.tags.splice(index, 1);
-        // If the removed tag was being edited, reset edit mode
         if (this.editingIndex === index) {
             this.editingIndex = null;
             this.editValue = '';
@@ -63,8 +129,7 @@
     editTag(index) {
         this.editingIndex = index;
         this.editValue = this.tags[index];
-        // Focus the inline edit input after it is rendered
-        setTimeout(function(){
+        setTimeout(function () {
             const input = document.querySelector('input[data-edit]');
             if (input) {
                 input.focus();
@@ -74,17 +139,23 @@
         }, 50);
     },
     commitEdit() {
-        if (this.editingIndex !== null) {
-            const val = this.editValue.trim();
-            if (val) {
-                this.tags[this.editingIndex] = val;
-            }
+        if (this.editingIndex === null) {
+            return;
+        }
+        const val = this.editValue.trim();
+        if (val && this.tags.some((tag, index) => index !== this.editingIndex && this.tagKey(tag) === val)) {
+            this.notifyDuplicate(val);
             this.editingIndex = null;
             this.editValue = '';
+            return;
         }
+        if (val && this.tagKey(this.tags[this.editingIndex]) !== val) {
+            this.tags[this.editingIndex] = val;
+        }
+        this.editingIndex = null;
+        this.editValue = '';
     },
     handleInput(e) {
-        // Comma or return
         if ((e.data === ',' || e.data === '\n') || e.inputType === 'insertFromPaste') {
             const parts = this.newTag.split(',').map(t => t.trim()).filter(Boolean);
             parts.forEach(t => this.addTag(t));
@@ -98,13 +169,16 @@
     }
 }"
 x-init="init()"
-class="whitespace-nowrap"
+data-tag-value="{{ $tagValue }}"
+data-store-as-json="{{ $storeAsJson ? '1' : '0' }}"
+data-max-tags="{{ $maxTags === null ? '' : (int) $maxTags }}"
+class="min-w-0 w-full"
 style="width: 100%; max-width: 100%;"
 >
-    <div class="w-full flex items-center overflow-x-auto gap-1 px-1.5 py-1 border border-slate-400 dark:border-slate-500 bg-slate-200 dark:bg-slate-900
+    <div class="w-full flex flex-wrap items-center gap-1 px-1.5 py-1 border border-slate-400 dark:border-slate-500 bg-slate-200 dark:bg-slate-900
         focus:outline-none focus:ring-1 focus:ring-primary-500 dark:focus:ring-primary-500 rounded-md shadow-sm">
         <template x-for="(tag, index) in tags" :key="index">
-            <div class="inline-flex items-center">
+            <div class="inline-flex items-center shrink-0 max-w-full">
                 <template x-if="editingIndex === index">
                     <input
                         type="text"
@@ -117,7 +191,7 @@ style="width: 100%; max-width: 100%;"
                     />
                 </template>
                 <template x-if="editingIndex !== index">
-                    <span class="inline-flex items-center px-2 bg-primary-500 bg-opacity-5 border-2 border-primary-500 rounded-md" style="line-height: 20px;">
+                    <span class="inline-flex items-center px-2 bg-primary-500 bg-opacity-5 border-2 border-primary-500 rounded-md whitespace-nowrap max-w-full" style="line-height: 20px;">
                         <span x-text="tag" class="relative font-medium pr-1.5 cursor-pointer" style="top: -1px;" @click="editTag(index)"></span>
                         <button type="button" class="relative top-[-1px] text-primary-600 font-medium" @click="removeTag(index)">x</button>
                     </span>
@@ -134,13 +208,13 @@ style="width: 100%; max-width: 100%;"
             @keydown.backspace="if (!newTag) removeTag(tags.length - 1)"
             x-bind:disabled="isFull"
             x-bind:placeholder="isFull ? ' - Maximum of ' + maxTags + ' tags reached' : ''"
-            class="pl-1 border-none outline-none focus:ring-0 flex-1 bg-transparent
+            class="pl-1 border-none outline-none focus:ring-0 flex-1 min-w-[8rem] bg-transparent
             placeholder-slate-400 dark:placeholder-slate-600 disabled:cursor-not-allowed"
         />
     </div>
 
-    {{-- Actual input field --}}
-    <input type="hidden" name="{{ $attributes['name'] }}" x-bind:value="tags.join(',')" />
+    {{-- Already deduped. Alpine keeps comma-separated text or a JSON list, matching the column. --}}
+    <input type="hidden" name="{{ $attributes['name'] }}" value="{{ $tagValue }}" x-bind:value="storedValue" />
 
     @if(!empty($commonTags))
         <div class="mt-2 flex flex-wrap gap-2">
