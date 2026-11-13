@@ -1,0 +1,26 @@
+<p class="docs-lead">
+    Fixes the <strong>Tags</strong> field when a value contains duplicates or enough tags to push the add box out of view.
+</p>
+
+<!-- Breaking Changes -->
+<div class="docs-section">
+    <h2 class="docs-heading">
+        <svg class="h-6 w-6 text-red-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        Breaking Changes
+    </h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>None. Comma-separated tag columns stay comma-separated, and array/JSON tag columns stay JSON lists.</li>
+    </ul>
+</div>
+
+<!-- Fixes -->
+<div class="docs-section">
+    <h2 class="docs-heading">Fixes</h2>
+    <ul class="list-disc list-outside space-y-1 text-gray-600 ml-5">
+        <li>Entering a tag that is already on the field shows a warning in the existing alert popouts and clears the input.</li>
+        <li>Tags and the add input wrap onto extra lines, so the input stays on screen when there are many tags.</li>
+        <li>Duplicate tags are removed when the field is displayed and again when it is saved, in the same order, so the stored value matches the pills.</li>
+    </ul>
+</div>

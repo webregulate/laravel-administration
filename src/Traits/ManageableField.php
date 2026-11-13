@@ -914,6 +914,15 @@ trait ManageableField
     }
 
     /**
+     * Whether a submitted-value callback is already registered.
+     * Array/json casts register one that decodes the posted JSON string.
+     */
+    protected function hasApplySubmittedValueCallback(): bool
+    {
+        return $this->applySubmittedValueCallable !== null;
+    }
+
+    /**
      * Hide from pages.
      *
      * @param PageType ...$pageTypes
