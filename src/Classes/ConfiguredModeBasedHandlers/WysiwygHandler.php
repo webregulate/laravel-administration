@@ -222,7 +222,8 @@ class WysiwygHandler extends ConfiguredModeBasedHandler
                             hidden = document.createElement('input');
                             hidden.type = 'hidden';
                             hidden.name = elName;
-                            form.appendChild(hidden);
+                            // Keep the input inside wire:ignore so it survives save re-renders.
+                            el.after(hidden);
                         }
 
                         // Keep the hidden input in sync with the editor at all times. The
