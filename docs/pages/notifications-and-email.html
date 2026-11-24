@@ -10,16 +10,83 @@
 ReportReady::make($user-&gt;id, [
     'message' =&gt; 'Your monthly report is ready.',
 ]);</code></pre></div>
-    <p class="docs-body mt-4">Pass a user ID or a <code class="docs-inline-code">user_groups</code> key from <code class="docs-inline-code">WRLASettings::runtime()</code>. The generator can also scaffold email delivery and buttons.</p>
+    <p class="docs-body mt-4">Pass a user ID for a personal notification, or a <code>user_groups</code> key for a shared notification. WRLA stores one row per call, not one per group member. A group notification shares its read state. For individual read states, create one notification per recipient.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Choose what the dashboard shows</h2>
+    <p class="docs-body">The default dashboard shows personal notifications and the shared <code>admin</code> feed. The widget starts on <strong>Outstanding</strong> (unread); switch to <strong>Completed</strong> or <strong>All</strong> to see read items. To show only personal notifications, set this in <code>config/wrla.php</code>:</p>
+    <div class="docs-code-block"><pre><code>// Under 'dashboard' =&gt; 'notifications'
+'user_groups' =&gt; ['@self'],</code></pre></div>
+    <p class="docs-body mt-4">Add group keys to show their shared feeds. This list controls what the dashboard queries, not group membership. Define group callbacks returning collections of users in <code>WRLASettings::runtime()</code> if your notification needs to resolve recipients, for example to email a group.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Customize a notification</h2>
+    <table class="docs-table">
+        <thead><tr><th scope="col">Method</th><th scope="col">What to customize</th></tr></thead>
+        <tbody>
+            <tr><th scope="row"><code>mount()</code></th><td>Initialize the definition from the data saved with the notification.</td></tr>
+            <tr><th scope="row"><code>getTitle()</code>, <code>getMessage()</code></th><td>The title and body shown in the panel.</td></tr>
+            <tr><th scope="row"><code>getLink()</code></th><td>An optional URL for the notification.</td></tr>
+            <tr><th scope="row"><code>getButtons()</code></th><td>Keep the default Read/Undo button or add a link or Livewire action.</td></tr>
+            <tr><th scope="row"><code>getEmailMessage()</code></th><td>A separate email body. Defaults to the panel message.</td></tr>
+            <tr><th scope="row"><code>postCreated()</code></th><td>Run follow-up logic after the row is saved. Email is not sent unless the definition asks for it.</td></tr>
+        </tbody>
+    </table>
+    <p class="docs-body mt-4">Scaffold an email hook and a URL button when generating a definition:</p>
+    <div class="docs-code-block"><pre><code>php artisan wrla:notification InvoiceReady --email --buttons --button-type=url</code></pre></div>
+    <p class="docs-body mt-4">Use <code>--button-type=livewire</code> for a button that calls a definition method. Authorize the operation in the handler; displaying a button is not an authorization check.</p>
 </div>
 
 <div class="docs-section">
     <h2 class="docs-heading">Send an email template</h2>
-    <p class="docs-body">Create a template in <strong>Email Templates</strong> with the alias <code class="docs-inline-code">report-ready</code>. Use <code class="docs-inline-code">{{ name }}</code> in the body where the recipient's name should appear.</p>
+    <p class="docs-body">In <strong>Email Templates</strong>, create a template with category <code>transactional</code> and alias <code>report-ready</code>. Add the <code>user.name</code> mapping. The built-in editor hides the outer braces in the Mappings field; the full JSON is:</p>
+    <div class="docs-code-block"><pre><code>{
+    "user": {
+        "name": null
+    }
+}</code></pre></div>
+    <p class="docs-body mt-4">Use <code>{{ user.name }}</code> in the subject or body. Pass a model or keyed array when sending. WRLA only pulls the mapped attributes from a model. A string in place of <code>null</code> supplies a fallback for an empty value.</p>
     <div class="docs-code-block"><pre><code>use WebRegulate\LaravelAdministration\Models\EmailTemplate;
 
-$sent = EmailTemplate::getByAlias('report-ready', [
-    'name' =&gt; $user-&gt;name,
-])-&gt;sendEmail($user-&gt;email);</code></pre></div>
-    <p class="docs-body mt-4">A missing alias throws an exception. Configure the <code class="docs-inline-code">smtp</code> mailer, or pass the name of another configured SMTP mailer with <code class="docs-inline-code">smtpKey:</code>. Check the return value when delivery matters.</p>
+$template = EmailTemplate::getByCategoryAlias('transactional', 'report-ready', [
+    'user' =&gt; $user,
+]);
+
+$sent = $template-&gt;sendEmail($user-&gt;email);</code></pre></div>
+    <p class="docs-body mt-4">Use <code>getByAlias()</code> if your aliases are unique across categories. Both lookups throw if the template is missing. For a message you don't need to save, use <code>EmailTemplate::make('Report ready', 'Your report is ready.')</code>.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Choose a format and preview it</h2>
+    <table class="docs-table">
+        <thead><tr><th scope="col">Type</th><th scope="col">How it is sent</th></tr></thead>
+        <tbody>
+            <tr><th scope="row"><code>markdown</code></th><td>Markdown converted to HTML with Laravel's mail layout.</td></tr>
+            <tr><th scope="row"><code>html</code></th><td>Authored HTML with Laravel's mail layout. Only use trusted HTML and values suitable for HTML insertion.</td></tr>
+            <tr><th scope="row"><code>text</code></th><td>Plain text. Supported by the sender, but not offered in the generated template editor.</td></tr>
+        </tbody>
+    </table>
+    <p class="docs-body mt-4">If a template has no type, WRLA uses <code>email_templates.render_mode</code> from <code>config/wrla.php</code>. The editor previews the subject and body with placeholder values. Save changes before using <strong>Send Test</strong>; it sends real email to the addresses you enter.</p>
+    <div class="docs-code-block"><pre><code>$subject = $template-&gt;getFinalSubject();
+$body = $template-&gt;renderEmail(); // Render only; does not send.</code></pre></div>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Delivery options</h2>
+    <div class="docs-code-block"><pre><code>$sent = $template
+    -&gt;replyTo('support@example.com')
+    -&gt;sendEmail(
+        $user-&gt;email,
+        attachments: [$reportPath],
+        smtpKey: 'smtp',
+    );</code></pre></div>
+    <ul class="list-disc space-y-1 text-gray-600 ml-5 mt-4">
+        <li>Recipients can be a single address, an array, or a comma-separated string. WRLA sends separate messages by default with the same template data. For per-recipient data, send separately after setting that recipient's mappings.</li>
+        <li>With <code>sendSeperateEmails: false</code> (the parameter is spelled this way), the first address is To and the rest are CC. Recipients can see those CC addresses.</li>
+        <li><code>attachments</code> takes application-controlled file paths. Set <code>smtpKey</code> to an SMTP mailer in <code>config/mail.php</code>. WRLA writes send details to the <code>smtp</code> log channel, including mappings and addresses; avoid passing secrets as mappings.</li>
+        <li>Use <code>setPostSendHook()</code> on a template or <code>setPostSendHookGlobal()</code> for all templates. Each hook receives the template, addresses, attachments, and mailer key after a successful send.</li>
+        <li>Check the <code>bool</code> result. A batch may partly succeed before reporting failure. Mailer exceptions can still propagate, and success does not guarantee inbox delivery.</li>
+    </ul>
 </div>

@@ -3,32 +3,92 @@
 
 <div class="docs-section">
     <h2 class="docs-heading">Choose who can use each tool</h2>
-    <p class="docs-body">Developer Tools, File Manager, and Logs are master-only in the generated settings. Database Browser, Database Schema, and Scheduler inherit Developer Tools access when their <code class="docs-inline-code">enabled</code> value is <code class="docs-inline-code">null</code>.</p>
+    <p class="docs-body">Use a boolean or a callback that receives the current user's WRLA user data. The generated settings use these rules:</p>
+    <table class="docs-table">
+        <thead><tr><th scope="col">Tool</th><th scope="col">Runtime key</th><th scope="col">Generated access rule</th></tr></thead>
+        <tbody>
+            <tr><th scope="row">Developer Tools</th><td><code>developer.enable</code></td><td>Master only</td></tr>
+            <tr><th scope="row">File Manager</th><td><code>file_manager.enabled</code></td><td>Master only</td></tr>
+            <tr><th scope="row">Logs</th><td><code>logs.enabled</code></td><td>Master only</td></tr>
+            <tr><th scope="row">Database Browser</th><td><code>database_browser.enabled</code></td><td><code>null</code>: inherit Developer Tools access</td></tr>
+            <tr><th scope="row">Database Schema</th><td><code>database_schema_viewer.enabled</code></td><td><code>null</code>: inherit Developer Tools access</td></tr>
+            <tr><th scope="row">Scheduler &amp; Jobs</th><td><code>scheduler.enabled</code></td><td><code>null</code>: inherit Developer Tools access</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Developer Tools</h2>
+    <p class="docs-body">The modal links to the database tools when available. It can also run a configured list of maintenance commands and show their output. Add entries under <code>developer.commands</code> in <code>WRLASettings::runtime()</code>:</p>
+    <div class="docs-code-block"><pre><code>[
+    'command' =&gt; 'php artisan view:clear',
+    'label' =&gt; 'Clear compiled views',
+    'condition' =&gt; fn ($userData) =&gt; $userData?-&gt;isMaster() ?? false,
+    'refresh' =&gt; false,
+],</code></pre></div>
+    <p class="docs-body mt-4"><code>condition</code> limits the individual command. Set <code>'refresh' =&gt; true</code> to offer a reload after an update command finishes. Keep this list limited to operations trusted admins should be able to run.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Scheduler &amp; Jobs</h2>
+    <table class="docs-table">
+        <thead><tr><th scope="col">Section</th><th scope="col">What you can do</th><th scope="col">Requirement</th></tr></thead>
+        <tbody>
+            <tr><th scope="row">Scheduled tasks</th><td>See the schedule, time zone, and next run. Run a task now if allowed.</td><td>Tasks registered with Laravel's scheduler</td></tr>
+            <tr><th scope="row">Pending jobs</th><td>Inspect or delete a pending job.</td><td>The default queue connection uses the database driver</td></tr>
+            <tr><th scope="row">Failed jobs</th><td>Retry or forget one job, retry all jobs, or clear all failures.</td><td>A database-backed failed-job store</td></tr>
+        </tbody>
+    </table>
+    <p class="docs-body mt-4">To let masters use the page without manually running scheduled tasks:</p>
     <div class="docs-code-block"><pre><code>// Inside WRLASettings::runtime()
 'scheduler' =&gt; [
     'enabled' =&gt; fn ($userData) =&gt; $userData?-&gt;isMaster() ?? false,
     'can_run_adhoc' =&gt; false,
 ],</code></pre></div>
-    <p class="docs-body mt-4">This lets masters view scheduled tasks and jobs without manually running scheduled tasks. Pending jobs are shown only for a database queue. Failed jobs require a database failed-job store.</p>
+    <p class="docs-body mt-4"><code>can_run_adhoc</code> defaults to <code>null</code>, which inherits Scheduler access. Turning it off does <strong>not</strong> make the page read-only: queue actions remain available. WRLA does not replace your scheduler or queue worker.</p>
 </div>
 
 <div class="docs-section">
-    <h2 class="docs-heading">Make the database browser read-only</h2>
-    <p class="docs-body">The browser shows raw records, not Manageable Models. Model permissions are not a substitute for restricting access here. Edit the existing <code class="docs-inline-code">database_browser</code> settings:</p>
+    <h2 class="docs-heading">Database Browser</h2>
+    <p class="docs-body">Browse tables, sort and filter rows, and open full record values. Where allowed, create, edit, or delete raw records. This does not use Manageable Model forms or permissions.</p>
+    <p class="docs-body">For a read-only reporting connection, edit the existing settings:</p>
     <div class="docs-code-block"><pre><code>// Inside config/wrla.php, under 'database_browser'
 'connections' =&gt; ['reporting'],
 'excluded_tables' =&gt; ['*' =&gt; ['users', 'sessions']],
 'read_only' =&gt; true,</code></pre></div>
-    <p class="docs-body mt-4">Use a connection defined in <code class="docs-inline-code">config/database.php</code>. Database Schema is a separate tool with its own connection options and access rule.</p>
+    <ul class="list-disc space-y-1 text-gray-600 ml-5 mt-4">
+        <li><code>connections</code> selects Laravel connection names; <code>null</code> allows all and <code>[]</code> allows none. <code>excluded_tables</code> supports wildcard patterns and per-connection exclusions.</li>
+        <li><code>read_only_connections</code> disables writes on selected connections. For writable connections, set separate <code>create</code>, <code>edit</code>, and <code>delete</code> rules under <code>database_browser.permissions</code> in runtime settings.</li>
+        <li>Tune filters, page sizes, previews, and modal or page forms under <code>database_browser</code> in <code>config/wrla.php</code>.</li>
+    </ul>
 </div>
 
 <div class="docs-section">
-    <h2 class="docs-heading">Files, logs, and schema</h2>
-    <ul class="list-disc space-y-1 text-gray-600 ml-5">
-        <li><strong>File Manager:</strong> browse configured Laravel disks. Limit exposed disks and accepted upload MIME types under <code class="docs-inline-code">file_manager</code>.</li>
-        <li><strong>Logs:</strong> select WRLA's built-in viewer or Opcodes Log Viewer with <code class="docs-inline-code">logs.current</code>.</li>
-        <li><strong>Database Schema:</strong> inspect a Truss diagram. Use <code class="docs-inline-code">database_schema_viewer.display</code> to embed it in WRLA or open the standalone viewer.</li>
-    </ul>
+    <h2 class="docs-heading">Database Schema</h2>
+    <p class="docs-body">Use the Truss diagram to inspect schema and relationships. This is separate from the Database Browser. Its access rule and connections are configured independently.</p>
+    <div class="docs-code-block"><pre><code>// Inside config/wrla.php, under 'database_schema_viewer'
+'display' =&gt; 'embed', // Or 'redirect' for the standalone viewer.
+'default_mode' =&gt; 'dark',
+'connections' =&gt; ['reporting' =&gt; ['excluded_tables' =&gt; ['legacy_import']]],</code></pre></div>
+    <p class="docs-body mt-4">An empty connection list uses Laravel's default. Pass additional Truss options through the <code>truss</code> key.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">File Manager</h2>
+    <p class="docs-body">Browse and preview files, upload or replace them, and create or delete folders. Enable only storage disks intended for admin access; an initial disk selection does not restrict which disks users can switch to.</p>
+    <div class="docs-code-block"><pre><code>// Inside config/wrla.php, under 'file_manager'
+'default_filesystem' =&gt; 'public',
+'file_systems' =&gt; ['public' =&gt; ['enabled' =&gt; true]],
+'can_upload_mime_types' =&gt; ['image/jpeg', 'image/png'],</code></pre></div>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Logs</h2>
+    <p class="docs-body">The built-in viewer browses, displays, and deletes log files. To use it instead of Opcodes:</p>
+    <div class="docs-code-block"><pre><code>// Inside config/wrla.php, under 'logs'
+'current' =&gt; 'wrla',
+'wrla' =&gt; ['max_characters' =&gt; 1000000],</code></pre></div>
+    <p class="docs-body mt-4">With <code>current</code> set to <code>opcodesio/log-viewer</code>, set <code>display_within_wrla</code> in that viewer's WRLA settings to embed it instead of redirecting. Configure Opcodes itself in <code>config/log-viewer.php</code>. WRLA's error, info, and event log channels are configured separately under <code>logging</code>.</p>
 </div>
 
 <p class="docs-body">See <a href="configuration.html" class="docs-link">Configuration</a> for more options or <a href="authorization.html" class="docs-link">Authorization</a> for the admin and master flags.</p>
