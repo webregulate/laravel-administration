@@ -1,0 +1,24 @@
+<h1 class="docs-title">Authorization</h1>
+<p class="docs-lead">Authorization decides who can enter WRLA and what they can do there.</p>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Grant admin access</h2>
+    <div class="docs-code-block"><pre><code>php artisan wrla:edit-user</code></pre></div>
+    <p class="docs-body mt-4">Select the user and grant admin access. WRLA's <code class="docs-inline-code">wrla_is_admin</code> middleware checks the signed-in user's WRLA user data with <code class="docs-inline-code">isAdmin()</code>.</p>
+    <ul class="list-disc space-y-1 text-gray-600 ml-5">
+        <li><strong>Admin</strong> grants access to the panel.</li>
+        <li><strong>Master</strong> is a separate flag. The generated settings use it for tools such as Developer Tools and File Manager. A master still needs the admin flag to enter WRLA.</li>
+    </ul>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Protect a custom page</h2>
+    <p class="docs-body">Routes in <code class="docs-inline-code">WRLASettings::buildRoutes()</code> already require admin access. Add a Laravel Gate when not every admin should see a page:</p>
+    <div class="docs-code-block"><pre><code>// Inside WRLASettings::buildRoutes(), using Illuminate\Support\Facades\Route
+Route::view('reports', 'admin.reports')
+    -&gt;middleware('can:view-admin-reports')
+    -&gt;name('wrla.reports');</code></pre></div>
+    <p class="docs-body mt-4">Define <code class="docs-inline-code">view-admin-reports</code> in your application. Hiding a navigation link does not protect its route or its Livewire actions.</p>
+</div>
+
+<p class="docs-body">For access to a specific model, see <a href="permissions.html" class="docs-link">Model Permissions</a>.</p>

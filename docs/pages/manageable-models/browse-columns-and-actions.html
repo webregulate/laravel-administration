@@ -1,0 +1,55 @@
+<h1 class="docs-title">Browse Columns &amp; Row Actions</h1>
+<p class="docs-lead">Choose what each row shows and what an admin can do with it.</p>
+
+<div class="docs-section">
+    <h2 class="docs-heading"><code>getBrowseColumns()</code></h2>
+    <p class="docs-body">Use the model attribute as the key. The value is a label or a column formatter.</p>
+    <div class="docs-code-block"><pre><code>use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumnCheck;
+use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumnDate;
+
+public function getBrowseColumns(): array
+{
+    return [
+        'name' =&gt; 'Product',
+        'active' =&gt; BrowseColumnCheck::make('Active'),
+        'created_at' =&gt; BrowseColumnDate::make('Added', 'd M Y'),
+    ];
+}</code></pre></div>
+    <p class="docs-body mt-4">Other formatters include <code class="docs-inline-code">BrowseColumnImage</code>, <code class="docs-inline-code">BrowseColumnIcon</code>, and <code class="docs-inline-code">BrowseColumnLink</code>.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading"><code>getInstanceActions()</code></h2>
+    <p class="docs-body">Use the built-in actions for edit, delete, duplicate, and restore. Include restore only for soft-deletable models.</p>
+    <div class="docs-code-block"><pre><code>use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionDelete;
+use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionEdit;
+use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionRestore;
+
+public function getInstanceActions(): array
+{
+    return [
+        InstanceActionEdit::make($this),
+        InstanceActionRestore::make($this),
+        InstanceActionDelete::make($this, $this-&gt;isModelSoftDeleted()),
+    ];
+}</code></pre></div>
+    <p class="docs-body mt-4">The delete button warns about permanent deletion if the record is already in the trash. Turn on <code class="docs-inline-code">setMultiSelect(true)</code> in <a href="manageable-models/manageable-models-browse-setup.html" class="docs-link">browseSetup()</a> to offer supported actions for multiple rows.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Import and export CSV</h2>
+    <p class="docs-body">Add these to the model's browse toolbar. Keep any existing actions you still want to show.</p>
+    <div class="docs-code-block"><pre><code>use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionExportCSV;
+use WebRegulate\LaravelAdministration\Classes\BrowseActions\BrowseActionImport;
+
+// Inside browseSetup()
+static::setBrowseActions(
+    BrowseActionImport::make(static::class),
+    BrowseActionExportCSV::make(static::class),
+);</code></pre></div>
+    <ul class="list-disc space-y-1 text-gray-600 ml-5 mt-4">
+        <li><strong>Import:</strong> Upload a CSV with headers, map them to database columns, and check the preview before importing. The single-row import writes a real record; it is not a dry run.</li>
+        <li><strong>Export:</strong> Download the filtered browse results, not just the current page. The toolbar asks how many rows to export when there are more than 1,000.</li>
+    </ul>
+    <p class="docs-body mt-4">Import uses database inserts, not the Manageable Model form's save flow. Do not rely on form validation or Eloquent save events to prepare CSV data. Configure upload rules, ignored columns, and chunk size under <code class="docs-inline-code">csv_imports</code> in <a href="configuration.html" class="docs-link">Configuration</a>.</p>
+</div>

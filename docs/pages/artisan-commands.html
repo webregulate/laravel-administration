@@ -1,0 +1,39 @@
+<h1 class="docs-title">Artisan Commands</h1>
+<p class="docs-lead">Run these commands from the root of your Laravel application.</p>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Setup and maintenance</h2>
+    <table class="docs-table">
+        <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+        <tbody>
+            <tr><th scope="row"><code>wrla:install</code></th><td>Publish application files and assets. The wizard offers to migrate the database and create a master administrator.</td></tr>
+            <tr><th scope="row"><code>wrla:site-configuration</code></th><td>Install the optional <a href="site-configuration.html" class="docs-link">Site Configuration</a> table and models.</td></tr>
+            <tr><th scope="row"><code>wrla:docs</code></th><td>Serve the docs locally. Set <code>--port</code> to change the default port of 8888.</td></tr>
+            <tr><th scope="row"><code>wrla:update</code></th><td>Update through Composer and run the application upgrade flow. Use <code>--yes</code> only when you intend to approve application file changes.</td></tr>
+            <tr><th scope="row"><code>wrla:upgrade</code></th><td>Migrate application files for the <a href="versions/v0.10.1.html" class="docs-link">0.10.1 configuration change</a>. Use <code>--dry-run</code> to preview or <code>--yes</code> to approve.</td></tr>
+            <tr><th scope="row"><code>wrla:uninstall</code></th><td>Prompt to remove WRLA files and its Composer dependency. Review what will be removed before accepting.</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Scaffolding and users</h2>
+    <table class="docs-table">
+        <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+        <tbody>
+            <tr><th scope="row"><code>wrla:manageable-model</code></th><td>Generate a Manageable Model. Pass a model name or supply it at the prompt.</td></tr>
+            <tr><th scope="row"><code>wrla:model-docblock</code></th><td>Generate Eloquent <code>@property</code> annotations from database columns. Review before writing or use <code>--force</code> to skip confirmation.</td></tr>
+            <tr><th scope="row"><code>wrla:notification</code></th><td>Generate a notification definition. Options include <code>--email</code>, <code>--buttons</code>, and <code>--button-type=url</code> or <code>livewire</code>.</td></tr>
+            <tr><th scope="row"><code>wrla:create-user</code></th><td>Create a user. Pass <code>master</code> for a master administrator or <code>--user-model</code> to specify a user model.</td></tr>
+            <tr><th scope="row"><code>wrla:edit-user</code></th><td>Find an existing user and edit account details or WRLA privileges.</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Examples</h2>
+    <div class="docs-code-block"><pre><code>php artisan list wrla
+php artisan wrla:docs --port=8890
+php artisan wrla:manageable-model Product
+php artisan wrla:upgrade --dry-run</code></pre></div>
+</div>

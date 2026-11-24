@@ -1,8 +1,12 @@
 <h1 class="docs-title"><i class="fa-solid fa-rocket mr-3 text-primary-500"></i>Quick Start</h1>
 <p class="docs-lead">
-    Welcome to <strong>WebRegulate Laravel Administration (WRLA)</strong> — a powerful, flexible
-    administration panel for Laravel 12+. Choose a topic below to jump straight in.
+    <strong>WebRegulate Laravel Administration (WRLA)</strong> adds an admin panel to Laravel.
+    <a href="features.html" class="docs-link">See what it includes</a>, or install it and follow the setup wizard.
 </p>
+<div class="docs-code-block mb-6">
+    <pre><code>composer require webregulate/laravel-administration "^0.10"
+php artisan wrla:install</code></pre>
+</div>
 
 <!-- Quick navigation cards -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
@@ -17,7 +21,7 @@
             </div>
             <h3 class="docs-card-title">Installation</h3>
         </div>
-        <p class="docs-card-body">Get WRLA up and running in your Laravel application with a single Composer command.</p>
+        <p class="docs-card-body">Install WRLA, run migrations, and create your first admin.</p>
         <span class="docs-card-link">View guide →</span>
     </a>
 
@@ -78,17 +82,17 @@
         <span class="docs-card-link">View history →</span>
     </a>
 
-    <!-- Customization -->
-    <a href="customization.html" class="docs-card docs-card-rose">
+    <!-- Custom Pages -->
+    <a href="custom-pages.html" class="docs-card docs-card-rose">
         <div class="docs-card-header">
             <div class="docs-card-icon">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
                 </svg>
             </div>
-            <h3 class="docs-card-title">Customization</h3>
+            <h3 class="docs-card-title">Custom Pages</h3>
         </div>
-        <p class="docs-card-body">Tailor themes, layouts, navigation items, and the admin UI to match your brand.</p>
+        <p class="docs-card-body">Add a Blade or Livewire page and link to it from the sidebar.</p>
         <span class="docs-card-link">View guide →</span>
     </a>
 </div>
@@ -101,6 +105,6 @@
         </svg>
     </div>
     <div class="docs-callout-body">
-        <strong>Requirements:</strong> Laravel v12 or higher is required to use WRLA.
+        <strong>Supported:</strong> Laravel 12 or 13 and Livewire 3.4+ or 4.x. Use a PHP version supported by your Laravel release.
     </div>
 </div>

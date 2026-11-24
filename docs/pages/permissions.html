@@ -1,0 +1,44 @@
+<h1 class="docs-title">Model Permissions</h1>
+<p class="docs-lead">Use <code class="docs-inline-code">ManageableModelPermissions</code> to control access to a model's WRLA screens and actions. These rules are separate from <a href="authorization.html" class="docs-link">access to the admin panel</a>.</p>
+
+<div class="docs-section">
+    <h2 class="docs-heading">All model permissions</h2>
+    <table class="docs-table">
+        <thead><tr><th scope="col">Enum case</th><th scope="col">What it controls</th><th scope="col">Generated default</th></tr></thead>
+        <tbody>
+            <tr><th scope="row"><code>ENABLED</code></th><td>Model navigation, browse columns and row actions, and access to create/edit forms. Not a substitute for <code>BROWSE</code>.</td><td>Admins only</td></tr>
+            <tr><th scope="row"><code>BROWSE</code></th><td>Access to the model's browse page. Reordering also requires <code>EDIT</code>.</td><td><code>true</code></td></tr>
+            <tr><th scope="row"><code>CREATE</code></th><td>Creating records. The built-in import and duplicate buttons also check this rule.</td><td><code>true</code></td></tr>
+            <tr><th scope="row"><code>EDIT</code></th><td>Editing existing records. Reordering also requires <code>BROWSE</code>.</td><td><code>true</code></td></tr>
+            <tr><th scope="row"><code>DELETE</code></th><td>Deleting records, including bulk deletion.</td><td><code>true</code></td></tr>
+            <tr><th scope="row"><code>RESTORE</code></th><td>The restore button and bulk restore for soft-deleted records.</td><td><code>true</code></td></tr>
+            <tr><th scope="row"><code>SHOW_IN_NAV</code></th><td>Sidebar visibility only. Turning this off does not block direct access.</td><td><code>true</code></td></tr>
+        </tbody>
+    </table>
+    <p class="docs-body mt-4">These are the defaults in the generated <code class="docs-inline-code">WRLASettings</code>, not necessarily the rules in your application. Do not rely on a hidden button as a server-side access check. In particular, the single-record restore handler does not check <code>RESTORE</code>; enforce that restriction server-side if your application requires it.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Example: set all seven rules on one model</h2>
+    <div class="docs-code-block"><pre><code>use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions as Permission;
+
+// Inside mainSetup()
+$mastersOnly = fn ($userData) =&gt; $userData?-&gt;isMaster() ?? false;
+
+static::setPermission(Permission::ENABLED, true);
+static::setPermission(Permission::BROWSE, true);
+static::setPermission(Permission::CREATE, $mastersOnly);
+static::setPermission(Permission::EDIT, $mastersOnly);
+static::setPermission(Permission::DELETE, $mastersOnly);
+static::setPermission(Permission::RESTORE, $mastersOnly);
+static::setPermission(Permission::SHOW_IN_NAV, true);</code></pre></div>
+    <p class="docs-body mt-4">Replace the generated permission lines in your model's <code class="docs-inline-code">mainSetup()</code>. WRLA still requires users to be admins to enter the panel. A rule can be a boolean or a callback that receives the current user's WRLA user data, or <code class="docs-inline-code">null</code>.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Set a default for all models</h2>
+    <p class="docs-body">In <code class="docs-inline-code">WRLASettings::runtime()</code>, edit the existing <code class="docs-inline-code">default_manageable_model_permissions</code> array:</p>
+    <div class="docs-code-block"><pre><code>// Uses the Permission alias from the first example.
+Permission::DELETE-&gt;value =&gt; false,</code></pre></div>
+    <p class="docs-body mt-4">A model's explicit rule wins. The generator adds explicit rules, so remove any that should inherit your defaults. For custom actions, enforce your access rule in the server-side handler as well as in the UI.</p>
+</div>

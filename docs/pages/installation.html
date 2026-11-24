@@ -8,7 +8,7 @@
         </svg>
     </div>
     <div class="docs-callout-body">
-        <strong>Important:</strong> Note that you MUST use at least Laravel v12 to use webregulate/laravel-administration.
+        <strong>Supported:</strong> Laravel 12 or 13 and Livewire 3.4+ or 4.x. The package requires PHP 8.2 or newer; your Laravel version may require a newer PHP version.
     </div>
 </div>
 
@@ -16,11 +16,12 @@
 <div class="docs-section">
     <h2 class="docs-heading">
         <span class="docs-step-badge">1</span>
-        Require the package with composer (Note that there are currently potential breaking changes between each minor version)
+        Require the package with Composer
     </h2>
     <div class="docs-code-block">
-        <pre><code>composer require webregulate/laravel-administration "^0.8.17"</code></pre>
+        <pre><code>composer require webregulate/laravel-administration "^0.10"</code></pre>
     </div>
+    <p class="docs-body">Check the <a href="versions/versions.html" class="docs-link">release notes</a> before switching minor versions.</p>
 </div>
 
 <!-- Step 2 -->
@@ -33,14 +34,12 @@
         <pre><code>php artisan wrla:install</code></pre>
     </div>
     <p class="docs-body">
-        Follow the steps provided by the installation wizard. Note that installing will publish a few assets which will be added to your project and mentioned in your terminal. You will also be asked if you want to run the migrations, and also whether you like to create a master user, which are necessary to use WRLA.
+        The wizard publishes WRLA's files and assets. Accept the prompts to run the migrations and create a master administrator if you don't already have one.
     </p>
     <p class="docs-body">
-        From v0.9.1, the wizard generates <code class="docs-inline-code">app/Models/WRLAUserData.php</code>,
-        an empty subclass of <code class="docs-inline-code">WebRegulate\LaravelAdministration\Models\WRLAUserDataBase</code>.
-        Customise only the methods you need. Existing installations must follow the
-        <a href="versions/v0.9.1.html" class="docs-link">v0.9.1 model rename and migration notes</a>;
-        the installer preserves configured legacy models and does not automatically rename them.
+        Upgrading from before v0.9.1? Follow the
+        <a href="versions/v0.9.1.html" class="docs-link">user-data model migration notes</a>.
+        The installer does not rename legacy models.
     </p>
 </div>
 
@@ -65,7 +64,7 @@
         Configure the package
     </h2>
     <p class="docs-body">
-        While installing, WRLA will create a config file at <code class="docs-inline-code">config/wrla.php</code>. Feel free to edit this as you wish. One of the first things you may want to change is the route URL for the admin section itself, which is the first key => value in the configuration file:
+        To change the admin URL, edit <code class="docs-inline-code">base_url</code> in <code class="docs-inline-code">config/wrla.php</code>:
     </p>
     <div class="docs-code-block">
         <pre><code>'base_url' => 'wr-admin',</code></pre>
@@ -86,10 +85,10 @@
         Add Manageable Models
     </h2>
     <p class="docs-body">
-        Now you are ready to add Manageable Models. You can either create new models to manage within your new administration section or use them to setup models that already exist in your project.
+        Add a Manageable Model for an existing or new Eloquent model:
     </p>
     <div class="docs-code-block mb-4">
-        <pre><code>php artisan wrla:manageable-model {?ModelName}</code></pre>
+        <pre><code>php artisan wrla:manageable-model Product</code></pre>
     </div>
     <p class="docs-body">
         For more information on Manageable Models, see the <a href="manageable-models/manageable-models.html" class="docs-link">Manageable Models documentation</a>.

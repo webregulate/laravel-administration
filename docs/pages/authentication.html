@@ -1,0 +1,19 @@
+<h1 class="docs-title">Authentication</h1>
+<p class="docs-lead">Authentication is how users sign in. WRLA uses your application's Laravel authentication by default.</p>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Use the built-in login</h2>
+    <p class="docs-body">Create a user, then open <code class="docs-inline-code">/wr-admin/login</code>. Replace <code class="docs-inline-code">wr-admin</code> if you changed <code class="docs-inline-code">base_url</code>.</p>
+    <div class="docs-code-block"><pre><code>php artisan wrla:create-user
+php artisan wrla:edit-user</code></pre></div>
+    <p class="docs-body mt-4">The second command lets you grant admin access to an existing account. Signing in alone does not grant access to WRLA.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Use your app's login instead</h2>
+    <p class="docs-body">Set this in <code class="docs-inline-code">config/wrla.php</code> to turn off WRLA's login and password reset routes:</p>
+    <div class="docs-code-block"><pre><code>'wrla_auth_routes_enabled' =&gt; false,</code></pre></div>
+    <p class="docs-body mt-4">Keep your app's own password reset and MFA flows. After sign-in, send eligible admins to <code class="docs-inline-code">route('wrla.dashboard')</code>. WRLA returns a 404 if they don't have admin access.</p>
+</div>
+
+<p class="docs-body">See <a href="configuration.html" class="docs-link">Configuration</a> for Turnstile, MFA, and rate limits, and <a href="authorization.html" class="docs-link">Authorization</a> for admin access rules.</p>

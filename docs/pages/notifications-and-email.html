@@ -1,0 +1,25 @@
+<h1 class="docs-title">Notifications &amp; Email</h1>
+<p class="docs-lead">Use notifications for the admin panel and email templates for messages sent through Laravel mail.</p>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Create an in-app notification</h2>
+    <div class="docs-code-block"><pre><code>php artisan wrla:notification ReportReady</code></pre></div>
+    <p class="docs-body mt-4">Edit the generated class in <code class="docs-inline-code">app/WRLA/NotificationDefinitions/</code>, then call it from your application:</p>
+    <div class="docs-code-block"><pre><code>use App\WRLA\NotificationDefinitions\ReportReady;
+
+ReportReady::make($user-&gt;id, [
+    'message' =&gt; 'Your monthly report is ready.',
+]);</code></pre></div>
+    <p class="docs-body mt-4">Pass a user ID or a <code class="docs-inline-code">user_groups</code> key from <code class="docs-inline-code">WRLASettings::runtime()</code>. The generator can also scaffold email delivery and buttons.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Send an email template</h2>
+    <p class="docs-body">Create a template in <strong>Email Templates</strong> with the alias <code class="docs-inline-code">report-ready</code>. Use <code class="docs-inline-code">{{ name }}</code> in the body where the recipient's name should appear.</p>
+    <div class="docs-code-block"><pre><code>use WebRegulate\LaravelAdministration\Models\EmailTemplate;
+
+$sent = EmailTemplate::getByAlias('report-ready', [
+    'name' =&gt; $user-&gt;name,
+])-&gt;sendEmail($user-&gt;email);</code></pre></div>
+    <p class="docs-body mt-4">A missing alias throws an exception. Configure the <code class="docs-inline-code">smtp</code> mailer, or pass the name of another configured SMTP mailer with <code class="docs-inline-code">smtpKey:</code>. Check the return value when delivery matters.</p>
+</div>

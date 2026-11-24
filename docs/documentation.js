@@ -30,9 +30,11 @@ class DocumentationApp {
             {
                 title: 'Getting Started',
                 items: [
+                    { title: 'Feature Overview', url: 'features.html' },
                     { title: 'Quick Start', url: 'quick-start.html' },
                     { title: 'Installation', url: 'installation.html' },
-                    { title: 'Configuration', url: 'configuration.html' }
+                    { title: 'Configuration', url: 'configuration.html' },
+                    { title: 'Artisan Commands', url: 'artisan-commands.html' }
                 ]
             },
             {
@@ -44,18 +46,22 @@ class DocumentationApp {
                         children: [
                             { title: 'mainSetup', url: 'manageable-models/manageable-models-main-setup.html' },
                             { title: 'browseSetup', url: 'manageable-models/manageable-models-browse-setup.html' },
+                            { title: 'Browse Columns & Row Actions', url: 'manageable-models/browse-columns-and-actions.html' },
+                            { title: 'Form Fields', url: 'manageable-models/form-fields.html' },
                         ]
                     },
                     { title: 'Custom Pages', url: 'custom-pages.html' },
                     { title: 'Authentication', url: 'authentication.html' },
                     { title: 'Authorization', url: 'authorization.html' },
-                    { title: 'Permissions', url: 'permissions.html' }
+                    { title: 'Model Permissions', url: 'permissions.html' }
                 ]
             },
             {
                 title: 'Optional Features',
                 items: [
-                    { title: 'Site Configuration', url: 'site-configuration.html' }
+                    { title: 'Site Configuration', url: 'site-configuration.html' },
+                    { title: 'Admin Tools', url: 'admin-tools.html' },
+                    { title: 'Notifications & Email', url: 'notifications-and-email.html' }
                 ]
             },
             {
@@ -163,6 +169,8 @@ class DocumentationApp {
             { version: '0.8.56', date: '2026-10-06' },
             { version: '0.9.1', date: '2026-11-01' },
             { version: '0.10.1', date: '2026-11-11' },
+            { version: '0.10.4', date: '2026-11-24' },
+            { version: '0.10.3', date: '2026-11-18' },
             { version: '0.10.2', date: '2026-11-13' },
         ];
     }

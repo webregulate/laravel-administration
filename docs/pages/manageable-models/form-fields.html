@@ -1,0 +1,48 @@
+<h1 class="docs-title">Form Fields</h1>
+<p class="docs-lead">Return fields from <code class="docs-inline-code">getManageableFields()</code>. WRLA uses the same list for create and edit, whether the form opens on a page or in a modal.</p>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Build a product form</h2>
+    <p class="docs-body">Pass the Manageable Model instance and Eloquent attribute to each field. Add Laravel validation rules with <code class="docs-inline-code">validation()</code>.</p>
+    <div class="docs-code-block"><pre><code>use WebRegulate\LaravelAdministration\Classes\ManageableFields\Select;
+use WebRegulate\LaravelAdministration\Classes\ManageableFields\Text;
+use WebRegulate\LaravelAdministration\Classes\ManageableFields\TextArea;
+
+public function getManageableFields(): array
+{
+    return [
+        Text::make($this, 'name')-&gt;validation('required|string|max:120'),
+        Select::make($this, 'status', [
+            'draft' =&gt; 'Draft',
+            'published' =&gt; 'Published',
+        ])-&gt;validation('required|in:draft,published'),
+        TextArea::make($this, 'description'),
+    ];
+}</code></pre></div>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Pick a field type</h2>
+    <table class="docs-table">
+        <thead><tr><th>Use case</th><th>Fields</th></tr></thead>
+        <tbody>
+            <tr><td>Text and formatting</td><td><code>Text</code>, <code>TextArea</code>, <code>Wysiwyg</code>, <code>Password</code></td></tr>
+            <tr><td>Choices and lookups</td><td><code>Select</code>, <code>SearchSelect</code>, <code>SearchableValue</code>, <code>Tags</code></td></tr>
+            <tr><td>Dates and prices</td><td><code>Date</code>, <code>MonetaryValue</code></td></tr>
+            <tr><td>Uploads</td><td><code>File</code>, <code>Image</code>, <code>ImageCroppable</code>, <code>MultiImage</code></td></tr>
+            <tr><td>Structured or repeated data</td><td><code>Json</code>, <code>JsonUI</code>, <code>MultiField</code> with <code>MultiFieldItem</code></td></tr>
+            <tr><td>Layout and hidden values</td><td><code>Heading</code>, <code>BladeElement</code>, <code>Hidden</code></td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Store tags</h2>
+    <div class="docs-code-block"><pre><code>use WebRegulate\LaravelAdministration\Classes\ManageableFields\Tags;
+
+// Add to the getManageableFields() return array.
+Tags::make($this, 'tags', ['commonTags' =&gt; ['featured', 'seasonal']]),</code></pre></div>
+    <p class="docs-body mt-4">Use an Eloquent <code class="docs-inline-code">array</code> cast for a JSON list, or leave a text attribute uncast for a comma-separated string. WRLA removes duplicates without changing the storage format.</p>
+</div>
+
+<p class="docs-body">To change where forms open or where users go after saving, see <a href="manageable-models/manageable-models-main-setup.html" class="docs-link">mainSetup()</a>.</p>

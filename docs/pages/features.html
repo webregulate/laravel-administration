@@ -1,0 +1,53 @@
+<h1 class="docs-title">Feature Overview</h1>
+<p class="docs-lead">WRLA adds a Laravel admin panel for managing Eloquent records, users, and site settings. It also includes tools for operating the application. Start here to see what you can use before installing.</p>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Manage application data</h2>
+    <table class="docs-table">
+        <thead><tr><th scope="col">Feature</th><th scope="col">What you can do</th></tr></thead>
+        <tbody>
+            <tr><th scope="row"><a href="manageable-models/manageable-models.html" class="docs-link">Manageable Models</a></th><td>Give an Eloquent model its own browse, create, and edit screens. Add actions for deleting, duplicating, and restoring records. Open forms in a modal or on their own page.</td></tr>
+            <tr><th scope="row"><a href="manageable-models/manageable-models-browse-setup.html" class="docs-link">Browse and filter</a></th><td>Define search, select, and soft-delete filters. Remember filters, scope the query, choose the default sort, select multiple records, or enable manual reordering.</td></tr>
+            <tr><th scope="row"><a href="manageable-models/browse-columns-and-actions.html" class="docs-link">Columns and actions</a></th><td>Show text, dates, icons, checks, images, and links. Add actions to a row or the browse toolbar. Import CSV data with column mapping or export browse results as CSV.</td></tr>
+            <tr><th scope="row"><a href="manageable-models/form-fields.html" class="docs-link">Form fields</a></th><td>Use text and rich-text editors, choices and search, tags, dates, prices, file and image uploads, image cropping, and repeatable or JSON-backed fields. Add Laravel validation rules.</td></tr>
+            <tr><th scope="row"><a href="site-configuration.html" class="docs-link">Site Configuration</a></th><td>Install an optional settings table and admin screen. Let admins edit values your application reads at runtime.</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Build and secure the panel</h2>
+    <table class="docs-table">
+        <thead><tr><th scope="col">Feature</th><th scope="col">What you can do</th></tr></thead>
+        <tbody>
+            <tr><th scope="row"><a href="authentication.html" class="docs-link">Authentication</a></th><td>Use WRLA's sign-in and password reset screens or keep your application's login. Configure Turnstile, authenticator-app MFA, and rate limits.</td></tr>
+            <tr><th scope="row"><a href="authorization.html" class="docs-link">Users and access</a></th><td>Manage accounts and profile details. Assign admin or master privileges. The generated User model includes optional impersonation, disabled by default. Set rules per model or action with <a href="permissions.html" class="docs-link">Model Permissions</a>.</td></tr>
+            <tr><th scope="row"><a href="custom-pages.html" class="docs-link">Dashboard, pages, and navigation</a></th><td>Add Livewire pages, change the dashboard, and decide which links appear in the sidebar.</td></tr>
+            <tr><th scope="row"><a href="configuration.html" class="docs-link">Appearance and settings</a></th><td>Change the admin URL, branding, colors, themes, and CSS. Keep callback-based rules in runtime settings so the Laravel config can be cached.</td></tr>
+            <tr><th scope="row"><a href="notifications-and-email.html" class="docs-link">Notifications and email</a></th><td>Send in-panel notifications to users or groups. Add links or buttons, or send email from an editable template with variable substitution.</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Operate the application</h2>
+    <p class="docs-body">Access to these tools can be restricted separately from model access. See <a href="admin-tools.html" class="docs-link">Admin Tools</a> for setup.</p>
+    <table class="docs-table">
+        <thead><tr><th scope="col">Tool</th><th scope="col">What you can do</th></tr></thead>
+        <tbody>
+            <tr><th scope="row">File Manager</th><td>Browse configured Laravel disks. Preview, upload, replace, or delete files and manage folders.</td></tr>
+            <tr><th scope="row">Logs</th><td>Use WRLA's log viewer or Opcodes Log Viewer. Configure separate WRLA log channels for errors, information, and events.</td></tr>
+            <tr><th scope="row">Database Browser</th><td>Inspect and filter raw records, or allow create, edit, and delete. Restrict connections and tables or use read-only mode.</td></tr>
+            <tr><th scope="row">Database Schema</th><td>Explore a Truss diagram of your schema. Embed it in WRLA or open it as a separate page.</td></tr>
+            <tr><th scope="row">Scheduler &amp; Jobs</th><td>Inspect Laravel's scheduled tasks and run tasks manually when allowed. View supported queue stores, retry failed jobs, or remove jobs.</td></tr>
+            <tr><th scope="row">Developer Tools</th><td>Expose a configured list of maintenance commands to authorized admins.</td></tr>
+            <tr><th scope="row"><a href="artisan-commands.html" class="docs-link">Artisan commands</a></th><td>Set up or update WRLA, generate model and notification classes, manage users, and serve the documentation locally.</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Try it with an existing model</h2>
+    <p class="docs-body">After <a href="installation.html" class="docs-link">installation</a>, scaffold a management screen for an existing <code class="docs-inline-code">Product</code> model:</p>
+    <div class="docs-code-block"><pre><code>php artisan wrla:manageable-model Product</code></pre></div>
+</div>
