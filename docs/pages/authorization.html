@@ -21,4 +21,14 @@ Route::view('reports', 'admin.reports')
     <p class="docs-body mt-4">Define <code class="docs-inline-code">view-admin-reports</code> in your application. Hiding a navigation link does not protect its route or its Livewire actions.</p>
 </div>
 
+<div class="docs-section">
+    <h2 class="docs-heading">Account settings and impersonation</h2>
+    <p class="docs-body"><strong>Manage Account</strong> opens the current user's edit form. The generated <code>App\WRLA\User</code> class defines which fields WRLA shows there.</p>
+    <p class="docs-body">The Users screen can also offer <strong>Login as</strong>, which switches the current session to another user's account. WRLA opens the admin dashboard if the target is an admin, or the frontend otherwise. The WRLA sidebar offers a switch-back link while impersonating. If your workflow includes frontend accounts, provide that link in the frontend too:</p>
+    <div class="docs-code-block"><pre><code>@if (session()-&gt;has('wrla_impersonating_user'))
+    &lt;a href="{{ route('wrla.impersonate.switch-back') }}"&gt;Switch back&lt;/a&gt;
+@endif</code></pre></div>
+    <p class="docs-body mt-4">The generated User model disables its <code>IMPERSONATE</code> rule. Keep it disabled unless you have a server-side policy for both who can impersonate and which accounts they may access. A broad operator-only rule does not restrict the target account.</p>
+</div>
+
 <p class="docs-body">For access to a specific model, see <a href="permissions.html" class="docs-link">Model Permissions</a>.</p>

@@ -1,0 +1,43 @@
+<h1 class="docs-title">Troubleshooting</h1>
+<p class="docs-lead">Run Artisan from the Laravel application root, not the package checkout. Check the first failing step before changing configuration.</p>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Admin route missing or access denied</h2>
+    <div class="docs-code-block"><pre><code>php artisan route:list --name=wrla
+php artisan migrate:status
+php artisan wrla:edit-user</code></pre></div>
+    <ul class="list-disc space-y-1 text-gray-600 ml-5 mt-4">
+        <li>Check <code>base_url</code> in <code>config/wrla.php</code>. The default is <code>/wr-admin</code>.</li>
+        <li>Run pending migrations against the intended database. Check that the signed-in user has WRLA user data and the admin flag. Master and admin are separate flags.</li>
+        <li>If you disabled WRLA authentication routes, sign in through your app first. WRLA returns a 404 on denied admin requests in this mode.</li>
+        <li>For one model or tool only, check <a href="permissions.html" class="docs-link">Model Permissions</a> or the access rules in <a href="admin-tools.html" class="docs-link">Admin Tools</a>.</li>
+        <li>If Scheduler returns a 404 after sign-in, check <code>scheduler.enabled</code> in <code>WRLASettings::runtime()</code>. When it is <code>null</code>, Scheduler inherits <code>developer.enable</code>, which the installer can set more narrowly than “all masters.”</li>
+    </ul>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Assets, uploads, or overrides not showing</h2>
+    <div class="docs-code-block"><pre><code>php artisan vendor:publish --tag=wrla-assets
+php artisan storage:link
+php artisan view:clear</code></pre></div>
+    <p class="docs-body mt-4">WRLA publishes its assets under <code>public/vendor/wr-laravel-administration/</code>. If published copies are stale, review local edits before republishing with <code>--force</code>. The storage link is for the standard public local disk; a private disk does not need to be exposed publicly. For a view override, confirm that its path matches the active <a href="themes.html" class="docs-link">theme</a>.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Configuration or route changes not taking effect</h2>
+    <div class="docs-code-block"><pre><code>php artisan config:clear
+php artisan route:clear
+php artisan view:clear</code></pre></div>
+    <p class="docs-body mt-4">Keep closures in <code>WRLASettings::runtime()</code>, not in the cacheable config. For an older install, preview <code>php artisan wrla:upgrade --dry-run</code> and follow the <a href="versions/v0.10.1.html" class="docs-link">0.10.1 upgrade guide</a>. Rebuild deployment caches after verifying changes.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Email or jobs not working</h2>
+    <div class="docs-code-block"><pre><code>php artisan schedule:list
+php artisan queue:failed</code></pre></div>
+    <ul class="list-disc space-y-1 text-gray-600 ml-5 mt-4">
+        <li><strong>Email:</strong> Confirm the template category, alias, mappings, and configured SMTP mailer. Save the template before using <strong>Send Test</strong>. Check the SMTP logs under <code>storage/logs/smtp/</code> and use a safe test inbox. See <a href="notifications-and-email.html" class="docs-link">Notifications &amp; Email</a>.</li>
+        <li><strong>Scheduled task not running:</strong> Check that Laravel lists it and your deployment invokes Laravel's scheduler. The WRLA page does not run scheduled tasks automatically.</li>
+        <li><strong>Queued job not running:</strong> Check that a worker is consuming the right connection and queue. WRLA only lists pending jobs for the database queue driver and failed jobs for database-backed failure storage.</li>
+    </ul>
+</div>

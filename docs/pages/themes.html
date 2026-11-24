@@ -1,0 +1,20 @@
+<h1 class="docs-title">Themes &amp; View Overrides</h1>
+<p class="docs-lead">Override only the Blade files you need. Keep your copies in the application, not in Composer's vendor directory.</p>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Override the active theme</h2>
+    <p class="docs-body">For the bundled <code>default</code> theme, copy the view from the package to the matching application path:</p>
+    <div class="docs-code-block"><pre><code>From: vendor/webregulate/laravel-administration/src/resources/views/themes/default/auth/login.blade.php
+To:   resources/views/vendor/wrla/themes/default/auth/login.blade.php</code></pre></div>
+    <p class="docs-body mt-4">WRLA checks the application's selected theme first, then the package's selected theme, then the unthemed package view. For another theme, replace <code>default</code> with its configured <code>path</code>. Non-themed overrides requested by WRLA's view resolver go directly under <code>resources/views/vendor/wrla/</code>.</p>
+    <p class="docs-body">Start with the existing template to preserve routes, form fields, and Livewire bindings. After an upgrade, compare your override with the shipped version. For colors and CSS without copying markup, see <a href="configuration.html" class="docs-link">Configuration</a>.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Use theme-aware Blade directives</h2>
+    <p class="docs-body"><code>@themeView</code> renders a named view. <code>@themeComponent</code> looks under <code>components</code> and takes a data array. These are view paths, not Blade component class names.</p>
+    <div class="docs-code-block"><pre><code>@themeView('layouts.partials.partial-left-panel')
+
+@themeComponent('heading', ['title' =&gt; 'Reports', 'icon' =&gt; 'fa-solid fa-chart-bar'])</code></pre></div>
+    <p class="docs-body mt-4">Use the directives in templates rendered inside WRLA. Use normal Blade includes or components if your view should not depend on the active WRLA theme. After changing overrides, clear compiled views with <code>php artisan view:clear</code>.</p>
+</div>

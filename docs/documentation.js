@@ -33,6 +33,7 @@ class DocumentationApp {
                     { title: 'Feature Overview', url: 'features.html' },
                     { title: 'Quick Start', url: 'quick-start.html' },
                     { title: 'Installation', url: 'installation.html' },
+                    { title: 'Troubleshooting', url: 'troubleshooting.html' },
                     { title: 'Configuration', url: 'configuration.html' },
                     { title: 'Artisan Commands', url: 'artisan-commands.html' }
                 ]
@@ -48,9 +49,11 @@ class DocumentationApp {
                             { title: 'browseSetup', url: 'manageable-models/manageable-models-browse-setup.html' },
                             { title: 'Browse Columns & Row Actions', url: 'manageable-models/browse-columns-and-actions.html' },
                             { title: 'Form Fields', url: 'manageable-models/form-fields.html' },
+                            { title: 'Advanced Models', url: 'manageable-models/advanced-models.html' },
                         ]
                     },
                     { title: 'Custom Pages', url: 'custom-pages.html' },
+                    { title: 'Themes & View Overrides', url: 'themes.html' },
                     { title: 'Authentication', url: 'authentication.html' },
                     { title: 'Authorization', url: 'authorization.html' },
                     { title: 'Model Permissions', url: 'permissions.html' }

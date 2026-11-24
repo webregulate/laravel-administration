@@ -1,0 +1,68 @@
+<h1 class="docs-title">Advanced Manageable Models</h1>
+<p class="docs-lead">Edit related records, react to form changes, transform submitted values, and add calculated columns without replacing WRLA's form or table.</p>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Edit a related record</h2>
+    <p class="docs-body">Use <code>relationship.attribute</code> to edit a field on a single related model. This example assumes the Eloquent Product model has a <code>hasOne</code> relationship named <code>details</code>, backed by a table that stores <code>product_id</code> and <code>subtitle</code>.</p>
+    <div class="docs-code-block"><pre><code>use WebRegulate\LaravelAdministration\Classes\ManageableFields\Text;
+
+// In getManageableFields()
+Text::make($this, 'details.subtitle')-&gt;validation('nullable|string|max:120'),</code></pre></div>
+    <p class="docs-body mt-4">This edits the related record itself. To choose a different existing related record, use a <code>SearchSelect</code> bound to the foreign key instead. For custom work before WRLA writes a related field, see <a href="manageable-models/manageable-models.html" class="docs-link">save hooks</a>.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Show a field when another value changes</h2>
+    <p class="docs-body">Bind the controlling field with <code>setLivewireModel('live')</code>. Read its current value when building the field list. These attributes must exist on your Eloquent model.</p>
+    <div class="docs-code-block"><pre><code>use WebRegulate\LaravelAdministration\Classes\ManageableFields\Select;
+use WebRegulate\LaravelAdministration\Classes\ManageableFields\Text;
+
+public function getManageableFields(): array
+{
+    $type = static::getLivewireField('type') ?? $this-&gt;model()-&gt;type ?? 'physical';
+
+    return [
+        Select::make($this, 'type', ['physical' =&gt; 'Physical', 'digital' =&gt; 'Digital'])
+            -&gt;setLivewireModel('live')
+            -&gt;validation('required|in:physical,digital'),
+        ...($type === 'digital' ? [
+            Text::make($this, 'download_url')-&gt;validation('required|url'),
+        ] : []),
+    ];
+}</code></pre></div>
+    <p class="docs-body mt-4">Hiding a field does not clear its stored value. Add an explicit save rule if changing the type should clear the old URL.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Transform a submitted value</h2>
+    <div class="docs-code-block"><pre><code>use Illuminate\Http\Request;
+use WebRegulate\LaravelAdministration\Classes\ManageableFields\Text;
+
+// In getManageableFields()
+Text::make($this, 'sku')
+    -&gt;validation('required|string|max:32')
+    -&gt;appendApplySubmittedValue(
+        fn (Request $request, mixed $value) =&gt; strtoupper(trim($value)),
+    ),</code></pre></div>
+    <p class="docs-body mt-4">The callback runs after form validation. <code>appendApplySubmittedValue()</code> keeps earlier callbacks, while <code>overrideApplySubmittedValue()</code> replaces the callback chain. If other write paths must normalize a value too, put the rule on the Eloquent model instead.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Add a query-backed browse column</h2>
+    <p class="docs-body">Use a query modifier when the database should calculate the value before pagination. In this example, <code>reviews()</code> is an Eloquent relationship on Product.</p>
+    <div class="docs-code-block"><pre><code>use Illuminate\Database\Eloquent\Builder;
+use WebRegulate\LaravelAdministration\Classes\BrowseColumns\BrowseColumn;
+
+public function getBrowseColumns(): array
+{
+    return [
+        'name' =&gt; 'Product',
+        'reviews_count' =&gt; BrowseColumn::query(
+            'Reviews',
+            static::class,
+            fn (Builder $query) =&gt; $query-&gt;withCount('reviews'),
+        ),
+    ];
+}</code></pre></div>
+    <p class="docs-body mt-4">The array key must match the selected alias. Use <code>BrowseColumn::selectRaw()</code> for a fixed SQL expression; never interpolate user input into raw SQL. For a display-only change, use <code>BrowseColumn::make()</code> with a formatter instead.</p>
+</div>
