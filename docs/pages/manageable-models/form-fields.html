@@ -22,18 +22,50 @@ public function getManageableFields(): array
 </div>
 
 <div class="docs-section">
-    <h2 class="docs-heading">Pick a field type</h2>
+    <h2 class="docs-heading">Field reference</h2>
+    <p class="docs-body">Import field classes from <code class="docs-inline-code">WebRegulate\LaravelAdministration\Classes\ManageableFields</code>. The examples go in the array returned by your model's <code>getManageableFields()</code>.</p>
     <table class="docs-table">
-        <thead><tr><th>Use case</th><th>Fields</th></tr></thead>
+        <thead><tr><th scope="col">Field</th><th scope="col">Use it for</th><th scope="col">Example</th></tr></thead>
         <tbody>
-            <tr><td>Text and formatting</td><td><code>Text</code>, <code>TextArea</code>, <code>Wysiwyg</code>, <code>Password</code></td></tr>
-            <tr><td>Choices and lookups</td><td><code>Select</code>, <code>SearchSelect</code>, <code>SearchableValue</code>, <code>Tags</code></td></tr>
-            <tr><td>Dates and prices</td><td><code>Date</code>, <code>MonetaryValue</code></td></tr>
-            <tr><td>Uploads</td><td><code>File</code>, <code>Image</code>, <code>ImageCroppable</code>, <code>MultiImage</code></td></tr>
-            <tr><td>Structured or repeated data</td><td><code>Json</code>, <code>JsonUI</code>, <code>MultiField</code> with <code>MultiFieldItem</code></td></tr>
-            <tr><td>Layout and hidden values</td><td><code>Heading</code>, <code>BladeElement</code>, <code>Hidden</code></td></tr>
+            <tr><th scope="row"><code>Text</code></th><td>Single-line text or an HTML input type such as email.</td><td><code>Text::make($this, 'email')-&gt;setAttribute('type', 'email')</code></td></tr>
+            <tr><th scope="row"><code>TextArea</code></th><td>Multiline plain text.</td><td><code>TextArea::make($this, 'description')</code></td></tr>
+            <tr><th scope="row"><code>Wysiwyg</code></th><td>Rich text. Choose the editor in <a href="configuration.html" class="docs-link">Configuration</a>.</td><td><code>Wysiwyg::make($this, 'body')</code></td></tr>
+            <tr><th scope="row"><code>Password</code></th><td>A write-only password and confirmation. A blank edit leaves the existing hash unchanged.</td><td><code>Password::make($this, 'password')</code></td></tr>
+            <tr><th scope="row"><code>Select</code></th><td>A dropdown from a value-to-label map.</td><td><code>Select::make($this, 'status', ['draft' =&gt; 'Draft'])</code></td></tr>
+            <tr><th scope="row"><code>SearchSelect</code></th><td>Search Eloquent records and store the selected model's key.</td><td><code>SearchSelect::make($this, 'category_id')-&gt;searchQuery(Category::class, 'name')</code></td></tr>
+            <tr><th scope="row"><code>SearchableValue</code></th><td>A searchable list of values. Supply a map or load choices with callbacks.</td><td><code>SearchableValue::make($this, 'region')-&gt;setItems(['uk' =&gt; 'United Kingdom'])</code></td></tr>
+            <tr><th scope="row"><code>Tags</code></th><td>A list of tags with optional suggestions and a limit.</td><td><code>Tags::make($this, 'tags')-&gt;commonTags(['featured'])-&gt;maxTags(5)</code></td></tr>
+            <tr><th scope="row"><code>Date</code></th><td>Date, time, or local date/time. Pass <code>['defaultNow' =&gt; false]</code> as the fourth argument to start without a default.</td><td><code>Date::make($this, 'starts_at', Date::TYPE_DATETIME)</code></td></tr>
+            <tr><th scope="row"><code>MonetaryValue</code></th><td>Display a decimal amount while storing an integer in minor units. With multiplier 100, £12.50 stores as 1250.</td><td><code>MonetaryValue::make($this, 'price_pence')</code></td></tr>
+            <tr><th scope="row"><code>File</code></th><td>Upload one file to a Laravel storage disk. The default disk is <code>public</code>.</td><td><code>File::make($this, 'manual', 'manuals')-&gt;validation('mimes:pdf')</code></td></tr>
+            <tr><th scope="row"><code>Image</code></th><td>Upload an image with a preview and optional server-side sizing.</td><td><code>Image::make($this, 'photo', 'products')-&gt;coverFitAspect(800, '4/3')</code></td></tr>
+            <tr><th scope="row"><code>ImageCroppable</code></th><td>Let the admin crop an uploaded image.</td><td><code>ImageCroppable::make($this, 'avatar', 'avatars')-&gt;aspect('1/1')</code></td></tr>
+            <tr><th scope="row"><code>MultiImage</code></th><td>Store several images in one field. Set the disk, directory, count, and upload rules.</td><td><code>MultiImage::make($this, 'gallery', path: 'products/gallery', maxImages: 4)</code></td></tr>
+            <tr><th scope="row"><code>Json</code></th><td>Edit raw JSON and optionally validate its keys.</td><td><code>Json::make($this, 'metadata')</code></td></tr>
+            <tr><th scope="row"><code>JsonUI</code></th><td>Edit JSON values with form controls instead of raw JSON text.</td><td><code>JsonUI::make($this, 'settings')-&gt;mergeDefaultKeyValues(['featured' =&gt; false])</code></td></tr>
+            <tr><th scope="row"><code>MultiField</code></th><td>Repeat a group of fields and store the entries together. Define each child with <code>MultiFieldItem</code>.</td><td><code>MultiField::make($this, 'resources')-&gt;setItems([MultiFieldItem::url('url')])</code></td></tr>
+            <tr><th scope="row"><code>Heading</code></th><td>Divide a form into sections without adding a stored value.</td><td><code>Heading::make('Product details')</code></td></tr>
+            <tr><th scope="row"><code>BladeElement</code></th><td>Render app-authored Blade markup inside the form.</td><td><code>BladeElement::make(null, null, '&lt;p&gt;Drafts are not published.&lt;/p&gt;')</code></td></tr>
+            <tr><th scope="row"><code>Hidden</code></th><td>Submit an attribute without displaying an input. A client can still change its value.</td><td><code>Hidden::make($this, 'source')-&gt;default('admin')</code></td></tr>
         </tbody>
     </table>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Labels, defaults, and validation</h2>
+    <div class="docs-code-block"><pre><code>Text::make($this, 'sku')
+    -&gt;setLabel('Stock code')
+    -&gt;setAttribute('placeholder', 'ABC-123')
+    -&gt;validation('required|string|max:32')
+    -&gt;inlineValidation(fn ($value) =&gt; $value !== 'reserved'
+        ? true
+        : 'Choose another stock code.'),</code></pre></div>
+    <ul class="list-disc space-y-1 text-gray-600 ml-5 mt-4">
+        <li><code>validation()</code> appends Laravel rules. Pass <code>overwrite: true</code> to replace a field's defaults.</li>
+        <li><code>inlineValidation()</code> takes a callback that returns <code>true</code> or an error message.</li>
+        <li><code>default()</code> sets an initial value on create; it does not replace the value on edit.</li>
+        <li>Use <code>showOnlyOn(PageType::CREATE)</code> or <code>hideFrom(PageType::EDIT)</code> to change which forms display a field. Import <code>PageType</code> from <code>WebRegulate\LaravelAdministration\Enums</code>.</li>
+    </ul>
 </div>
 
 <div class="docs-section">
@@ -43,6 +75,24 @@ public function getManageableFields(): array
 // Add to the getManageableFields() return array.
 Tags::make($this, 'tags', ['commonTags' =&gt; ['featured', 'seasonal']]),</code></pre></div>
     <p class="docs-body mt-4">Use an Eloquent <code class="docs-inline-code">array</code> cast for a JSON list, or leave a text attribute uncast for a comma-separated string. WRLA removes duplicates without changing the storage format.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Repeat a group of fields</h2>
+    <div class="docs-code-block"><pre><code>use WebRegulate\LaravelAdministration\Classes\ManageableFields\MultiField;
+use WebRegulate\LaravelAdministration\Classes\ManageableFields\MultiFieldItem;
+
+// Add to the getManageableFields() return array.
+MultiField::make($this, 'resources')
+    -&gt;setItems([
+        MultiFieldItem::text('title', 'Title'),
+        MultiFieldItem::url('url', 'Link'),
+        MultiFieldItem::select('type', ['guide' =&gt; 'Guide', 'video' =&gt; 'Video']),
+    ])
+    -&gt;addItemLabel('Add resource')
+    -&gt;maxFormGroups(5)
+    -&gt;useColumnLayout(2),</code></pre></div>
+    <p class="docs-body mt-4">Other item builders are <code>date()</code>, <code>number()</code>, <code>textarea()</code>, and <code>image()</code>. The default row layout places each entry's fields side by side. Column layout stacks the fields within each entry.</p>
 </div>
 
 <p class="docs-body">To change where forms open or where users go after saving, see <a href="manageable-models/manageable-models-main-setup.html" class="docs-link">mainSetup()</a>.</p>

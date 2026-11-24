@@ -104,6 +104,28 @@
     </table>
 </div>
 
+<div class="docs-section">
+    <h2 class="docs-heading">Save and delete hooks</h2>
+    <p class="docs-body">Override these methods on your Manageable Model to add behavior to WRLA's own save and delete flows.</p>
+    <table class="docs-table">
+        <thead><tr><th scope="col">Hook</th><th scope="col">When it runs</th></tr></thead>
+        <tbody>
+            <tr><th scope="row"><code>preUpdateModelInstance()</code></th><td>After validation, before WRLA applies and saves submitted values. Return the request.</td></tr>
+            <tr><th scope="row"><code>preUpdateRelationshipInstanceField()</code></th><td>Before WRLA applies a submitted field on a related record.</td></tr>
+            <tr><th scope="row"><code>postUpdateModelInstance()</code></th><td>After the create or edit form saves the record.</td></tr>
+            <tr><th scope="row"><code>preDeleteModelInstance()</code></th><td>Before WRLA deletes a record. Receives the ID and whether this is a soft delete.</td></tr>
+            <tr><th scope="row"><code>postDeleteModelInstance()</code></th><td>After WRLA deletes a record. Receives the same ID and soft-delete flag.</td></tr>
+        </tbody>
+    </table>
+    <div class="docs-code-block mt-4"><pre><code>use Illuminate\Http\Request;
+
+public function postUpdateModelInstance(Request $request, mixed $model): void
+{
+    cache()-&gt;forget('product-card:'.$model-&gt;getKey());
+}</code></pre></div>
+    <p class="docs-body mt-4">These are not Eloquent events. Use an Eloquent observer if the behavior must also run for ordinary Eloquent saves outside WRLA. <a href="manageable-models/browse-columns-and-actions.html" class="docs-link">CSV imports</a> use direct inserts, not the form save flow.</p>
+</div>
+
 <!-- See subsections -->
 <div class="docs-callout docs-callout-info">
     <div class="docs-callout-icon">

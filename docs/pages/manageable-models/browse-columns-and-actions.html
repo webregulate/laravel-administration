@@ -15,12 +15,35 @@ public function getBrowseColumns(): array
         'created_at' =&gt; BrowseColumnDate::make('Added', 'd M Y'),
     ];
 }</code></pre></div>
-    <p class="docs-body mt-4">Other formatters include <code class="docs-inline-code">BrowseColumnImage</code>, <code class="docs-inline-code">BrowseColumnIcon</code>, and <code class="docs-inline-code">BrowseColumnLink</code>.</p>
+    <h3 class="docs-subheading mt-6 mb-3">Column formatters</h3>
+    <p class="docs-body">Import these classes from <code class="docs-inline-code">WebRegulate\LaravelAdministration\Classes\BrowseColumns</code>.</p>
+    <table class="docs-table">
+        <thead><tr><th scope="col">Formatter</th><th scope="col">What it shows</th><th scope="col">Example</th></tr></thead>
+        <tbody>
+            <tr><th scope="row"><code>BrowseColumn</code></th><td>Text. Set a character limit or pass a formatter receiving the value and Eloquent model.</td><td><code>BrowseColumn::make('Description')-&gt;limit(60)</code></td></tr>
+            <tr><th scope="row"><code>BrowseColumnCheck</code></th><td>Different icons for true and false values.</td><td><code>BrowseColumnCheck::make('Active')-&gt;trueIcon('fa-solid fa-check')</code></td></tr>
+            <tr><th scope="row"><code>BrowseColumnDate</code></th><td>A formatted date with a fallback for missing values.</td><td><code>BrowseColumnDate::make('Added', 'd M Y')-&gt;setFallback('Unknown')</code></td></tr>
+            <tr><th scope="row"><code>BrowseColumnIcon</code></th><td>An icon class returned by a callback that receives the Eloquent model.</td><td><code>BrowseColumnIcon::make('Type', fn ($model) =&gt; 'fa-solid fa-box')</code></td></tr>
+            <tr><th scope="row"><code>BrowseColumnImage</code></th><td>A linked thumbnail. Pass a URL or a callback that receives the value and model.</td><td><code>BrowseColumnImage::make('Photo', fn ($value) =&gt; $value, 80)</code></td></tr>
+            <tr><th scope="row"><code>BrowseColumnLink</code></th><td>A link from a callback that returns <code>url</code> and <code>text</code>, or <code>null</code> to render nothing. Enable HTML output for the generated link.</td><td><code>BrowseColumnLink::make('Details', fn ($value) =&gt; ['url' =&gt; route('products.show', $value), 'text' =&gt; 'View'])-&gt;renderHtml()</code></td></tr>
+            <tr><th scope="row"><code>BrowseColumnManageableModel</code></th><td>A link to a related record's WRLA edit page. The browse column value becomes the link text.</td><td><code>'category.name' =&gt; BrowseColumnManageableModel::make('Category', 'category.id', \App\WRLA\Category::class)</code></td></tr>
+        </tbody>
+    </table>
+    <p class="docs-body mt-4">Use <code>allowOrdering(false)</code> for a column that should not be sortable. Use <code>headerClass()</code> or <code>columnClass()</code> to style just the header or cells.</p>
 </div>
 
 <div class="docs-section">
     <h2 class="docs-heading"><code>getInstanceActions()</code></h2>
-    <p class="docs-body">Use the built-in actions for edit, delete, duplicate, and restore. Include restore only for soft-deletable models.</p>
+    <p class="docs-body">Return the buttons you want to show. Import these classes from <code class="docs-inline-code">WebRegulate\LaravelAdministration\Classes\InstanceActions</code>.</p>
+    <table class="docs-table mb-4">
+        <thead><tr><th scope="col">Action</th><th scope="col">Behavior</th><th scope="col">Permission used by the button</th></tr></thead>
+        <tbody>
+            <tr><th scope="row"><code>InstanceActionEdit</code></th><td>Open a record for editing.</td><td><code>EDIT</code></td></tr>
+            <tr><th scope="row"><code>InstanceActionDuplicate</code></th><td>Start a new record using values from the selected record.</td><td><code>CREATE</code></td></tr>
+            <tr><th scope="row"><code>InstanceActionDelete</code></th><td>Delete the record. A record already in the trash can be deleted permanently.</td><td><code>DELETE</code></td></tr>
+            <tr><th scope="row"><code>InstanceActionRestore</code></th><td>Restore a soft-deleted record. Use only with models that support soft deletes.</td><td><code>RESTORE</code></td></tr>
+        </tbody>
+    </table>
     <div class="docs-code-block"><pre><code>use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionDelete;
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionEdit;
 use WebRegulate\LaravelAdministration\Classes\InstanceActions\InstanceActionRestore;
@@ -29,11 +52,31 @@ public function getInstanceActions(): array
 {
     return [
         InstanceActionEdit::make($this),
+        // Add InstanceActionDuplicate::make($this) to offer duplication.
         InstanceActionRestore::make($this),
         InstanceActionDelete::make($this, $this-&gt;isModelSoftDeleted()),
     ];
 }</code></pre></div>
     <p class="docs-body mt-4">The delete button warns about permanent deletion if the record is already in the trash. Turn on <code class="docs-inline-code">setMultiSelect(true)</code> in <a href="manageable-models/manageable-models-browse-setup.html" class="docs-link">browseSetup()</a> to offer supported actions for multiple rows.</p>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-heading">Add a custom row action</h2>
+    <p class="docs-body">Pass a URL to render a link, or pass a callback to run server-side. This example uses an application route named <code>products.show</code>.</p>
+    <div class="docs-code-block"><pre><code>use WebRegulate\LaravelAdministration\Classes\InstanceAction;
+
+// Add to the getInstanceActions() return array.
+InstanceAction::make(
+    $this,
+    'Preview',
+    'fa-solid fa-eye',
+    action: route('products.show', $this-&gt;model()-&gt;getKey()),
+),</code></pre></div>
+    <ul class="list-disc space-y-1 text-gray-600 ml-5 mt-4">
+        <li>A callback receives the row model and can return a message, an alert array, a redirect, a file response, or <code>null</code>.</li>
+        <li>Use <code>confirm()</code> to ask before running an action or <code>requireCondition()</code> to control when the action is enabled. Still authorize the operation server-side.</li>
+        <li>Use <code>multiAction()</code> to define a separate handler for selected record IDs. Enable multi-select in <code>browseSetup()</code> to show it.</li>
+    </ul>
 </div>
 
 <div class="docs-section">
