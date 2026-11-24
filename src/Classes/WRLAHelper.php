@@ -2048,6 +2048,10 @@ class WRLAHelper
         foreach ($changes as $key => $newValue) {
             $oldValue = $original[$key] ?? null;
 
+            // Eloquent casts original enum values, but dirty values are typically raw.
+            $oldValue = $oldValue instanceof \BackedEnum ? $oldValue->value : $oldValue;
+            $newValue = $newValue instanceof \BackedEnum ? $newValue->value : $newValue;
+
             // Only log if the value has actually changed
             if ($oldValue != $newValue) {
                 $oldValueStr = !is_array($oldValue) ? $oldValue : json_encode($oldValue);
