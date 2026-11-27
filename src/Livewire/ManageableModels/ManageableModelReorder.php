@@ -3,9 +3,9 @@
 namespace WebRegulate\LaravelAdministration\Livewire\ManageableModels;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use WebRegulate\LaravelAdministration\Classes\ManageableModel;
+use WebRegulate\LaravelAdministration\Classes\OrderColumnUpdater;
 use WebRegulate\LaravelAdministration\Classes\OrderableOptions;
 use WebRegulate\LaravelAdministration\Classes\WRLAHelper;
 use WebRegulate\LaravelAdministration\Enums\ManageableModelPermissions;
@@ -64,42 +64,7 @@ class ManageableModelReorder extends WRLAPageComponent
      */
     public function saveOrder(array $orderedIds): void
     {
-        $options = $this->options();
-        $model = $this->baseModel();
-        $keyName = $model->getKeyName();
-        $orderedIds = array_map('strval', $orderedIds);
-        $connection = DB::connection($model->getConnectionName());
-        $baseModelClass = $this->manageableModelClass::getBaseModelClass();
-
-        $saved = $connection->transaction(function () use ($baseModelClass, $connection, $keyName, $model, $options, $orderedIds): bool {
-            $expectedIds = $baseModelClass::query()
-                ->lockForUpdate()
-                ->pluck($keyName)
-                ->map(fn ($id) => (string) $id)
-                ->all();
-            $submittedIds = $orderedIds;
-            sort($expectedIds, SORT_STRING);
-            sort($submittedIds, SORT_STRING);
-
-            if (count($orderedIds) !== count(array_unique($orderedIds)) || $submittedIds !== $expectedIds) {
-                return false;
-            }
-
-            foreach (array_chunk($orderedIds, max(1, $options->updateChunkSize), true) as $chunk) {
-                $rows = [];
-
-                foreach ($chunk as $index => $id) {
-                    $rows[] = [
-                        $keyName => $id,
-                        $options->orderColumn => $options->startAt + $index,
-                    ];
-                }
-
-                $connection->table($model->getTable())->upsert($rows, [$keyName], [$options->orderColumn]);
-            }
-
-            return true;
-        });
+        $saved = (new OrderColumnUpdater)->persist($this->baseModel(), $this->options(), $orderedIds);
 
         if (! $saved) {
             WRLAHelper::pushAlert('danger', 'The records changed while you were reordering. Refresh the page and try again.');
