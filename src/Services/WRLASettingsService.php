@@ -29,8 +29,12 @@ class WRLASettingsService
         'scheduler.can_run_adhoc',
     ];
 
+    private const OPTIONAL_RUNTIME_DEFAULTS = [
+        'captcha.enabled_if' => true,
+    ];
+
     /**
-     * Read application runtime settings without config or package-default fallbacks.
+     * Read application runtime settings, with config fallbacks only for optional keys.
      */
     public static function get(?string $key = null): mixed
     {
@@ -40,6 +44,10 @@ class WRLASettingsService
 
             return $values;
         });
+
+        if ($key !== null && array_key_exists($key, self::OPTIONAL_RUNTIME_DEFAULTS) && !Arr::has($runtime, $key)) {
+            return config("wrla.{$key}", self::OPTIONAL_RUNTIME_DEFAULTS[$key]);
+        }
 
         // Unknown lookups must not receive silent replacement values
         if ($key !== null && !Arr::has($runtime, $key)) {
@@ -112,19 +120,26 @@ class WRLASettingsService
                 throw new \UnexpectedValueException("WRLASettings::runtime() setting {$key} must be an array.");
             }
         }
+
+        $captchaCondition = Arr::get($values, 'captcha.enabled_if', self::OPTIONAL_RUNTIME_DEFAULTS['captcha.enabled_if']);
+        if (!is_bool($captchaCondition) && !$captchaCondition instanceof \Closure) {
+            throw new \UnexpectedValueException('WRLASettings::runtime() setting captcha.enabled_if must be a boolean or a Closure returning a boolean.');
+        }
     }
 
     private static function validateRuntime(array $values, string $prefix = ''): void
     {
+        $supportedKeys = [...static::RUNTIME_KEYS, ...array_keys(self::OPTIONAL_RUNTIME_DEFAULTS)];
+
         foreach ($values as $key => $value) {
             $path = $prefix . $key;
 
             // A supported runtime section owns its complete value, including lists
-            if (in_array($path, static::RUNTIME_KEYS, true)) {
+            if (in_array($path, $supportedKeys, true)) {
                 continue;
             }
 
-            $branch = array_filter(static::RUNTIME_KEYS, fn (string $runtimeKey) => str_starts_with($runtimeKey, $path . '.'));
+            $branch = array_filter($supportedKeys, fn (string $runtimeKey) => str_starts_with($runtimeKey, $path . '.'));
 
             // Reject settings that package consumers read only from scalar config
             if ($branch === [] || !is_array($value) || $value === []) {

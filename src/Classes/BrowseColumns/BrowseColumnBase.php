@@ -99,6 +99,11 @@ class BrowseColumnBase
         return $this->setOption('allowOrdering', $allowOrdering);
     }
 
+    public function hideOnMobile(bool $hide = true): static
+    {
+        return $this->setOption('hideOnMobile', $hide);
+    }
+
     /**
      * Render html in the column (false by default)
      */

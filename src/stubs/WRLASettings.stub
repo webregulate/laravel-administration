@@ -17,6 +17,11 @@ class WRLASettings
     public static function runtime(): array
     {
         return [
+            // Enable the configured captcha provider when this condition is true.
+            'captcha' => [
+                'enabled_if' => static fn (): bool => !app()->isLocal(),
+            ],
+
             // Default access rules for manageable models; individual models can override these.
             'default_manageable_model_permissions' => [
                 ManageableModelPermissions::ENABLED->value => fn ($wrlaUserData) => $wrlaUserData?->isAdmin() ?? false,

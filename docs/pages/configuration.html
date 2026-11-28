@@ -170,6 +170,7 @@ class WRLAUserData extends WRLAUserDataBase
     <!-- Captcha -->
     <h3 class="docs-subheading">Captcha</h3>
     <p class="docs-body">Protects the login and forgot-password forms. Set <code class="docs-inline-code">captcha.current</code> to <code class="docs-inline-code">null</code> to disable.</p>
+    <p class="docs-body">Set <code>captcha.enabled_if</code> in <code>WRLASettings::runtime()</code> to override the boolean in <code>config/wrla.php</code>, which defaults to <code>true</code>. For example, <code>'captcha' =&gt; ['enabled_if' =&gt; !app()-&gt;isLocal()]</code> skips captcha locally. The generated settings stub uses the same condition in a closure so it is evaluated only when needed. The runtime override accepts a boolean or a closure returning a boolean. Neither setting enables a provider when <code>captcha.current</code> is <code>null</code>.</p>
     <table class="docs-table mb-6">
         <thead>
             <tr>

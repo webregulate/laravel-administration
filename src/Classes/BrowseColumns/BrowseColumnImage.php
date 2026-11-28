@@ -45,12 +45,26 @@ class BrowseColumnImage extends BrowseColumnBase
                 'hideIfEmpty' => true,
             ])->render();
 
-            return <<<BLADE
-                <a href="$value" target="_blank" style="display:block;width:{$colWidthPx};max-width:{$colWidthPx};">$renderedView</a>
-            BLADE;
+            $mobileWidth = $browseColumnImage->getOption('mobileWidth');
+            $class = '';
+            $sizing = 'width:'.e($colWidthPx).';max-width:'.e($colWidthPx).';';
+
+            if ($mobileWidth !== null) {
+                $class = 'max-md:[--wrla-browse-image-width:var(--wrla-browse-image-mobile-width)]';
+                $mobileWidthPx = is_int($mobileWidth) ? "{$mobileWidth}px" : $mobileWidth;
+                $width = 'var(--wrla-browse-image-width,'.e($colWidthPx).')';
+                $sizing = '--wrla-browse-image-mobile-width:'.e($mobileWidthPx).";width:{$width};max-width:{$width};";
+            }
+
+            return '<a href="'.e($value).'" target="_blank" class="'.$class.'" style="display:block;'.$sizing.'">'.$renderedView.'</a>';
         };
 
         return $browseColumnImage;
+    }
+
+    public function mobileWidth(string|int $width): static
+    {
+        return $this->setOption('mobileWidth', $width);
     }
 
     /**

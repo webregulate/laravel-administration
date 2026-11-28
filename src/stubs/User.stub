@@ -117,11 +117,11 @@ class User extends ManageableModel
     public final function getBrowseColumns(): array
     {
         return [
-            'wrlaUserData.avatar' => BrowseColumnImage::make('Avatar', $this->model()->wrlaUserData?->getProfileAvatar(), 80)->imageClass('rounded-full')->aspect('1/1'),
-            'name' => BrowseColumn::make('Name'),
+            'wrlaUserData.avatar' => BrowseColumnImage::make('Avatar', $this->model()->wrlaUserData?->getProfileAvatar(), 80)->mobileWidth(40)->imageClass('rounded-full')->aspect('1/1'),
+            'name' => BrowseColumn::make('Name')->hideOnMobile(),
             'email' => BrowseColumn::make('Email'),
-            'created_at' => BrowseColumn::make('Created'),
-            'wrlaUserData.permissions->admin' => BrowseColumnCheck::make('Admin'),
+            'created_at' => BrowseColumn::make('Created')->hideOnMobile(),
+            'wrlaUserData.permissions->admin' => BrowseColumnCheck::make('Admin')->hideOnMobile(),
         ];
     }
 

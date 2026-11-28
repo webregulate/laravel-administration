@@ -44,6 +44,9 @@ return [
         // Use 'turnstile' for CloudFlare Turnstile, or null to disable
         'current' => null,
 
+        // Default when WRLASettings::runtime() does not override captcha.enabled_if.
+        'enabled_if' => true,
+
         // Turnstile
         'turnstile' => [
             'site_key' => env('CLOUDFLARE_TURNSTILE_SITEKEY', ''),

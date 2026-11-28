@@ -1246,12 +1246,27 @@ class WRLAHelper
         return $captchaConfig[$captchaConfig['current']];
     }
 
-    /**
-     * Get current Wysiwyg editor setup JS
-     */
+    private static function usesTurnstile(): bool
+    {
+        $provider = config('wrla.captcha.current');
+        if ($provider === null) {
+            return false;
+        }
+        if ($provider !== 'turnstile') {
+            throw new \UnexpectedValueException('Unsupported WRLA captcha provider in wrla.captcha.current.');
+        }
+
+        $enabled = value(WRLASettingsService::get('captcha.enabled_if'));
+        if (!is_bool($enabled)) {
+            throw new \UnexpectedValueException('WRLASettings::runtime() setting captcha.enabled_if must resolve to a boolean.');
+        }
+
+        return $enabled;
+    }
+
     public static function getCaptchaHTML(): string
     {
-        if (config('wrla.captcha.current') ?? null == 'turnstile') {
+        if (static::usesTurnstile()) {
             return Blade::render(<<<'HTML'
                 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
 
@@ -1276,7 +1291,7 @@ class WRLAHelper
      */
     public static function applyCaptchaCheck(Request $request): bool
     {
-        if (config('wrla.captcha.current') ?? null == 'turnstile') {
+        if (static::usesTurnstile()) {
             $ipAddress = $request->ip();
 
             $data = Http::post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [

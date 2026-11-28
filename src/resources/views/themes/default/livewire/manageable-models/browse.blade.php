@@ -10,7 +10,7 @@
 
     {{-- Title and total records --}}
 
-    <div class="flex justify-between items-center">
+    <div class="flex flex-wrap justify-between items-center gap-x-4 gap-y-2">
         <div class="text-xl font-semibold mb-2">
             <i class="{{ $manageableModelClass::getIcon() }} mr-2"></i>
             {{ $manageableModelClass::getDisplayName(true) }}
@@ -19,7 +19,7 @@
             $wrlaBrowseTotal = $models instanceof \Illuminate\Pagination\LengthAwarePaginator ? $models?->total() : $models->count();
             $wrlaPerPageOptions = config('wrla.browse.pagination.perPage', [20, 30, 50, 75, 100]);
         @endphp
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
             <div wire:loading.flex class="items-center gap-2 text-sm">
                 <i class="fas fa-spinner animate-spin text-primary-500"></i>
                 <span>Loading...</span>
@@ -52,7 +52,7 @@
     {!! $manageableModelClass::renderAdditionalRender(AdditionalRenderPosition::BROWSE_BELOW_HEADING) !!}
 
     {{-- Browse actions --}}
-    <div class="flex flex-row gap-3">
+    <div class="flex flex-wrap gap-3">
         @foreach ($manageableModelClass::getBrowseActions() as $browseAction)
             @if ($browseAction === null)
                 <div class="ml-auto"></div>
@@ -86,7 +86,7 @@
 
     {{-- Filters --}}
     <div class="relative w-full rounded-lg px-3 pt-2 pb-3 mb-2 bg-slate-100 shadow-md dark:bg-slate-800">
-        <div class="flex flex-wrap justify-start items-stretch gap-x-4 gap-y-2">
+        <div class="flex flex-wrap justify-start items-stretch gap-x-4 gap-y-2 max-md:[&>*]:!w-full max-md:[&>*]:!flex-none">
 
             @if(!$manageableModelClass::getStaticOption($manageableModelClass, 'browse.useDynamicFilters'))
                 @foreach ($manageableModelClass::getBrowseFilters() as $filter)
@@ -172,7 +172,7 @@
     {{-- Main data table --}}
     <div class="w-full block overflow-x-auto rounded-md shadow-lg shadow-slate-300 dark:shadow-slate-850">
         <table class="w-full table-auto text-left border-collapse" style="table-layout: auto /* fixed */;">
-            <colgroup>
+            <colgroup class="max-md:hidden">
                 @if ($wrlaMultiSelectEnabled)
                     <col style="width: 44px; min-width: 44px; max-width: 44px;" />
                 @endif
@@ -218,7 +218,7 @@
                         <th @if ($browseColumn->getOption('allowOrdering'))
                                 title="Order by {{ $column }} {{ $orderDirection == 'asc' ? 'descending' : 'ascending' }}"
                             @endif
-                            class="px-3 py-2 bg-slate-700 dark:bg-slate-700 text-slate-100 dark:text-slate-300 border-b border-slate-400 dark:border-slate-600 @if ($browseColumn->getOption('allowOrdering')) group hover:text-primary-500 @endif @if ($orderBy == $column) text-primary-500 @endif"
+                            class="px-2 md:px-3 py-2 bg-slate-700 dark:bg-slate-700 text-slate-100 dark:text-slate-300 border-b border-slate-400 dark:border-slate-600 @if ($browseColumn->getOption('hideOnMobile')) max-md:hidden @endif @if ($browseColumn->getOption('allowOrdering')) group hover:text-primary-500 @endif @if ($orderBy == $column) text-primary-500 @endif"
                             scope="col"
                         >
                             @php $wrlaHeaderClass = $browseColumn->getOption('headerClass') ?: 'justify-start'; @endphp
@@ -275,11 +275,11 @@
                                     ? 'text-center'
                                     : (str_contains($wrlaColumnClass, 'justify-end') ? 'text-right' : 'text-left');
                             @endphp
-                            <td class="px-3 py-2 bg-inherit text-sm">
-                                <div class="relative flex w-full @if(!$isHTML) h-[22px] @endif items-center overflow-hidden {{ $wrlaColumnClass }}">
+                            <td @class(['px-2 md:px-3 py-2 bg-inherit text-sm', 'max-md:hidden' => $browseColumns->get($column)?->getOption('hideOnMobile')])>
+                                <div class="relative flex w-full @if(!$isHTML) md:h-[22px] @endif items-center overflow-hidden {{ $wrlaColumnClass }}">
                                     @if(!$isHTML)
-                                        <div style="color: transparent;">{!! $value !!}</div>
-                                        <div class="absolute top-0 left-0 w-full h-full whitespace-nowrap overflow-ellipsis truncate {{ $wrlaTextAlign }}">
+                                        <div aria-hidden="true" class="hidden md:block text-transparent">{!! $value !!}</div>
+                                        <div class="w-full [overflow-wrap:anywhere] md:absolute md:top-0 md:left-0 md:h-full md:truncate {{ $wrlaTextAlign }}">
                                             {!! $value !!}
                                         </div>
                                     @else
