@@ -276,10 +276,11 @@
                                     : (str_contains($wrlaColumnClass, 'justify-end') ? 'text-right' : 'text-left');
                             @endphp
                             <td @class(['px-2 md:px-3 py-2 bg-inherit text-sm', 'max-md:hidden' => $browseColumns->get($column)?->getOption('hideOnMobile')])>
-                                <div class="relative flex w-full @if(!$isHTML) md:h-[22px] @endif items-center overflow-hidden {{ $wrlaColumnClass }}">
+                                <div class="relative flex w-full @if(!$isHTML) h-[22px] @endif items-center overflow-hidden {{ $wrlaColumnClass }}">
                                     @if(!$isHTML)
-                                        <div aria-hidden="true" class="hidden md:block text-transparent">{!! $value !!}</div>
-                                        <div class="w-full [overflow-wrap:anywhere] md:absolute md:top-0 md:left-0 md:h-full md:truncate {{ $wrlaTextAlign }}">
+                                        {{-- Let text inform column width without making long words set the mobile minimum. --}}
+                                        <div aria-hidden="true" class="invisible max-md:[overflow-wrap:anywhere]">{!! $value !!}</div>
+                                        <div class="absolute top-0 left-0 w-full h-full truncate {{ $wrlaTextAlign }}">
                                             {!! $value !!}
                                         </div>
                                     @else

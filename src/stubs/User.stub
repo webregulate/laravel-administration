@@ -171,6 +171,7 @@ class User extends ManageableModel
             Heading::make('User Information', 'fas fa-info-circle'),
 
             Text::make($this, 'name')
+                ->beginGroup()
                 ->required()
                 ->validation('string|max:255')
                 ->setAttribute('placeholder', 'John Doe'),
@@ -180,7 +181,8 @@ class User extends ManageableModel
                 ->required()
                 ->validation('email|max:255|unique:users,email,'.$modelInstance->id)
                 ->setAttributes(['type' => 'email', 'placeholder' => 'email@domain.com'])
-                ->notes('<b>Required</b> - Must be valid and unique'),
+                ->notes('<b>Required</b> - Must be valid and unique')
+                ->endGroup(),
 
             Password::make($this, 'password'),
 

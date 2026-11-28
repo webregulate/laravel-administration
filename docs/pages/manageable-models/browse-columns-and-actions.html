@@ -31,7 +31,7 @@ public function getBrowseColumns(): array
     </table>
     <p class="docs-body mt-4">Use <code>allowOrdering(false)</code> for a column that should not be sortable. Use <code>headerClass()</code> or <code>columnClass()</code> to style just the header or cells.</p>
     <h3 class="docs-subheading mt-6 mb-3">Mobile layout</h3>
-    <p class="docs-body">Below 768px, browse tables size columns to their content and wrap plain text. Use <code>-&gt;hideOnMobile()</code> to hide a column's header and cells without changing desktop visibility or CSV exports. Use <code>-&gt;mobileWidth(40)</code> on a <code>BrowseColumnImage</code> to set a mobile thumbnail width. Integers are pixels; CSS lengths such as <code>'3rem'</code> also work.</p>
+    <p class="docs-body">Below 768px, browse tables size columns to their content and truncate plain-text cells with an ellipsis when they don't fit on one line. Use <code>-&gt;hideOnMobile()</code> to hide a column's header and cells without changing desktop visibility or CSV exports. Use <code>-&gt;mobileWidth(40)</code> on a <code>BrowseColumnImage</code> to set a mobile thumbnail width. Integers are pixels; CSS lengths such as <code>'3rem'</code> also work.</p>
     <div class="docs-code-block"><pre><code>'name' =&gt; BrowseColumn::make('Name')-&gt;hideOnMobile(),
 'avatar' =&gt; BrowseColumnImage::make('Avatar', fn ($value) =&gt; $value, 80)-&gt;mobileWidth(40),</code></pre></div>
 </div>
