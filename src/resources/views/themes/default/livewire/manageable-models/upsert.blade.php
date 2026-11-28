@@ -8,11 +8,9 @@
             'icon' => 'fa fa-arrow-left',
         ])
 
-        <br />
-
         {{-- Heading --}}
-        <div class="flex justify-between">
-            <div class="text-xl font-semibold">
+        <div class="mt-3 flex flex-col gap-2 md:mt-6 md:flex-row md:items-start md:justify-between">
+            <div class="min-w-0 text-xl font-semibold">
                 <i class="{{ $manageableModelClass::getIcon() }} mr-2"></i>
                 
                 @if(!empty($overrideTitle))
@@ -22,7 +20,7 @@
                 @endif
             </div>
 
-            <div class="flex justify-end gap-2 !text-sm">
+            <div class="flex flex-wrap items-center gap-2 !text-sm md:justify-end">
                 @foreach($manageableModel->getInstanceActionsFinal() as $key => $instanceAction)
                     @continue($key == 'edit')
                     {!! $instanceAction?->render() ?? '' !!}
